@@ -1,6 +1,6 @@
-# Travlr 🗺️
+# Travlr
 
-A modern travel mapping application for organizing and sharing your adventures.
+A travel mapping application for organizing and sharing your adventures.
 
 > **⚠️ Work in Progress**  
 > This project is currently under active development. Features and functionality are subject to change.
