@@ -1,13 +1,13 @@
 # Travlr
 
-A travel mapping application for organizing and sharing your adventures.
+A mapping application for organizing and sharing your adventures, interests and your city's best kept secrets.
 
 > **⚠️ Work in Progress**  
 > This project is currently under active development. Features and functionality are subject to change.
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### Prereqs
 - Node.js 18+ 
 - npm or yarn
 - A Mapbox account and API key
@@ -61,7 +61,7 @@ npm start
 - **TypeScript**: Full type safety
 - **Deployment**: Vercel (recommended)
 
-## 🗂️ Project Structure
+## 🗂️ Arch
 
 ```
 src/
@@ -78,7 +78,7 @@ src/
     └── supabase.ts     # Supabase client configuration
 ```
 
-## 🔧 Environment Setup
+## 🔧 Env Setup
 
 ### Mapbox Setup
 1. Sign up at [mapbox.com](https://mapbox.com)
@@ -104,7 +104,7 @@ This project is currently in early development. Contributions, issues, and featu
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 🙏 Ack
 
 - [Mapbox](https://mapbox.com) for mapping services
 - [Supabase](https://supabase.com) for backend infrastructure
