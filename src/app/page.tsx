@@ -83,10 +83,10 @@ export default function Home() {
           <div className="map-card fade-in">
             <div className="map-header">
               <h2 className="map-title">
-                Your Adventure Map
+                Your Map
               </h2>
               <p className="map-description">
-                Click anywhere on the map to add pins and mark your favorite locations
+                THIS IS INFO ABOUT YOUR MAP
               </p>
             </div>
             
