@@ -1,11 +1,16 @@
 'use client'
 import { useAuth } from '@/hooks/useAuth'
+import { useProfileCompletion } from '@/components/ProfileCompletion'
 import Auth from '@/components/Auth'
+import ProfileCompletion from '@/components/ProfileCompletion'
 import Map from '@/components/Map'
 import { supabase } from '@/lib/supabase'
+import { useState } from 'react'
 
 export default function Home() {
-  const { user, loading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const { needsCompletion, loading: profileLoading } = useProfileCompletion()
+  const [profileCompleted, setProfileCompleted] = useState(false)
 
   const handleMapClick = (lng: number, lat: number) => {
     console.log('Map clicked at:', { lng, lat })
@@ -20,7 +25,12 @@ export default function Home() {
     return email.split('@')[0].slice(0, 2).toUpperCase()
   }
 
-  if (loading) {
+  const handleProfileComplete = () => {
+    setProfileCompleted(true)
+  }
+
+  // Show loading state while checking auth/profile
+  if (authLoading || profileLoading) {
     return (
       <div className="loading-spinner">
         <div className="spinner"></div>
@@ -29,6 +39,7 @@ export default function Home() {
     )
   }
 
+  // No user -> show auth
   if (!user) {
     return (
       <div className="auth-page">
@@ -53,8 +64,20 @@ export default function Home() {
     )
   }
 
+  // User exists but needs profile completion
+  if ((needsCompletion && !profileCompleted)) {
+    return (
+      <div className="auth-page">
+        <div className="auth-container">
+          <ProfileCompletion onComplete={handleProfileComplete} />
+        </div>
+      </div>
+    )
+  }
+
+  // User is fully authenticated and has profile
   return (
-    <div className="page-container page-bg-default">
+    <div className="page-container">
       <nav className="navbar">
         <div className="navbar-content">
           <h1 className="navbar-brand">

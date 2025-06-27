@@ -61,6 +61,15 @@ export interface CollectionWithPins {
   pins: Pin[]
 }
 
+export interface UserProfile {
+  id: string
+  email: string
+  username: string | null
+  bio: string | null
+  profile_image: string | null
+  created_at: string
+}
+
 export class DatabaseService {
   /**
    * Get user statistics
@@ -216,6 +225,85 @@ export class DatabaseService {
     } catch (error) {
       console.error('DatabaseService error:', error)
       return { success: false, error: 'Failed to create pin' }
+    }
+  }
+
+  /**
+   * Get user profile by ID
+   */
+  static async getUserProfile(userId: string): Promise<UserProfile | null> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error getting user profile:', error)
+        return null
+      }
+
+      return data as UserProfile
+    } catch (error) {
+      console.error('DatabaseService error:', error)
+      return null
+    }
+  }
+
+  /**
+   * Update user profile
+   */
+  static async updateUserProfile(
+    userId: string, 
+    updates: Partial<Pick<UserProfile, 'username' | 'bio' | 'profile_image'>>
+  ) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', userId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error updating profile:', error)
+        return { success: false, error: error.message }
+      }
+
+      return { success: true, data }
+    } catch (error) {
+      console.error('DatabaseService error:', error)
+      return { success: false, error: 'Failed to update profile' }
+    }
+  }
+
+  /**
+   * Check if username is available
+   */
+  static async isUsernameAvailable(username: string, excludeUserId?: string): Promise<boolean> {
+    try {
+      let query = supabase
+        .from('users')
+        .select('username')
+        .eq('username', username)
+
+      if (excludeUserId) {
+        query = query.neq('id', excludeUserId)
+      }
+
+      const { data, error } = await query.single()
+
+      if (error && error.code === 'PGRST116') {
+        // No rows found = username is available
+        return true
+      }
+
+      // Username found = not available
+      return false
+    } catch (error) {
+      console.error('Error checking username availability:', error)
+      return false
     }
   }
 }
