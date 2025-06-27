@@ -1,4 +1,4 @@
-
+// src/lib/database.ts
 import { supabase } from './supabase'
 
 export interface UserStats {
@@ -146,48 +146,6 @@ export class DatabaseService {
   }
 
   /**
-   * Get user's collections with stats
-   */
-  static async getUserCollections(userId: string): Promise<CollectionWithStats[]> {
-    try {
-      const { data, error } = await supabase.rpc('get_user_collections_with_stats', {
-        user_uuid: userId
-      })
-
-      if (error) {
-        console.error('Error getting user collections:', error)
-        return []
-      }
-
-      return data as CollectionWithStats[]
-    } catch (error) {
-      console.error('DatabaseService error:', error)
-      return []
-    }
-  }
-
-  /**
-   * Search public collections
-   */
-  static async searchCollections(searchTerm: string): Promise<CollectionWithDetails[]> {
-    try {
-      const { data, error } = await supabase.rpc('search_public_collections', {
-        search_term: searchTerm
-      })
-
-      if (error) {
-        console.error('Error searching collections:', error)
-        return []
-      }
-
-      return data as CollectionWithDetails[]
-    } catch (error) {
-      console.error('DatabaseService error:', error)
-      return []
-    }
-  }
-
-  /**
    * Create a new collection
    */
   static async createCollection(
@@ -258,99 +216,6 @@ export class DatabaseService {
     } catch (error) {
       console.error('DatabaseService error:', error)
       return { success: false, error: 'Failed to create pin' }
-    }
-  }
-
-  /**
-   * Toggle follow/unfollow
-   */
-  static async toggleFollow(followerId: string, followingId: string) {
-    try {
-      // Check if already following
-      const isCurrentlyFollowing = await this.isFollowing(followerId, followingId)
-
-      if (isCurrentlyFollowing) {
-        // Unfollow
-        const { error } = await supabase
-          .from('follows')
-          .delete()
-          .eq('follower_id', followerId)
-          .eq('following_id', followingId)
-
-        if (error) {
-          console.error('Error unfollowing:', error)
-          return { success: false, error: error.message }
-        }
-
-        return { success: true, action: 'unfollowed' }
-      } else {
-        // Follow
-        const { error } = await supabase
-          .from('follows')
-          .insert({
-            follower_id: followerId,
-            following_id: followingId
-          })
-
-        if (error) {
-          console.error('Error following:', error)
-          return { success: false, error: error.message }
-        }
-
-        return { success: true, action: 'followed' }
-      }
-    } catch (error) {
-      console.error('DatabaseService error:', error)
-      return { success: false, error: 'Failed to toggle follow' }
-    }
-  }
-
-  /**
-   * Toggle like/unlike collection
-   */
-  static async toggleLike(userId: string, collectionId: string) {
-    try {
-      // Check if already liked
-      const { data: existingLike } = await supabase
-        .from('likes')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('collection_id', collectionId)
-        .single()
-
-      if (existingLike) {
-        // Unlike
-        const { error } = await supabase
-          .from('likes')
-          .delete()
-          .eq('user_id', userId)
-          .eq('collection_id', collectionId)
-
-        if (error) {
-          console.error('Error unliking:', error)
-          return { success: false, error: error.message }
-        }
-
-        return { success: true, action: 'unliked' }
-      } else {
-        // Like
-        const { error } = await supabase
-          .from('likes')
-          .insert({
-            user_id: userId,
-            collection_id: collectionId
-          })
-
-        if (error) {
-          console.error('Error liking:', error)
-          return { success: false, error: error.message }
-        }
-
-        return { success: true, action: 'liked' }
-      }
-    } catch (error) {
-      console.error('DatabaseService error:', error)
-      return { success: false, error: 'Failed to toggle like' }
     }
   }
 }

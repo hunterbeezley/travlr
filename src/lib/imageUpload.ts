@@ -33,6 +33,8 @@ export class ImageUploadService {
       const fileName = `${folder}/${timestamp}.${fileExt}`
       const filePath = `${userId}/${fileName}`
 
+      console.log('Uploading to path:', filePath)
+
       // Upload file
       const { data, error } = await supabase.storage
         .from(this.BUCKET_NAME)
@@ -45,6 +47,8 @@ export class ImageUploadService {
         console.error('Upload error:', error)
         return { success: false, error: error.message }
       }
+
+      console.log('Upload successful:', data)
 
       // Get public URL
       const { data: urlData } = supabase.storage
