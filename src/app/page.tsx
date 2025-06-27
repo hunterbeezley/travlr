@@ -77,7 +77,7 @@ export default function Home() {
 
   // User is fully authenticated and has profile
   return (
-    <div className="page-container">
+    <div className="page-container page-bg-default">
       <nav className="navbar">
         <div className="navbar-content">
           <h1 className="navbar-brand">
