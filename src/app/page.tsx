@@ -54,7 +54,7 @@ export default function Home() {
   }
 
   return (
-    <div className="page-container">
+    <div className="page-container page-bg-default">
       <nav className="navbar">
         <div className="navbar-content">
           <h1 className="navbar-brand">
