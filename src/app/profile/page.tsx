@@ -1,4 +1,4 @@
-// Save this as: src/app/profile/page.tsx
+
 
 'use client'
 import { useAuth } from '@/hooks/useAuth'
@@ -8,13 +8,15 @@ import { supabase } from '@/lib/supabase'
 
 interface UserProfile {
   id: string
-  username: string | null
-  full_name: string | null
-  bio: string | null
-  location: string | null
-  website: string | null
-  profile_image_url: string | null
+  email?: string
+  username?: string | null
+  full_name?: string | null
+  bio?: string | null
+  location?: string | null
+  website?: string | null
+  profile_image_url?: string | null
   created_at: string
+  updated_at?: string
 }
 
 interface UserStats {
@@ -34,8 +36,9 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [profileLoading, setProfileLoading] = useState(true)
   const [updateLoading, setUpdateLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Form states
+  // Complete form state with all fields
   const [formData, setFormData] = useState({
     username: '',
     full_name: '',
@@ -61,6 +64,7 @@ export default function ProfilePage() {
 
     try {
       setProfileLoading(true)
+      setError(null)
       
       // Get user profile
       const { data: profileData, error: profileError } = await supabase
@@ -70,20 +74,50 @@ export default function ProfilePage() {
         .single()
 
       if (profileError) {
-        console.error('Error fetching profile:', profileError)
-        return
+        if (profileError.code === 'PGRST116') {
+          // No user record exists, create one
+          console.log('No user record found, creating one...')
+          const { data: newUser, error: createError } = await supabase
+            .from('users')
+            .insert({
+              id: user.id,
+              email: user.email,
+              created_at: new Date().toISOString()
+            })
+            .select()
+            .single()
+
+          if (createError) {
+            console.error('Error creating user record:', createError)
+            setError(`Failed to create user profile: ${createError.message}`)
+            return
+          }
+
+          setProfile(newUser)
+          setFormData({
+            username: '',
+            full_name: '',
+            bio: '',
+            location: '',
+            website: ''
+          })
+        } else {
+          console.error('Error fetching profile:', profileError)
+          setError(`Failed to load profile: ${profileError.message}`)
+          return
+        }
+      } else {
+        setProfile(profileData)
+        setFormData({
+          username: profileData.username || '',
+          full_name: profileData.full_name || '',
+          bio: profileData.bio || '',
+          location: profileData.location || '',
+          website: profileData.website || ''
+        })
       }
 
-      setProfile(profileData)
-      setFormData({
-        username: profileData.username || '',
-        full_name: profileData.full_name || '',
-        bio: profileData.bio || '',
-        location: profileData.location || '',
-        website: profileData.website || ''
-      })
-
-      // Get user stats if the function exists
+      // Try to get user stats
       try {
         const { data: statsData, error: statsError } = await supabase.rpc('get_user_stats', {
           user_uuid: user.id
@@ -93,12 +127,12 @@ export default function ProfilePage() {
           setStats(statsData)
         }
       } catch (error) {
-        // Stats function might not exist yet, that's okay
         console.log('Stats function not available yet')
       }
 
     } catch (error) {
       console.error('Error fetching profile:', error)
+      setError('An unexpected error occurred while loading your profile.')
     } finally {
       setProfileLoading(false)
     }
@@ -110,33 +144,59 @@ export default function ProfilePage() {
 
     try {
       setUpdateLoading(true)
+      setError(null)
+
+      // Prepare update data - only include non-empty values or explicitly null for empty strings
+      const updateData: any = {
+        username: formData.username.trim() || null,
+        full_name: formData.full_name.trim() || null,
+        bio: formData.bio.trim() || null,
+        location: formData.location.trim() || null,
+        website: formData.website.trim() || null,
+        updated_at: new Date().toISOString()
+      }
+
+      console.log('Updating profile with:', updateData)
 
       const { error } = await supabase
         .from('users')
-        .update({
-          username: formData.username || null,
-          full_name: formData.full_name || null,
-          bio: formData.bio || null,
-          location: formData.location || null,
-          website: formData.website || null,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', user.id)
 
       if (error) {
         console.error('Error updating profile:', error)
-        alert('Error updating profile. Please try again.')
+        setError(`Update failed: ${error.message}`)
         return
       }
 
       // Refresh profile data
       await fetchProfile()
       setIsEditing(false)
-      alert('Profile updated successfully!')
+      
+      // Show success message
+      const successMessage = document.createElement('div')
+      successMessage.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        font-weight: 500;
+      `
+      successMessage.textContent = '✅ Profile updated successfully!'
+      document.body.appendChild(successMessage)
+      
+      setTimeout(() => {
+        document.body.removeChild(successMessage)
+      }, 3000)
 
     } catch (error) {
       console.error('Error updating profile:', error)
-      alert('Error updating profile. Please try again.')
+      setError('An unexpected error occurred while updating your profile.')
     } finally {
       setUpdateLoading(false)
     }
@@ -169,7 +229,7 @@ export default function ProfilePage() {
     )
   }
 
-  if (!user || !profile) {
+  if (!user) {
     return null
   }
 
@@ -220,12 +280,31 @@ export default function ProfilePage() {
       <main className="main-content">
         <div className="profile-container">
           
+          {/* Error Display */}
+          {error && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: 'var(--radius)',
+              padding: 'var(--space-md)',
+              marginBottom: 'var(--space-lg)',
+              color: '#dc2626'
+            }}>
+              <strong>Error:</strong> {error}
+              <div style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                <a href="/debug-profile" style={{ color: '#dc2626', textDecoration: 'underline' }}>
+                  → Open Debug Helper
+                </a>
+              </div>
+            </div>
+          )}
+          
           {/* Profile Header */}
           <div className="profile-header fade-in">
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-xl)' }}>
               {/* Avatar */}
               <div className="profile-avatar">
-                {profile.profile_image_url ? (
+                {profile?.profile_image_url ? (
                   <img 
                     src={profile.profile_image_url} 
                     alt="Profile" 
@@ -239,7 +318,7 @@ export default function ProfilePage() {
               <div className="profile-info">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-md)' }}>
                   <h1 style={{ fontSize: '2rem', fontWeight: '700', margin: 0 }}>
-                    {profile.full_name || profile.username || 'Anonymous User'}
+                    {profile?.full_name || profile?.username || user.email?.split('@')[0] || 'User'}
                   </h1>
                   <button
                     onClick={() => setIsEditing(!isEditing)}
@@ -250,25 +329,25 @@ export default function ProfilePage() {
                   </button>
                 </div>
 
-                {profile.username && (
+                {profile?.username && (
                   <p style={{ color: 'var(--muted-foreground)', marginBottom: 'var(--space-sm)' }}>
                     @{profile.username}
                   </p>
                 )}
 
-                {profile.bio && (
+                {profile?.bio && (
                   <p style={{ marginBottom: 'var(--space-md)', lineHeight: 1.6 }}>
                     {profile.bio}
                   </p>
                 )}
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-md)', fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
-                  {profile.location && (
+                  {profile?.location && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
                       📍 {profile.location}
                     </span>
                   )}
-                  {profile.website && (
+                  {profile?.website && (
                     <a 
                       href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
                       target="_blank"
@@ -279,7 +358,7 @@ export default function ProfilePage() {
                     </a>
                   )}
                   <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
-                    📅 Joined {formatDate(profile.created_at)}
+                    📅 Joined {formatDate(profile?.created_at || new Date().toISOString())}
                   </span>
                 </div>
               </div>
@@ -312,7 +391,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Edit Profile Form */}
+          {/* Complete Edit Profile Form */}
           {isEditing && (
             <div className="profile-form slide-up">
               <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: 'var(--space-lg)' }}>
@@ -428,10 +507,19 @@ export default function ProfilePage() {
                 <span className="info-value mono">{user.id}</span>
               </div>
 
-              <div className="info-item">
-                <span className="info-label">Account Created:</span>
-                <span className="info-value">{formatDate(profile.created_at)}</span>
-              </div>
+              {profile?.created_at && (
+                <div className="info-item">
+                  <span className="info-label">Account Created:</span>
+                  <span className="info-value">{formatDate(profile.created_at)}</span>
+                </div>
+              )}
+
+              {profile?.updated_at && (
+                <div className="info-item">
+                  <span className="info-label">Last Updated:</span>
+                  <span className="info-value">{formatDate(profile.updated_at)}</span>
+                </div>
+              )}
             </div>
           </div>
 
