@@ -1,0 +1,442 @@
+// Save this as: src/app/profile/page.tsx
+
+'use client'
+import { useAuth } from '@/hooks/useAuth'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+
+interface UserProfile {
+  id: string
+  username: string | null
+  full_name: string | null
+  bio: string | null
+  location: string | null
+  website: string | null
+  profile_image_url: string | null
+  created_at: string
+}
+
+interface UserStats {
+  collections_count: number
+  public_collections_count: number
+  pins_count: number
+  followers_count: number
+  following_count: number
+  likes_received: number
+}
+
+export default function ProfilePage() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [stats, setStats] = useState<UserStats | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [updateLoading, setUpdateLoading] = useState(false)
+
+  // Form states
+  const [formData, setFormData] = useState({
+    username: '',
+    full_name: '',
+    bio: '',
+    location: '',
+    website: ''
+  })
+
+  const getUserInitials = (email: string) => {
+    return email.split('@')[0].slice(0, 2).toUpperCase()
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  const fetchProfile = async () => {
+    if (!user) return
+
+    try {
+      setProfileLoading(true)
+      
+      // Get user profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError)
+        return
+      }
+
+      setProfile(profileData)
+      setFormData({
+        username: profileData.username || '',
+        full_name: profileData.full_name || '',
+        bio: profileData.bio || '',
+        location: profileData.location || '',
+        website: profileData.website || ''
+      })
+
+      // Get user stats if the function exists
+      try {
+        const { data: statsData, error: statsError } = await supabase.rpc('get_user_stats', {
+          user_uuid: user.id
+        })
+
+        if (!statsError && statsData) {
+          setStats(statsData)
+        }
+      } catch (error) {
+        // Stats function might not exist yet, that's okay
+        console.log('Stats function not available yet')
+      }
+
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    } finally {
+      setProfileLoading(false)
+    }
+  }
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user || updateLoading) return
+
+    try {
+      setUpdateLoading(true)
+
+      const { error } = await supabase
+        .from('users')
+        .update({
+          username: formData.username || null,
+          full_name: formData.full_name || null,
+          bio: formData.bio || null,
+          location: formData.location || null,
+          website: formData.website || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('Error updating profile:', error)
+        alert('Error updating profile. Please try again.')
+        return
+      }
+
+      // Refresh profile data
+      await fetchProfile()
+      setIsEditing(false)
+      alert('Profile updated successfully!')
+
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      alert('Error updating profile. Please try again.')
+    } finally {
+      setUpdateLoading(false)
+    }
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile()
+    }
+  }, [user])
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/')
+    }
+  }, [user, loading, router])
+
+  if (loading || profileLoading) {
+    return (
+      <div className="loading-spinner">
+        <div className="spinner"></div>
+        <div className="text-xl font-medium text-muted">Loading Profile...</div>
+      </div>
+    )
+  }
+
+  if (!user || !profile) {
+    return null
+  }
+
+  return (
+    <div className="page-container">
+      {/* Navigation */}
+      <nav className="navbar">
+        <div className="navbar-content">
+          <h1 className="navbar-brand">
+            Travlr
+          </h1>
+          
+          {/* Navigation Menu */}
+          <div className="navbar-nav">
+            <button
+              onClick={() => router.push('/')}
+              className="nav-link"
+            >
+              🗺️ Map
+            </button>
+            
+            <button
+              onClick={() => router.push('/profile')}
+              className="nav-link active"
+            >
+              👤 Profile
+            </button>
+          </div>
+
+          <div className="navbar-user">
+            <div className="user-avatar">
+              {getUserInitials(user.email || '')}
+            </div>
+            <span className="user-email">
+              {user.email}
+            </span>
+            <button
+              onClick={handleSignOut}
+              className="btn btn-destructive btn-small"
+              title="Sign out"
+            >
+              🚪 Sign out
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <main className="main-content">
+        <div className="profile-container">
+          
+          {/* Profile Header */}
+          <div className="profile-header fade-in">
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-xl)' }}>
+              {/* Avatar */}
+              <div className="profile-avatar">
+                {profile.profile_image_url ? (
+                  <img 
+                    src={profile.profile_image_url} 
+                    alt="Profile" 
+                  />
+                ) : (
+                  getUserInitials(user.email || '')
+                )}
+              </div>
+
+              {/* Profile Info */}
+              <div className="profile-info">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-md)' }}>
+                  <h1 style={{ fontSize: '2rem', fontWeight: '700', margin: 0 }}>
+                    {profile.full_name || profile.username || 'Anonymous User'}
+                  </h1>
+                  <button
+                    onClick={() => setIsEditing(!isEditing)}
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.875rem' }}
+                  >
+                    {isEditing ? '✕ Cancel' : '✏️ Edit Profile'}
+                  </button>
+                </div>
+
+                {profile.username && (
+                  <p style={{ color: 'var(--muted-foreground)', marginBottom: 'var(--space-sm)' }}>
+                    @{profile.username}
+                  </p>
+                )}
+
+                {profile.bio && (
+                  <p style={{ marginBottom: 'var(--space-md)', lineHeight: 1.6 }}>
+                    {profile.bio}
+                  </p>
+                )}
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-md)', fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
+                  {profile.location && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+                      📍 {profile.location}
+                    </span>
+                  )}
+                  {profile.website && (
+                    <a 
+                      href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', color: 'var(--accent)', textDecoration: 'none' }}
+                    >
+                      🔗 {profile.website}
+                    </a>
+                  )}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+                    📅 Joined {formatDate(profile.created_at)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Cards */}
+          {stats && (
+            <div className="profile-stats slide-up">
+              {[
+                { label: 'Collections', value: stats.collections_count, icon: '📁' },
+                { label: 'Public Collections', value: stats.public_collections_count, icon: '🌍' },
+                { label: 'Pins', value: stats.pins_count, icon: '📍' },
+                { label: 'Followers', value: stats.followers_count, icon: '👥' },
+                { label: 'Following', value: stats.following_count, icon: '➡️' },
+                { label: 'Likes Received', value: stats.likes_received, icon: '❤️' }
+              ].map((stat, index) => (
+                <div key={stat.label} className="stat-card">
+                  <div className="stat-icon">
+                    {stat.icon}
+                  </div>
+                  <div className="stat-value">
+                    {stat.value.toLocaleString()}
+                  </div>
+                  <div className="stat-label">
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Edit Profile Form */}
+          {isEditing && (
+            <div className="profile-form slide-up">
+              <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: 'var(--space-lg)' }}>
+                ✏️ Edit Profile
+              </h2>
+
+              <form onSubmit={handleUpdateProfile}>
+                <div style={{ display: 'grid', gap: 'var(--space-lg)' }}>
+                  
+                  <div className="form-group">
+                    <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontWeight: '500' }}>
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      placeholder="Choose a username"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontWeight: '500' }}>
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.full_name}
+                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      placeholder="Your full name"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontWeight: '500' }}>
+                      Bio
+                    </label>
+                    <textarea
+                      className="form-input"
+                      value={formData.bio}
+                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      placeholder="Tell us about yourself..."
+                      rows={3}
+                      style={{ resize: 'vertical', minHeight: '80px' }}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontWeight: '500' }}>
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      placeholder="Where are you based?"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontWeight: '500' }}>
+                      Website
+                    </label>
+                    <input
+                      type="url"
+                      className="form-input"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      className="btn"
+                      style={{ background: 'var(--muted)', color: 'var(--foreground)' }}
+                      disabled={updateLoading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={updateLoading}
+                    >
+                      {updateLoading ? 'Updating...' : '💾 Save Changes'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Account Info */}
+          <div className="account-info fade-in">
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: 'var(--space-lg)' }}>
+              ⚙️ Account Information
+            </h2>
+
+            <div style={{ display: 'grid', gap: 'var(--space-md)' }}>
+              <div className="info-item">
+                <span className="info-label">Email Address:</span>
+                <span className="info-value">{user.email}</span>
+              </div>
+
+              <div className="info-item">
+                <span className="info-label">User ID:</span>
+                <span className="info-value mono">{user.id}</span>
+              </div>
+
+              <div className="info-item">
+                <span className="info-label">Account Created:</span>
+                <span className="info-value">{formatDate(profile.created_at)}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  )
+}
