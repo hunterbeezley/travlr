@@ -3,10 +3,11 @@ import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import Auth from '@/components/Auth'
 import Map from '@/components/Map'
+import UserAvatar from '@/components/UserAvatar'
 import { supabase } from '@/lib/supabase'
 
 export default function Home() {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   const router = useRouter()
 
   const handleMapClick = (lng: number, lat: number) => {
@@ -16,10 +17,6 @@ export default function Home() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-  }
-
-  const getUserInitials = (email: string) => {
-    return email.split('@')[0].slice(0, 2).toUpperCase()
   }
 
   if (loading) {
@@ -81,9 +78,11 @@ export default function Home() {
           </div>
 
           <div className="navbar-user">
-            <div className="user-avatar">
-              {getUserInitials(user.email || '')}
-            </div>
+            <UserAvatar
+              profileImageUrl={profile?.profile_image_url}
+              email={user.email || ''}
+              size="medium"
+            />
             <span className="user-email">
               {user.email}
             </span>

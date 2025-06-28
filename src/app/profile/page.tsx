@@ -5,6 +5,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import ProfilePictureUpload from '@/components/ProfilePictureUpload'
+import UserAvatar from '@/components/UserAvatar'
 
 interface UserProfile {
   id: string
@@ -15,6 +17,7 @@ interface UserProfile {
   location?: string | null
   website?: string | null
   profile_image_url?: string | null
+  profile_image_path?: string | null
   created_at: string
   updated_at?: string
 }
@@ -29,7 +32,7 @@ interface UserStats {
 }
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth()
+  const { user, profile: authProfile, loading, refreshProfile } = useAuth()
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [stats, setStats] = useState<UserStats | null>(null)
@@ -138,6 +141,83 @@ export default function ProfilePage() {
     }
   }
 
+  const handleProfileImageUpload = async (imageUrl: string, imagePath: string) => {
+    if (!user) return
+
+    try {
+      // Update the database with the new profile image
+      const { error } = await supabase
+        .from('users')
+        .update({
+          profile_image_url: imageUrl,
+          profile_image_path: imagePath,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('Error updating profile image in database:', error)
+        alert('Failed to save profile image to database')
+        return
+      }
+
+      // Update local state
+      setProfile(prev => prev ? {
+        ...prev,
+        profile_image_url: imageUrl,
+        profile_image_path: imagePath
+      } : null)
+
+      // Refresh the auth context so navbar updates immediately
+      await refreshProfile()
+
+      // Show success message
+      showSuccessMessage('Profile picture updated successfully!')
+
+    } catch (error) {
+      console.error('Error updating profile image:', error)
+      alert('Failed to update profile image')
+    }
+  }
+
+  const handleProfileImageDelete = async () => {
+    if (!user) return
+
+    try {
+      // Update the database to remove the profile image
+      const { error } = await supabase
+        .from('users')
+        .update({
+          profile_image_url: null,
+          profile_image_path: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (error) {
+        console.error('Error removing profile image from database:', error)
+        alert('Failed to remove profile image from database')
+        return
+      }
+
+      // Update local state
+      setProfile(prev => prev ? {
+        ...prev,
+        profile_image_url: null,
+        profile_image_path: null
+      } : null)
+
+      // Refresh the auth context so navbar updates immediately
+      await refreshProfile()
+
+      showSuccessMessage('Profile picture removed successfully!')
+
+    } catch (error) {
+      console.error('Error removing profile image:', error)
+      alert('Failed to remove profile image')
+    }
+  }
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || updateLoading) return
@@ -173,26 +253,7 @@ export default function ProfilePage() {
       await fetchProfile()
       setIsEditing(false)
       
-      // Show success message
-      const successMessage = document.createElement('div')
-      successMessage.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #10b981;
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-        font-weight: 500;
-      `
-      successMessage.textContent = '✅ Profile updated successfully!'
-      document.body.appendChild(successMessage)
-      
-      setTimeout(() => {
-        document.body.removeChild(successMessage)
-      }, 3000)
+      showSuccessMessage('Profile updated successfully!')
 
     } catch (error) {
       console.error('Error updating profile:', error)
@@ -200,6 +261,30 @@ export default function ProfilePage() {
     } finally {
       setUpdateLoading(false)
     }
+  }
+
+  const showSuccessMessage = (message: string) => {
+    const successElement = document.createElement('div')
+    successElement.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #10b981;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      font-weight: 500;
+    `
+    successElement.textContent = `✅ ${message}`
+    document.body.appendChild(successElement)
+    
+    setTimeout(() => {
+      if (document.body.contains(successElement)) {
+        document.body.removeChild(successElement)
+      }
+    }, 3000)
   }
 
   const handleSignOut = async () => {
@@ -260,9 +345,11 @@ export default function ProfilePage() {
           </div>
 
           <div className="navbar-user">
-            <div className="user-avatar">
-              {getUserInitials(user.email || '')}
-            </div>
+            <UserAvatar
+              profileImageUrl={authProfile?.profile_image_url}
+              email={user.email || ''}
+              size="medium"
+            />
             <span className="user-email">
               {user.email}
             </span>
@@ -302,17 +389,15 @@ export default function ProfilePage() {
           {/* Profile Header */}
           <div className="profile-header fade-in">
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-xl)' }}>
-              {/* Avatar */}
-              <div className="profile-avatar">
-                {profile?.profile_image_url ? (
-                  <img 
-                    src={profile.profile_image_url} 
-                    alt="Profile" 
-                  />
-                ) : (
-                  getUserInitials(user.email || '')
-                )}
-              </div>
+              
+              {/* Profile Picture Upload */}
+              <ProfilePictureUpload
+                currentImageUrl={profile?.profile_image_url}
+                onImageUploaded={handleProfileImageUpload}
+                onImageDeleted={handleProfileImageDelete}
+                userId={user.id}
+                userInitials={getUserInitials(user.email || '')}
+              />
 
               {/* Profile Info */}
               <div className="profile-info">
