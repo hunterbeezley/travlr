@@ -44,6 +44,8 @@ export interface Pin {
   image_url: string | null
   category: string | null
   created_at: string
+  user_id: string
+  collection_id: string
 }
 
 export interface CollectionWithPins {
@@ -71,6 +73,59 @@ export interface UserProfile {
 }
 
 export class DatabaseService {
+  /**
+   * Create a new pin
+   */
+  static async createPin(
+    userId: string,
+    collectionId: string,
+    title: string,
+    latitude: number,
+    longitude: number,
+    description?: string,
+    imageUrl?: string,
+    category?: string
+  ) {
+    console.log('🔧 DatabaseService.createPin called with:', {
+      userId,
+      collectionId,
+      title,
+      latitude,
+      longitude,
+      description,
+      imageUrl,
+      category
+    })
+
+    try {
+      const { data, error } = await supabase
+        .from('pins')
+        .insert({
+          user_id: userId,
+          collection_id: collectionId,
+          title,
+          latitude,
+          longitude,
+          description,
+          image_url: imageUrl,
+          category
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Database error creating pin:', error)
+        return { success: false, error: error.message }
+      }
+
+      console.log('✅ Pin created successfully:', data)
+      return { success: true, data }
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return { success: false, error: 'Failed to create pin' }
+    }
+  }
+
   /**
    * Get user statistics
    */
@@ -163,6 +218,13 @@ export class DatabaseService {
     description?: string, 
     isPublic: boolean = false
   ) {
+    console.log('🔧 DatabaseService.createCollection called with:', {
+      userId,
+      title,
+      description,
+      isPublic
+    })
+
     try {
       const { data, error } = await supabase
         .from('collections')
@@ -176,55 +238,61 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('Error creating collection:', error)
+        console.error('❌ Database error creating collection:', error)
         return { success: false, error: error.message }
       }
 
+      console.log('✅ Collection created successfully:', data)
       return { success: true, data }
     } catch (error) {
-      console.error('DatabaseService error:', error)
+      console.error('💥 DatabaseService error:', error)
       return { success: false, error: 'Failed to create collection' }
     }
   }
 
   /**
-   * Create a new pin
+   * Get user's collections
    */
-  static async createPin(
-    userId: string,
-    collectionId: string,
-    title: string,
-    latitude: number,
-    longitude: number,
-    description?: string,
-    imageUrl?: string,
-    category?: string
-  ) {
+  static async getUserCollections(userId: string) {
     try {
       const { data, error } = await supabase
-        .from('pins')
-        .insert({
-          user_id: userId,
-          collection_id: collectionId,
-          title,
-          latitude,
-          longitude,
-          description,
-          image_url: imageUrl,
-          category
-        })
-        .select()
-        .single()
+        .from('collections')
+        .select('id, title, description, is_public, created_at, updated_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error creating pin:', error)
+        console.error('Error getting user collections:', error)
         return { success: false, error: error.message }
       }
 
       return { success: true, data }
     } catch (error) {
       console.error('DatabaseService error:', error)
-      return { success: false, error: 'Failed to create pin' }
+      return { success: false, error: 'Failed to get collections' }
+    }
+  }
+
+  /**
+   * Get user's pins
+   */
+  static async getUserPins(userId: string): Promise<Pin[]> {
+    try {
+      const { data, error } = await supabase
+        .from('pins')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error getting user pins:', error)
+        return []
+      }
+
+      return data as Pin[]
+    } catch (error) {
+      console.error('DatabaseService error:', error)
+      return []
     }
   }
 

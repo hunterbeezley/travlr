@@ -2,6 +2,9 @@
 import { useRef, useEffect, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
+import PinCreationModal from './PinCreationModal'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!
 
@@ -19,17 +22,35 @@ interface SearchResult {
   }
 }
 
+interface Pin {
+  id: string
+  title: string
+  description: string | null
+  latitude: number
+  longitude: number
+  image_url: string | null
+  category: string | null
+  created_at: string
+}
+
 export default function Map({ onMapClick }: MapProps) {
+  const { user } = useAuth()
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
-  const [lng, setLng] = useState(-70.9)
-  const [lat, setLat] = useState(42.35)
-  const [zoom, setZoom] = useState(9)
+  const [lng, setLng] = useState(-122.6765)
+  const [lat, setLat] = useState(45.5152)
+  const [zoom, setZoom] = useState(11)
   const [mapStyle, setMapStyle] = useState('mapbox://styles/mapbox/streets-v12')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+  
+  // Pin creation state
+  const [showPinModal, setShowPinModal] = useState(false)
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [pins, setPins] = useState<Pin[]>([])
+  const [loadingPins, setLoadingPins] = useState(false)
 
   const mapStyles = [
     { name: 'Streets', value: 'mapbox://styles/mapbox/streets-v12', icon: '🏙️' },
@@ -37,6 +58,22 @@ export default function Map({ onMapClick }: MapProps) {
     { name: 'Outdoors', value: 'mapbox://styles/mapbox/outdoors-v12', icon: '🏔️' },
     { name: 'Dark', value: 'mapbox://styles/mapbox/dark-v11', icon: '🌙' },
   ]
+
+  const getCategoryIcon = (category: string | null) => {
+    const icons: { [key: string]: string } = {
+      restaurant: '🍽️',
+      cafe: '☕',
+      bar: '🍺',
+      attraction: '🎯',
+      nature: '🌲',
+      shopping: '🛍️',
+      hotel: '🏨',
+      transport: '🚌',
+      activity: '🎪',
+      other: '📍'
+    }
+    return icons[category || 'other'] || '📍'
+  }
 
   // Search for places using Mapbox Geocoding API
   const searchPlaces = async (query: string) => {
@@ -90,6 +127,205 @@ export default function Map({ onMapClick }: MapProps) {
     setShowSearch(false)
   }
 
+  // Load pins from database
+  const loadPins = async () => {
+    if (!user) return
+
+    setLoadingPins(true)
+    try {
+      // For now, we'll fetch pins from a specific collection or all user's pins
+      // You can modify this query based on your needs
+      const { data, error } = await supabase
+        .from('pins')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error loading pins:', error)
+        return
+      }
+
+      setPins(data || [])
+    } catch (error) {
+      console.error('Error loading pins:', error)
+    } finally {
+      setLoadingPins(false)
+    }
+  }
+
+  // Store marker references to clean them up properly
+  const markersRef = useRef<mapboxgl.Marker[]>([])
+
+  // Add pins to map using GeoJSON source (perfectly synced with map)
+  const addPinsToMap = () => {
+    if (!map.current) return
+
+    console.log('🔧 Adding pins to map:', pins.length, 'pins')
+    console.log('📍 Pin data:', pins)
+
+    // Remove existing pin source and layers if they exist
+    if (map.current.getSource('pins')) {
+      console.log('🗑️ Removing existing pin layers')
+      if (map.current.getLayer('pins-layer')) {
+        map.current.removeLayer('pins-layer')
+      }
+      if (map.current.getLayer('pins-icons')) {
+        map.current.removeLayer('pins-icons')
+      }
+      map.current.removeSource('pins')
+    }
+
+    if (pins.length === 0) {
+      console.log('⚠️ No pins to display')
+      return
+    }
+
+    // Create GeoJSON data from pins
+    const geojsonData = {
+      type: 'FeatureCollection' as const,
+      features: pins.map(pin => ({
+        type: 'Feature' as const,
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [pin.longitude, pin.latitude]
+        },
+        properties: {
+          id: pin.id,
+          title: pin.title,
+          description: pin.description || '',
+          category: pin.category || 'other',
+          image_url: pin.image_url || '',
+          created_at: pin.created_at,
+          icon: getCategoryIcon(pin.category)
+        }
+      }))
+    }
+
+    console.log('📊 GeoJSON data:', geojsonData)
+
+    // Add source
+    map.current.addSource('pins', {
+      type: 'geojson',
+      data: geojsonData
+    })
+
+    console.log('✅ Added pins source to map')
+
+    // Add simple circle pins (fallback approach that always works)
+    map.current.addLayer({
+      id: 'pins-layer',
+      type: 'circle',
+      source: 'pins',
+      paint: {
+        'circle-radius': 8,
+        'circle-color': '#dc2626', // Red color
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#ffffff'
+      }
+    })
+
+    console.log('✅ Added pins-layer (circles)')
+
+    // Add category icons as text on top
+    map.current.addLayer({
+      id: 'pins-icons',
+      type: 'symbol',
+      source: 'pins',
+      layout: {
+        'text-field': ['get', 'icon'],
+        'text-size': 12,
+        'text-allow-overlap': true,
+        'text-ignore-placement': true
+      },
+      paint: {
+        'text-color': '#ffffff'
+      }
+    })
+
+    console.log('✅ Added pins-icons layer (text)')
+
+    // Add click handlers for popups
+    const clickHandler = (e: any) => {
+      if (!e.features || !e.features[0]) return
+      
+      const feature = e.features[0]
+      const coordinates = (feature.geometry as any).coordinates.slice()
+      const props = feature.properties
+
+      console.log('🖱️ Pin clicked:', props.title)
+
+      // Ensure that if the map is zoomed out such that multiple
+      // copies of the feature are visible, the popup appears
+      // over the copy being pointed to.
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
+      }
+
+      const popupContent = `
+        <div style="padding: 12px; min-width: 200px; max-width: 300px;">
+          <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; line-height: 1.3;">
+            ${props.icon} ${props.title}
+          </h3>
+          ${props.description ? `<p style="margin: 0 0 8px 0; font-size: 14px; color: #666; line-height: 1.4;">${props.description}</p>` : ''}
+          ${props.image_url ? `<img src="${props.image_url}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;" alt="${props.title}" />` : ''}
+          <div style="font-size: 12px; color: #888; border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
+            📅 ${new Date(props.created_at).toLocaleDateString()}
+          </div>
+        </div>
+      `
+
+      new mapboxgl.Popup({
+        closeButton: true,
+        closeOnClick: true,
+        maxWidth: '300px'
+      })
+        .setLngLat(coordinates)
+        .setHTML(popupContent)
+        .addTo(map.current!)
+    }
+
+    // Add click handlers to both layers
+    map.current.on('click', 'pins-layer', clickHandler)
+    map.current.on('click', 'pins-icons', clickHandler)
+
+    // Add hover effects
+    const mouseEnterHandler = () => {
+      if (map.current) {
+        map.current.getCanvas().style.cursor = 'pointer'
+        map.current.setPaintProperty('pins-layer', 'circle-radius', 10)
+      }
+    }
+
+    const mouseLeaveHandler = () => {
+      if (map.current) {
+        map.current.getCanvas().style.cursor = ''
+        map.current.setPaintProperty('pins-layer', 'circle-radius', 8)
+      }
+    }
+
+    map.current.on('mouseenter', 'pins-layer', mouseEnterHandler)
+    map.current.on('mouseleave', 'pins-layer', mouseLeaveHandler)
+    map.current.on('mouseenter', 'pins-icons', mouseEnterHandler)
+    map.current.on('mouseleave', 'pins-icons', mouseLeaveHandler)
+
+    console.log('🎯 Pin display setup complete')
+  }
+
+  // Load pins when user changes or component mounts
+  useEffect(() => {
+    if (user) {
+      loadPins()
+    }
+  }, [user])
+
+  // Add pins to map when pins data changes
+  useEffect(() => {
+    if (map.current && pins.length > 0) {
+      addPinsToMap()
+    }
+  }, [pins])
+
   // Initialize map only once
   useEffect(() => {
     if (!mapContainer.current || map.current) return
@@ -102,10 +338,10 @@ export default function Map({ onMapClick }: MapProps) {
       pitch: 0,
       bearing: 0,
       antialias: true,
-      dragPan: true, // Enable dragging
-      scrollZoom: true, // Enable scroll zoom
-      doubleClickZoom: true, // Enable double-click zoom
-      touchZoomRotate: true // Enable touch gestures
+      dragPan: true,
+      scrollZoom: true,
+      doubleClickZoom: true,
+      touchZoomRotate: true
     })
 
     // Add navigation control
@@ -139,40 +375,40 @@ export default function Map({ onMapClick }: MapProps) {
         map.current = null
       }
     }
-  }, []) // Empty dependency array - only run once!
+  }, [])
 
-  // Handle click events separately
+  // Handle click events for pin creation
   useEffect(() => {
-    if (!map.current || !onMapClick) return
+    if (!map.current) return
 
     const handleClick = (e: mapboxgl.MapMouseEvent) => {
-      onMapClick(e.lngLat.lng, e.lngLat.lat)
-      
-      // Add a temporary marker with animation
-      const marker = new mapboxgl.Marker({
-        color: '#3b82f6',
-        scale: 0.8
+      // Check if we clicked on a pin layer - if so, don't create a new pin
+      const features = map.current!.queryRenderedFeatures(e.point, {
+        layers: ['pins-layer', 'pins-icons']
       })
-        .setLngLat([e.lngLat.lng, e.lngLat.lat])
-        .addTo(map.current!)
-      
-      // Add popup with coordinates
-      const popup = new mapboxgl.Popup({ offset: 25 })
-        .setHTML(`
-          <div style="padding: 8px; font-size: 12px;">
-            <strong>📍 Pin Added</strong><br>
-            ${e.lngLat.lat.toFixed(4)}, ${e.lngLat.lng.toFixed(4)}
-          </div>
-        `)
-      
-      marker.setPopup(popup)
-      popup.addTo(map.current!)
-      
-      // Remove marker and popup after 3 seconds
-      setTimeout(() => {
-        marker.remove()
-        popup.remove()
-      }, 3000)
+
+      if (features.length > 0) {
+        console.log('🎯 Clicked on existing pin, not creating new pin')
+        return // Don't create a new pin if we clicked on an existing one
+      }
+
+      // Only create pins for logged-in users
+      if (!user) {
+        alert('Please log in to create pins')
+        return
+      }
+
+      console.log('📍 Creating new pin at:', e.lngLat.lat, e.lngLat.lng)
+
+      // Set selected location and show modal
+      setSelectedLocation({
+        lat: e.lngLat.lat,
+        lng: e.lngLat.lng
+      })
+      setShowPinModal(true)
+
+      // Call original onMapClick if provided
+      onMapClick?.(e.lngLat.lng, e.lngLat.lat)
     }
 
     map.current.on('click', handleClick)
@@ -182,7 +418,7 @@ export default function Map({ onMapClick }: MapProps) {
         map.current.off('click', handleClick)
       }
     }
-  }, [onMapClick])
+  }, [onMapClick, user]) // Note: don't include pins here to avoid recreating the handler
 
   // Update map style when changed
   useEffect(() => {
@@ -190,6 +426,13 @@ export default function Map({ onMapClick }: MapProps) {
       map.current.setStyle(mapStyle)
     }
   }, [mapStyle])
+
+  // Handle pin creation success
+  const handlePinCreated = (pin: Pin) => {
+    setPins(prev => [pin, ...prev])
+    setShowPinModal(false)
+    setSelectedLocation(null)
+  }
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -245,35 +488,30 @@ export default function Map({ onMapClick }: MapProps) {
               background: 'var(--card)',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-xl)',
+              boxShadow: 'var(--shadow-lg)',
               backdropFilter: 'blur(8px)',
               overflow: 'hidden'
             }}>
-              <input
-                type="text"
-                placeholder="Search for cities, places, or addresses..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--foreground)',
-                  fontSize: '0.875rem',
-                  outline: 'none'
-                }}
-                autoFocus
-              />
-              
+              <div style={{ padding: '0.75rem' }}>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for places..."
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
               {isSearching && (
-                <div style={{ 
-                  padding: '0.75rem', 
-                  textAlign: 'center', 
-                  color: 'var(--muted-foreground)',
-                  fontSize: '0.875rem'
-                }}>
-                  Searching...
+                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
+                  🔍 Searching...
                 </div>
               )}
 
@@ -286,30 +524,23 @@ export default function Map({ onMapClick }: MapProps) {
                       style={{
                         width: '100%',
                         padding: '0.75rem',
-                        border: 'none',
-                        background: 'transparent',
                         textAlign: 'left',
+                        border: 'none',
+                        background: 'none',
                         cursor: 'pointer',
-                        transition: 'var(--transition)',
                         borderTop: '1px solid var(--border)',
-                        color: 'var(--foreground)',
-                        fontSize: '0.875rem'
+                        fontSize: '0.875rem',
+                        transition: 'var(--transition)'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--muted)'
+                        e.currentTarget.style.backgroundColor = 'var(--muted)'
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent'
+                        e.currentTarget.style.backgroundColor = 'transparent'
                       }}
                     >
-                      <div style={{ fontWeight: '500' }}>
-                        {result.place_name}
-                      </div>
-                      <div style={{ 
-                        fontSize: '0.75rem', 
-                        color: 'var(--muted-foreground)',
-                        marginTop: '0.25rem'
-                      }}>
+                      <div style={{ fontWeight: '500' }}>{result.place_name}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>
                         {result.place_type.join(', ')}
                       </div>
                     </button>
@@ -318,12 +549,7 @@ export default function Map({ onMapClick }: MapProps) {
               )}
 
               {searchQuery && !isSearching && searchResults.length === 0 && (
-                <div style={{ 
-                  padding: '0.75rem', 
-                  textAlign: 'center', 
-                  color: 'var(--muted-foreground)',
-                  fontSize: '0.875rem'
-                }}>
+                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
                   No results found
                 </div>
               )}
@@ -332,35 +558,140 @@ export default function Map({ onMapClick }: MapProps) {
         </div>
       </div>
 
-      {/* Map Controls */}
-      <div className="map-controls">
-        📍 {lat}°, {lng}° | 🔍 {zoom}x
+      {/* Map Coordinates Display */}
+      <div style={{
+        position: 'absolute',
+        top: '0.75rem',
+        left: '0.75rem',
+        zIndex: 10,
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        padding: 'var(--space-sm)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: '0.75rem',
+        color: 'var(--muted-foreground)',
+        boxShadow: 'var(--shadow)',
+        backdropFilter: 'blur(8px)'
+      }}>
+        Lng: {lng} | Lat: {lat} | Zoom: {zoom}
       </div>
-      
+
       {/* Map Style Selector */}
-      <div className="map-style-selector">
-        <div className="map-style-title">Map Style</div>
-        <div className="map-style-buttons">
+      <div style={{
+        position: 'absolute',
+        top: '4rem',
+        left: '0.75rem',
+        zIndex: 10,
+        background: 'rgba(255, 255, 255, 0.9)',
+        backdropFilter: 'blur(8px)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)',
+        padding: 'var(--space-sm)',
+        boxShadow: 'var(--shadow-lg)'
+      }}>
+        <div style={{
+          fontSize: '0.75rem',
+          fontWeight: '500',
+          color: 'var(--muted-foreground)',
+          marginBottom: 'var(--space-sm)'
+        }}>
+          Map Style
+        </div>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--space-xs)'
+        }}>
           {mapStyles.map((style) => (
             <button
               key={style.value}
               onClick={() => setMapStyle(style.value)}
-              className={`map-style-btn ${mapStyle === style.value ? 'active' : ''}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-sm)',
+                padding: 'var(--space-xs) var(--space-sm)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.75rem',
+                transition: 'var(--transition)',
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: mapStyle === style.value ? 'var(--accent)' : 'transparent',
+                color: mapStyle === style.value ? 'white' : 'var(--foreground)'
+              }}
             >
               <span>{style.icon}</span>
-              {style.name}
+              <span>{style.name}</span>
             </button>
           ))}
         </div>
       </div>
 
+      {/* User Instructions */}
+      {user && (
+        <div style={{
+          position: 'absolute',
+          bottom: '1rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10,
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '0.75rem 1rem',
+          fontSize: '0.875rem',
+          color: 'var(--muted-foreground)',
+          boxShadow: 'var(--shadow-lg)',
+          backdropFilter: 'blur(8px)',
+          textAlign: 'center'
+        }}>
+          📍 Click anywhere on the map to create a pin
+        </div>
+      )}
+
+      {/* Pin Count Display */}
+      {pins.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          bottom: '1rem',
+          right: '1rem',
+          zIndex: 10,
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          padding: '0.5rem 0.75rem',
+          fontSize: '0.75rem',
+          color: 'var(--muted-foreground)',
+          boxShadow: 'var(--shadow)',
+          backdropFilter: 'blur(8px)'
+        }}>
+          📍 {pins.length} pin{pins.length !== 1 ? 's' : ''}
+        </div>
+      )}
+
       {/* Map Container */}
-      <div ref={mapContainer} className="w-full h-full" />
-      
-      {/* Click Instruction */}
-      <div className="map-instruction">
-        💡 Click anywhere to add a pin • Drag to pan • Scroll to zoom
-      </div>
+      <div 
+        ref={mapContainer} 
+        style={{ 
+          width: '100%', 
+          height: '100%' 
+        }} 
+      />
+
+      {/* Pin Creation Modal */}
+      {selectedLocation && (
+        <PinCreationModal
+          isOpen={showPinModal}
+          onClose={() => {
+            setShowPinModal(false)
+            setSelectedLocation(null)
+          }}
+          latitude={selectedLocation.lat}
+          longitude={selectedLocation.lng}
+          onPinCreated={handlePinCreated}
+        />
+      )}
     </div>
   )
 }
