@@ -413,75 +413,25 @@ body {
   font-family: var(--font-mono);
 }
 
-/* Responsive design for navigation */
-@media (max-width: 768px) {
-  .navbar-nav {
-    position: static;
-    transform: none;
-    gap: var(--space-md);
-  }
-  
-  .navbar-content {
-    flex-direction: column;
-    gap: var(--space-md);
-    padding: var(--space-md);
-  }
-  
-  .navbar-brand {
-    font-size: 1.25rem;
-  }
-  
-  .nav-link {
-    padding: var(--space-xs) var(--space-sm);
-    font-size: 0.8rem;
-  }
-  
-  .profile-header {
-    padding: var(--space-lg);
-  }
-  
-  .profile-avatar {
-    width: 4rem;
-    height: 4rem;
-    font-size: 1.5rem;
-  }
-  
-  .profile-stats {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: var(--space-md);
-  }
-  
-  .stat-card {
-    padding: var(--space-md);
-  }
-  
-  .stat-icon {
-    font-size: 1.5rem;
-  }
-  
-  .stat-value {
-    font-size: 1.25rem;
-  }
+
+/* Navigation */
+.navbar {
+  background: var(--card);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
-@media (max-width: 480px) {
-  .navbar-nav {
-    gap: var(--space-sm);
-  }
-  
-  .profile-container {
-    padding: var(--space-md);
-  }
-  
-  .profile-stats {
-    grid-template-columns: 1fr;
-  }
-  
-  .info-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-xs);
-  }
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-md) var(--space-lg);
 }
 
 .navbar-brand {
@@ -495,11 +445,23 @@ body {
   align-items: center;
   gap: var(--space-sm);
   text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.navbar-brand:hover {
+  transform: scale(1.02);
 }
 
 .navbar-brand::before {
-  content: '🗺️';
-  font-size: 1.75rem;
+  content: '';
+  width: 2rem;
+  height: 2rem;
+  background-image: url('/travlr-logo.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: block;
+  flex-shrink: 0;
 }
 
 .navbar-user {
@@ -525,6 +487,26 @@ body {
   color: var(--muted-foreground);
   font-size: 0.875rem;
   font-weight: 500;
+}
+
+/* Responsive Design for Navbar */
+@media (max-width: 768px) {
+  .navbar-content {
+    padding: var(--space-md);
+  }
+  
+  .navbar-brand {
+    font-size: 1.25rem;
+  }
+  
+  .navbar-brand::before {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  
+  .user-email {
+    display: none;
+  }
 }
 
 /* Buttons */
