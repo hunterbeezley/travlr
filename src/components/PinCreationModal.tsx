@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { DatabaseService } from '@/lib/database'
 import { supabase } from '@/lib/supabase'
+import SingleImageUpload from './SingleImageUpload'
+import MultipleImageUpload from './MultipleImageUpload'
+
 
 interface PinCreationModalProps {
   isOpen: boolean
@@ -17,6 +20,15 @@ interface Collection {
   title: string
   description: string | null
   is_public: boolean
+}
+
+interface ImageItem {
+  id: string
+  url: string
+  path: string
+  order: number
+  isUploading: boolean
+  isTemp: boolean
 }
 
 const PIN_CATEGORIES = [
@@ -52,56 +64,106 @@ export default function PinCreationModal({
     title: '',
     description: '',
     category: 'other',
-    collectionId: '',
-    imageUrl: ''
+    collectionId: ''
   })
 
+// Image mode toggle
+const [useMultipleImages, setUseMultipleImages] = useState(false)
+
+// Single image state (existing)
+const [imageData, setImageData] = useState<{
+  url: string
+  path: string
+} | null>(null)
+
+// Multiple images state (new)
+const [multipleImages, setMultipleImages] = useState<ImageItem[]>([])
   // Reset form when modal opens/closes
-  useEffect(() => {
-    if (isOpen) {
-      setFormData({
-        title: '',
-        description: '',
-        category: 'other',
-        collectionId: '',
-        imageUrl: ''
-      })
-      setError(null)
-      fetchAddress()
-    }
-  }, [isOpen, latitude, longitude])
+useEffect(() => {
+  if (isOpen) {
+    setFormData({
+      title: '',
+      description: '',
+      category: 'other',
+      collectionId: ''
+    })
+    setImageData(null)
+    setMultipleImages([])
+    setUseMultipleImages(false) // Reset to single image mode
+    setError(null)
+    fetchAddress()
+    fetchCollections()
+  }
+}, [isOpen])
 
-  // Fetch user's collections
-  useEffect(() => {
-    if (isOpen && user) {
-      fetchCollections()
-    }
-  }, [isOpen, user])
+ const fetchCollections = async () => {
+  if (!user) {
+    console.log('❌ fetchCollections: No user found')
+    return
+  }
 
-  const fetchCollections = async () => {
-    if (!user) return
+  console.log('🔍 fetchCollections: Starting fetch for user:', user.id)
+
+  try {
+    setLoadingCollections(true)
+    const { data, error } = await supabase
+      .from('collections')
+      .select('id, title, description, is_public')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    console.log('📥 fetchCollections result:', { data, error })
+
+    if (error) {
+      console.error('❌ fetchCollections error:', error)
+      setError(`Failed to load collections: ${error.message}`)
+      return
+    }
+
+    console.log(`✅ fetchCollections: Found ${data?.length || 0} collections:`, data)
+    setCollections(data || [])
+    
+    // Auto-select first collection if available
+    if (data && data.length > 0 && !formData.collectionId) {
+      console.log('🎯 Auto-selecting first collection:', data[0].id)
+      setFormData(prev => ({ ...prev, collectionId: data[0].id }))
+    } else {
+      console.log('⚠️ No collections to auto-select or collection already selected')
+    }
+  } catch (error) {
+    console.error('💥 fetchCollections exception:', error)
+    setError('Failed to load collections')
+  } finally {
+    setLoadingCollections(false)
+  }
+}
+
+// (Removed duplicate createNewCollection function to fix redeclaration error)
+
+  // Handler to create a new collection (simple prompt-based version)
+  const createNewCollection = async () => {
+    const title = window.prompt('Enter a name for your new collection:')
+    if (!title || !user) return
 
     try {
       setLoadingCollections(true)
       const { data, error } = await supabase
         .from('collections')
+        .insert([{ title, user_id: user.id, is_public: false }])
         .select('id, title, description, is_public')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+        .single()
 
       if (error) {
-        console.error('Error fetching collections:', error)
+        setError('Failed to create collection: ' + error.message)
         return
       }
 
-      setCollections(data || [])
-      
-      // Auto-select first collection if available
-      if (data && data.length > 0 && !formData.collectionId) {
-        setFormData(prev => ({ ...prev, collectionId: data[0].id }))
+      if (data) {
+        setCollections(prev => [data, ...prev])
+        setFormData(prev => ({ ...prev, collectionId: data.id }))
       }
-    } catch (error) {
-      console.error('Error in fetchCollections:', error)
+    } catch (err) {
+      setError('Failed to create collection')
     } finally {
       setLoadingCollections(false)
     }
@@ -128,100 +190,120 @@ export default function PinCreationModal({
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  
+  console.log('🚀 Pin creation started')
+  console.log('User:', user)
+  console.log('Form data:', formData)
+  console.log('Image mode:', useMultipleImages ? 'multiple' : 'single')
+  console.log('Single image data:', imageData)
+  console.log('Multiple images data:', multipleImages)
+  console.log('Location:', { latitude, longitude })
+  
+  if (!user) {
+    console.error('❌ No user found')
+    setError('You must be logged in to create pins')
+    return
+  }
+
+  if (!formData.title.trim()) {
+    console.error('❌ No title provided')
+    setError('Title is required')
+    return
+  }
+
+  if (!formData.collectionId) {
+    console.error('❌ No collection selected')
+    setError('Please select a collection')
+    return
+  }
+
+  // Check if any images are still uploading (for multiple images mode)
+  if (useMultipleImages) {
+    const hasUploadingImages = multipleImages.some(img => img.isUploading)
+    if (hasUploadingImages) {
+      setError('Please wait for all images to finish uploading')
+      return
+    }
+  }
+
+  console.log('✅ Validation passed, creating pin...')
+  setLoading(true)
+  setError(null)
+
+  try {
+    // Get the image URL for the main pin record (first image or single image)
+    let mainImageUrl: string | undefined
     
-    console.log('🚀 Pin creation started')
-    console.log('User:', user)
-    console.log('Form data:', formData)
-    console.log('Location:', { latitude, longitude })
-    
-    if (!user) {
-      console.error('❌ No user found')
-      setError('You must be logged in to create pins')
-      return
+    if (useMultipleImages && multipleImages.length > 0) {
+      // Use first image from multiple images
+      const firstImage = multipleImages.find(img => !img.isUploading && !img.isTemp)
+      mainImageUrl = firstImage?.url
+    } else if (!useMultipleImages && imageData) {
+      // Use single image
+      mainImageUrl = imageData.url
     }
 
-    if (!formData.title.trim()) {
-      console.error('❌ No title provided')
-      setError('Title is required')
-      return
-    }
+    console.log('📡 Creating pin with main image:', mainImageUrl)
 
-    if (!formData.collectionId) {
-      console.error('❌ No collection selected')
-      setError('Please select a collection')
-      return
-    }
+    // Create the pin first
+    const result = await DatabaseService.createPin(
+      user.id,
+      formData.collectionId,
+      formData.title.trim(),
+      latitude,
+      longitude,
+      formData.description.trim() || undefined,
+      mainImageUrl, // This goes in the main pins table for backward compatibility
+      formData.category
+    )
 
-    console.log('✅ Validation passed, creating pin...')
-    setLoading(true)
-    setError(null)
-
-    try {
-      console.log('📡 Calling DatabaseService.createPin with:', {
-        userId: user.id,
-        collectionId: formData.collectionId,
-        title: formData.title.trim(),
-        latitude,
-        longitude,
-        description: formData.description.trim() || undefined,
-        imageUrl: formData.imageUrl.trim() || undefined,
-        category: formData.category
-      })
-
-      const result = await DatabaseService.createPin(
-        user.id,
-        formData.collectionId,
-        formData.title.trim(),
-        latitude,
-        longitude,
-        formData.description.trim() || undefined,
-        formData.imageUrl.trim() || undefined,
-        formData.category
-      )
-
-      console.log('📥 DatabaseService response:', result)
-
-      if (result.success && result.data) {
-        console.log('✅ Pin created successfully:', result.data)
-        onPinCreated?.(result.data)
-        onClose()
-      } else {
-        console.error('❌ Pin creation failed:', result.error)
-        setError(result.error || 'Failed to create pin')
-      }
-    } catch (error) {
-      console.error('💥 Unexpected error creating pin:', error)
-      setError('An unexpected error occurred')
-    } finally {
+    if (!result.success || !result.data) {
+      console.error('❌ Pin creation failed:', result.error)
+      setError(result.error || 'Failed to create pin')
       setLoading(false)
+      return
     }
-  }
 
-  const createNewCollection = async () => {
-    const title = prompt('Enter a name for your new collection:')
-    if (!title?.trim() || !user) return
+    const newPin = result.data
+    console.log('✅ Pin created successfully:', newPin)
 
-    try {
-      const result = await DatabaseService.createCollection(
-        user.id,
-        title.trim(),
-        undefined,
-        false // default to private
-      )
+    // If using multiple images, save them to the pin_images table
+    if (useMultipleImages && multipleImages.length > 0) {
+      const validImages = multipleImages.filter(img => !img.isUploading && !img.isTemp)
+      
+      if (validImages.length > 0) {
+        console.log('📷 Saving multiple images to pin_images table')
+        
+        const imageResult = await DatabaseService.savePinImages(
+          newPin.id,
+          user.id,
+          validImages.map(img => ({
+            image_url: img.url,
+            image_path: img.path,
+            upload_order: img.order
+          }))
+        )
 
-      if (result.success && result.data) {
-        setCollections(prev => [result.data, ...prev])
-        setFormData(prev => ({ ...prev, collectionId: result.data.id }))
-      } else {
-        setError(result.error || 'Failed to create collection')
+        if (!imageResult.success) {
+          console.warn('⚠️ Pin created but failed to save multiple images:', imageResult.error)
+          // Don't fail the whole operation - pin is created
+        } else {
+          console.log('✅ Multiple images saved successfully')
+        }
       }
-    } catch (error) {
-      console.error('Error creating collection:', error)
-      setError('Failed to create collection')
     }
+
+    onPinCreated?.(newPin)
+    onClose()
+  } catch (error) {
+    console.error('💥 Unexpected error creating pin:', error)
+    setError('An unexpected error occurred')
+  } finally {
+    setLoading(false)
   }
+}
 
   if (!isOpen) return null
 
@@ -342,7 +424,8 @@ export default function PinCreationModal({
                 padding: '0.75rem',
                 border: '1px solid var(--border)',
                 borderRadius: 'var(--radius)',
-                fontSize: '1rem'
+                fontSize: '1rem',
+                backgroundColor: 'var(--card)'
               }}
             >
               {PIN_CATEGORIES.map(category => (
@@ -374,7 +457,8 @@ export default function PinCreationModal({
                   padding: '0.75rem',
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius)',
-                  fontSize: '1rem'
+                  fontSize: '1rem',
+                  backgroundColor: 'var(--card)'
                 }}
               >
                 <option value="">Select a collection...</option>
@@ -429,37 +513,106 @@ export default function PinCreationModal({
             />
           </div>
 
-          {/* Image URL (for now - can be replaced with file upload later) */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              fontWeight: '500',
-              fontSize: '0.875rem'
-            }}>
-              Image URL (optional)
-            </label>
-            <input
-              type="url"
-              value={formData.imageUrl}
-              onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-              placeholder="https://example.com/image.jpg"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                fontSize: '1rem'
-              }}
-            />
-          </div>
+          {/* Image Upload Section */}
+<div style={{ marginBottom: '1.5rem' }}>
+  <div style={{ 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'space-between',
+    marginBottom: '0.5rem' 
+  }}>
+    <label style={{
+      fontWeight: '500',
+      fontSize: '0.875rem'
+    }}>
+      Images (optional)
+    </label>
+    
+    {/* Toggle between single and multiple images */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>
+        Single
+      </span>
+      <button
+        type="button"
+        onClick={() => {
+          setUseMultipleImages(!useMultipleImages)
+          // Clear images when switching modes
+          setImageData(null)
+          setMultipleImages([])
+        }}
+        style={{
+          width: '40px',
+          height: '20px',
+          borderRadius: '10px',
+          border: 'none',
+          cursor: 'pointer',
+          backgroundColor: useMultipleImages ? 'var(--accent)' : 'var(--border)',
+          position: 'relative',
+          transition: 'var(--transition)'
+        }}
+        disabled={loading}
+      >
+        <div style={{
+          width: '16px',
+          height: '16px',
+          borderRadius: '50%',
+          backgroundColor: 'white',
+          position: 'absolute',
+          top: '2px',
+          left: useMultipleImages ? '22px' : '2px',
+          transition: 'var(--transition)'
+        }} />
+      </button>
+      <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>
+        Multiple
+      </span>
+    </div>
+  </div>
+
+  {/* Conditional Image Upload Component */}
+  {useMultipleImages ? (
+    <MultipleImageUpload
+      currentImages={multipleImages}
+      onImagesChanged={setMultipleImages}
+      userId={user?.id || ''}
+      maxImages={5}
+      disabled={loading}
+    />
+  ) : (
+    <SingleImageUpload
+      currentImageUrl={imageData?.url}
+      onImageUploaded={(url, path) => {
+        setImageData({ url, path })
+        setError(null)
+      }}
+      onImageRemoved={() => {
+        setImageData(null)
+      }}
+      userId={user?.id || ''}
+      disabled={loading}
+    />
+  )}
+  
+  {/* Help text */}
+  <div style={{
+    fontSize: '0.75rem',
+    color: 'var(--muted-foreground)',
+    marginTop: '0.5rem'
+  }}>
+    {useMultipleImages 
+      ? 'Upload multiple images. First image will be shown on the map.'
+      : 'Upload a single image for this pin.'
+    }
+  </div>
+</div>
 
           {/* Error Message */}
           {error && (
             <div style={{
+              color: 'var(--destructive)',
+              backgroundColor: 'var(--destructive-muted)',
               padding: '0.75rem',
-              backgroundColor: '#fee2e2',
-              color: '#dc2626',
               borderRadius: 'var(--radius)',
               marginBottom: '1rem',
               fontSize: '0.875rem'
@@ -468,45 +621,26 @@ export default function PinCreationModal({
             </div>
           )}
 
-          {/* Actions */}
-          <div style={{
-            display: 'flex',
-            gap: '0.75rem',
-            justifyContent: 'flex-end'
-          }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '0.75rem 1.5rem',
-                border: '1px solid var(--border)',
-                backgroundColor: 'transparent',
-                borderRadius: 'var(--radius)',
-                cursor: 'pointer',
-                fontSize: '0.875rem'
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || loadingCollections}
-              style={{
-                padding: '0.75rem 1.5rem',
-                backgroundColor: loading ? 'var(--muted)' : 'var(--accent)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--radius)',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontSize: '0.875rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              {loading ? '⏳ Creating...' : '📍 Create Pin'}
-            </button>
-          </div>
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              backgroundColor: 'var(--accent)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 'var(--radius)',
+              fontWeight: '600',
+              fontSize: '1rem',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              transition: 'var(--transition)'
+            }}
+          >
+            {loading ? 'Creating Pin...' : 'Create Pin'}
+          </button>
         </form>
       </div>
     </div>

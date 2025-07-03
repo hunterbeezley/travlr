@@ -34,14 +34,43 @@ export default function Home() {
         <div className="auth-container">
           <div className="text-center fade-in" style={{ marginBottom: '2rem' }}>
             <h1 className="text-5xl font-bold" style={{ 
-              marginBottom: '1rem',
-              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>
-              Travlr
-            </h1>
+  marginBottom: '1rem',
+  color: '#EA8B47',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '0.75rem'
+}}>
+  <svg 
+    width="48" 
+    height="48" 
+    viewBox="0 0 400 400" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* Pin shape */}
+    <path 
+      d="M200 50c-55.228 0-100 44.772-100 100 0 75 100 150 100 150s100-75 100-150c0-55.228-44.772-100-100-100z" 
+      fill="#EA8B47"
+    />
+    {/* Inner white circle */}
+    <circle 
+      cx="200" 
+      cy="150" 
+      r="40" 
+      fill="white"
+    />
+    {/* Inner orange dot */}
+    <circle 
+      cx="200" 
+      cy="150" 
+      r="15" 
+      fill="#EA8B47"
+    />
+  </svg>
+  Travlr
+</h1>
+
             <p className="text-lg text-muted">
               Discover and map your world
             </p>
@@ -55,66 +84,87 @@ export default function Home() {
   return (
     <div className="page-container page-bg-default">
       <nav className="navbar">
-        <div className="navbar-content">
-          <h1 className="navbar-brand">
-            Travlr
-          </h1>
-          
-          {/* Navigation Menu */}
-          <div className="navbar-nav">
-            <button
-              onClick={() => router.push('/')}
-              className="nav-link active"
-            >
-              🗺️ Map
-            </button>
-            
-            <button
-              onClick={() => router.push('/profile')}
-              className="nav-link"
-            >
-              👤 Profile
-            </button>
-          </div>
+  <div className="navbar-content">
+    <div className="navbar-brand">
+      <svg 
+        width="32" 
+        height="32" 
+        viewBox="0 0 400 400" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ marginRight: '0.5rem' }}
+      >
+        {/* Pin shape */}
+        <path 
+          d="M200 50c-55.228 0-100 44.772-100 100 0 75 100 150 100 150s100-75 100-150c0-55.228-44.772-100-100-100z" 
+          fill="#EA8B47"
+        />
+        {/* Inner white circle */}
+        <circle 
+          cx="200" 
+          cy="150" 
+          r="40" 
+          fill="white"
+        />
+        {/* Inner orange dot */}
+        <circle 
+          cx="200" 
+          cy="150" 
+          r="15" 
+          fill="#EA8B47"
+        />
+      </svg>
+      <span style={{ color: '#EA8B47', fontWeight: '700', fontSize: '1.5rem' }}>
+        Travlr
+      </span>
+    </div>
+    
+    {/* Navigation Menu */}
+    <div className="navbar-nav">
+      <button
+        onClick={() => router.push('/')}
+        className="nav-link active"
+      >
+        🗺️ Map
+      </button>
+      
+      <button
+        onClick={() => router.push('/profile')}
+        className="nav-link"
+      >
+        👤 Profile
+      </button>
+    </div>
 
-          <div className="navbar-user">
-            <UserAvatar
-              profileImageUrl={profile?.profile_image_url}
-              email={user.email || ''}
-              size="medium"
-            />
-            <span className="user-email">
-              {user.email}
-            </span>
-            <button
-              onClick={handleSignOut}
-              className="btn btn-destructive btn-small"
-              title="Sign out"
-            >
-              🚪 Sign out
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="navbar-user">
+      <UserAvatar
+        profileImageUrl={profile?.profile_image_url}
+        email={user.email || ''}
+        size="medium"
+      />
+      <span className="user-email">
+        {user.email}
+      </span>
+      <button
+        onClick={handleSignOut}
+        className="btn btn-destructive btn-small"
+        title="Sign out"
+      >
+        🚪 Sign out
+      </button>
+    </div>
+  </div>
+</nav>
 
       <main className="main-content">
-        <div className="map-container">
-          <div className="map-card fade-in">
-            <div className="map-header">
-              <h2 className="map-title">
-                Your Map
-              </h2>
-              <p className="map-description">
-                Explore and discover amazing places around the world
-              </p>
-            </div>
-            
-            <div className="map-wrapper">
-              <Map onMapClick={handleMapClick} />
-            </div>
-          </div>
-        </div>
-      </main>
+  <div className="map-container-full">
+    <div className="map-card-full fade-in">
+      <div className="map-wrapper-full">
+        <Map onMapClick={handleMapClick} />
+      </div>
+    </div>
+  </div>
+</main>
     </div>
   )
 }

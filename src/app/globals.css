@@ -654,10 +654,7 @@ body {
   gap: var(--space-sm);
 }
 
-.map-title::before {
-  content: '📍';
-  font-size: 1.125rem;
-}
+
 
 .map-description {
   color: var(--muted-foreground);
@@ -1122,4 +1119,64 @@ body {
                     radial-gradient(circle at 75% 75%, rgba(147, 51, 234, 0.1) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
+}
+/* Immersive Full Map Styles */
+.map-container-full {
+  width: 100%;
+  height: calc(100vh - 80px); /* Subtract navbar height */
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.map-card-full {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  height: 100%;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.map-wrapper-full {
+  position: relative;
+  height: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* Update main-content to remove bottom padding for full immersion */
+.main-content {
+  flex: 1;
+  padding-bottom: 0; /* Remove the existing padding-bottom */
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .map-container-full {
+    height: calc(100vh - 70px); /* Smaller navbar on mobile */
+    padding: 0.5rem;
+  }
+  
+  .map-card-full {
+    border-radius: var(--radius-lg);
+  }
+}
+/* Navbar brand improvements */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  transition: var(--transition);
+}
+
+.navbar-brand:hover {
+  transform: scale(1.02);
+}
+
+/* Logo animation on hover */
+.navbar-brand svg {
+  transition: var(--transition);
+}
+
+.navbar-brand:hover svg {
+  transform: rotate(5deg);
 }

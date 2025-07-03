@@ -72,6 +72,16 @@ export interface UserProfile {
   created_at: string
 }
 
+export interface PinImage {
+  id: string
+  pin_id: string
+  image_url: string
+  image_path: string
+  upload_order: number
+  created_at: string
+  user_id: string
+}
+
 export class DatabaseService {
   /**
    * Create a new pin
@@ -125,6 +135,92 @@ export class DatabaseService {
       return { success: false, error: 'Failed to create pin' }
     }
   }
+
+ /**
+ * Update an existing pin
+ */
+static async updatePin(
+  pinId: string,
+  userId: string,
+  updates: {
+    title?: string
+    description?: string
+    category?: string
+    image_url?: string
+  }
+) {
+  console.log('🔧 DatabaseService.updatePin called with:', {
+    pinId,
+    userId,
+    updates
+  })
+
+  try {
+    // First verify the user owns this pin
+    const { data: existingPin, error: fetchError } = await supabase
+      .from('pins')
+      .select('user_id')
+      .eq('id', pinId)
+      .single()
+
+    if (fetchError) {
+      console.error('❌ Error fetching pin for ownership check:', fetchError)
+      return { success: false, error: 'Pin not found' }
+    }
+
+    if (existingPin.user_id !== userId) {
+      console.error('❌ User does not own this pin')
+      return { success: false, error: 'You can only edit your own pins' }
+    }
+
+    // Update the pin
+    const { data, error } = await supabase
+      .from('pins')
+      .update(updates)
+      .eq('id', pinId)
+      .eq('user_id', userId) // Double check ownership in the query
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ Database error updating pin:', error)
+      return { success: false, error: error.message }
+    }
+
+    console.log('✅ Pin updated successfully:', data)
+    return { success: true, data }
+  } catch (error) {
+    console.error('💥 DatabaseService error:', error)
+    return { success: false, error: 'Failed to update pin' }
+  }
+}
+
+/**
+ * Delete a pin (bonus method for complete CRUD)
+ */
+static async deletePin(pinId: string, userId: string) {
+  console.log('🔧 DatabaseService.deletePin called with:', { pinId, userId })
+
+  try {
+    // Verify ownership and delete in one query
+    const { error } = await supabase
+      .from('pins')
+      .delete()
+      .eq('id', pinId)
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('❌ Database error deleting pin:', error)
+      return { success: false, error: error.message }
+    }
+
+    console.log('✅ Pin deleted successfully')
+    return { success: true }
+  } catch (error) {
+    console.error('💥 DatabaseService error:', error)
+    return { success: false, error: 'Failed to delete pin' }
+  }
+}
 
   /**
    * Get user statistics
@@ -345,6 +441,145 @@ export class DatabaseService {
       return { success: false, error: 'Failed to update profile' }
     }
   }
+  /**
+ * Save multiple images for a pin to the pin_images table
+ */
+static async savePinImages(
+  pinId: string,
+  userId: string,
+  images: { image_url: string; image_path: string; upload_order: number }[]
+) {
+  console.log('🔧 DatabaseService.savePinImages called with:', { pinId, userId, imageCount: images.length })
+
+  if (images.length === 0) {
+    console.log('✅ No images to save')
+    return { success: true, data: [] }
+  }
+
+  try {
+    // Prepare image data
+    const imageData = images.map(img => ({
+      pin_id: pinId,
+      user_id: userId,
+      image_url: img.image_url,
+      image_path: img.image_path,
+      upload_order: img.upload_order
+    }))
+
+    const { data, error } = await supabase
+      .from('pin_images')
+      .insert(imageData)
+      .select()
+
+    if (error) {
+      console.error('❌ Database error saving pin images:', error)
+      return { success: false, error: error.message }
+    }
+
+    console.log('✅ Pin images saved successfully:', data)
+    return { success: true, data }
+  } catch (error) {
+    console.error('💥 DatabaseService error:', error)
+    return { success: false, error: 'Failed to save pin images' }
+  }
+}
+
+/**
+ * Get all images for a specific pin
+ */
+static async getPinImages(pinId: string): Promise<PinImage[]> {
+  console.log('🔧 DatabaseService.getPinImages called for pin:', pinId)
+
+  try {
+    const { data, error } = await supabase
+      .from('pin_images')
+      .select('*')
+      .eq('pin_id', pinId)
+      .order('upload_order', { ascending: true })
+
+    if (error) {
+      console.error('❌ Error fetching pin images:', error)
+      return []
+    }
+
+    console.log('✅ Found pin images:', data?.length || 0)
+    return data || []
+  } catch (error) {
+    console.error('💥 DatabaseService error:', error)
+    return []
+  }
+}
+
+/**
+ * Get the first image URL for a pin (for backward compatibility with map display)
+ */
+static async getFirstPinImageUrl(pinId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('pin_images')
+      .select('image_url')
+      .eq('pin_id', pinId)
+      .order('upload_order', { ascending: true })
+      .limit(1)
+      .single()
+
+    if (error || !data) {
+      return null
+    }
+
+    return data.image_url
+  } catch (error) {
+    console.error('Error getting first pin image:', error)
+    return null
+  }
+}
+
+/**
+ * Delete all images for a pin (used when deleting a pin)
+ */
+static async deletePinImages(pinId: string, userId: string) {
+  console.log('🔧 DatabaseService.deletePinImages called for pin:', pinId)
+
+  try {
+    // First get the image paths so we can delete from storage
+    const { data: images } = await supabase
+      .from('pin_images')
+      .select('image_path')
+      .eq('pin_id', pinId)
+      .eq('user_id', userId)
+
+    // Delete from database
+    const { error } = await supabase
+      .from('pin_images')
+      .delete()
+      .eq('pin_id', pinId)
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('❌ Error deleting pin images from database:', error)
+      return { success: false, error: error.message }
+    }
+
+    // Delete from storage (background task - don't wait for it)
+    if (images && images.length > 0) {
+      images.forEach(async (img) => {
+        try {
+          await supabase.storage
+            .from('travlr-images')
+            .remove([img.image_path])
+        } catch (storageError) {
+          console.warn('Failed to delete image from storage:', storageError)
+        }
+      })
+    }
+
+    console.log('✅ Pin images deleted successfully')
+    return { success: true }
+  } catch (error) {
+    console.error('💥 DatabaseService error:', error)
+    return { success: false, error: 'Failed to delete pin images' }
+  }
+}
 
   /**
    * Check if username is available
@@ -374,4 +609,6 @@ export class DatabaseService {
       return false
     }
   }
+
 }
+
