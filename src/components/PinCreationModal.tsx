@@ -92,9 +92,13 @@ useEffect(() => {
     setUseMultipleImages(false) // Reset to single image mode
     setError(null)
     fetchAddress()
-    fetchCollections()
+    
+    // Only fetch collections if user is available
+    if (user) {
+      fetchCollections()
+    }
   }
-}, [isOpen])
+}, [isOpen, user]) // Add 'user' as a dependency
 
  const fetchCollections = async () => {
   if (!user) {

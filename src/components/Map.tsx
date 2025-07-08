@@ -379,6 +379,7 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
       }
     }
   }
+  
 
   // View pin images function (new)
   (window as any).viewPinImages = (pinId: string, pinTitle: string) => {
