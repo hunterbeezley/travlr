@@ -1,5 +1,3 @@
-
-
 'use client'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
@@ -31,6 +29,12 @@ interface UserStats {
   likes_received: number
 }
 
+const getDisplayName = (profile: any, user: any) => {
+  if (profile?.username) return `@${profile.username}`
+  if (profile?.full_name) return profile.full_name
+  return user?.email || 'User'
+}
+
 export default function ProfilePage() {
   const { user, profile: authProfile, loading, refreshProfile } = useAuth()
   const router = useRouter()
@@ -60,6 +64,16 @@ export default function ProfilePage() {
       month: 'long',
       day: 'numeric'
     })
+  }
+
+  const showSuccessMessage = (message: string) => {
+    // You can implement a toast notification here
+    alert(message) // Simple alert for now
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
   }
 
   const fetchProfile = async () => {
@@ -263,33 +277,8 @@ export default function ProfilePage() {
     }
   }
 
-  const showSuccessMessage = (message: string) => {
-    const successElement = document.createElement('div')
-    successElement.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #10b981;
-      color: white;
-      padding: 1rem 1.5rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-      z-index: 1000;
-      font-weight: 500;
-    `
-    successElement.textContent = `✅ ${message}`
-    document.body.appendChild(successElement)
-    
-    setTimeout(() => {
-      if (document.body.contains(successElement)) {
-        document.body.removeChild(successElement)
-      }
-    }, 3000)
-  }
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   useEffect(() => {
@@ -298,34 +287,77 @@ export default function ProfilePage() {
     }
   }, [user])
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/')
-    }
-  }, [user, loading, router])
-
-  if (loading || profileLoading) {
+  if (loading) {
     return (
-      <div className="loading-spinner">
-        <div className="spinner"></div>
-        <div className="text-xl font-medium text-muted">Loading Profile...</div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        background: 'var(--background)'
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <div style={{
+            width: '3rem',
+            height: '3rem',
+            border: '3px solid var(--muted)',
+            borderTop: '3px solid var(--accent)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <p style={{ color: 'var(--muted-foreground)' }}>Loading...</p>
+        </div>
       </div>
     )
   }
 
   if (!user) {
+    router.push('/')
     return null
   }
 
   return (
-    <div className="page-container">
+    <div className="app">
       {/* Navigation */}
       <nav className="navbar">
         <div className="navbar-content">
-          <h1 className="navbar-brand">
-            Travlr
-          </h1>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <svg width="32" height="32" viewBox="0 0 400 300" style={{ flexShrink: 0 }}>
+              {/* Outer circle */}
+              <circle 
+                cx="200" 
+                cy="150" 
+                r="45" 
+                fill="none" 
+                stroke="#EA8B47" 
+                strokeWidth="6"
+              />
+              {/* Inner orange dot */}
+              <circle 
+                cx="200" 
+                cy="150" 
+                r="15" 
+                fill="#EA8B47"
+              />
+            </svg>
+            <h1 style={{
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              margin: 0
+            }}>
+              Travlr
+            </h1>
+          </div>
           
           {/* Navigation Menu */}
           <div className="navbar-nav">
@@ -351,7 +383,7 @@ export default function ProfilePage() {
               size="medium"
             />
             <span className="user-email">
-              {user.email}
+              {getDisplayName(authProfile, user)}
             </span>
             <button
               onClick={handleSignOut}
@@ -437,135 +469,174 @@ export default function ProfilePage() {
                       href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', color: 'var(--accent)', textDecoration: 'none' }}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 'var(--space-xs)', 
+                        color: 'var(--accent)', 
+                        textDecoration: 'none' 
+                      }}
                     >
-                      🔗 {profile.website}
+                      🔗 {profile.website.replace(/^https?:\/\//, '')}
                     </a>
                   )}
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
-                    📅 Joined {formatDate(profile?.created_at || new Date().toISOString())}
-                  </span>
                 </div>
+
+                {stats && (
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', 
+                    gap: 'var(--space-md)', 
+                    marginTop: 'var(--space-lg)',
+                    padding: 'var(--space-md)',
+                    background: 'var(--muted)',
+                    borderRadius: 'var(--radius)'
+                  }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.25rem', fontWeight: '700' }}>{stats.collections_count}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>Collections</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.25rem', fontWeight: '700' }}>{stats.pins_count}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>Pins</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.25rem', fontWeight: '700' }}>{stats.followers_count}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>Followers</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.25rem', fontWeight: '700' }}>{stats.following_count}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>Following</div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Stats Cards */}
-          {stats && (
-            <div className="profile-stats slide-up">
-              {[
-                { label: 'Collections', value: stats.collections_count, icon: '📁' },
-                { label: 'Public Collections', value: stats.public_collections_count, icon: '🌍' },
-                { label: 'Pins', value: stats.pins_count, icon: '📍' },
-                { label: 'Followers', value: stats.followers_count, icon: '👥' },
-                { label: 'Following', value: stats.following_count, icon: '➡️' },
-                { label: 'Likes Received', value: stats.likes_received, icon: '❤️' }
-              ].map((stat, index) => (
-                <div key={stat.label} className="stat-card">
-                  <div className="stat-icon">
-                    {stat.icon}
-                  </div>
-                  <div className="stat-value">
-                    {stat.value.toLocaleString()}
-                  </div>
-                  <div className="stat-label">
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Complete Edit Profile Form */}
+          {/* Edit Profile Form */}
           {isEditing && (
-            <div className="profile-form slide-up">
+            <div className="edit-profile-form fade-in">
               <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: 'var(--space-lg)' }}>
                 ✏️ Edit Profile
               </h2>
 
               <form onSubmit={handleUpdateProfile}>
-                <div style={{ display: 'grid', gap: 'var(--space-lg)' }}>
-                  
-                  <div className="form-group">
-                    <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontWeight: '500' }}>
+                <div style={{ display: 'grid', gap: 'var(--space-lg)', maxWidth: '500px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: '500', marginBottom: 'var(--space-xs)' }}>
                       Username
                     </label>
                     <input
                       type="text"
-                      className="form-input"
                       value={formData.username}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      placeholder="Choose a username"
+                      onChange={(e) => handleInputChange('username', e.target.value)}
+                      placeholder="Enter your username"
+                      style={{
+                        width: '100%',
+                        padding: 'var(--space-sm)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        fontSize: '0.875rem'
+                      }}
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontWeight: '500' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: '500', marginBottom: 'var(--space-xs)' }}>
                       Full Name
                     </label>
                     <input
                       type="text"
-                      className="form-input"
                       value={formData.full_name}
-                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                      placeholder="Your full name"
+                      onChange={(e) => handleInputChange('full_name', e.target.value)}
+                      placeholder="Enter your full name"
+                      style={{
+                        width: '100%',
+                        padding: 'var(--space-sm)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        fontSize: '0.875rem'
+                      }}
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontWeight: '500' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: '500', marginBottom: 'var(--space-xs)' }}>
                       Bio
                     </label>
                     <textarea
-                      className="form-input"
                       value={formData.bio}
-                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      onChange={(e) => handleInputChange('bio', e.target.value)}
                       placeholder="Tell us about yourself..."
                       rows={3}
-                      style={{ resize: 'vertical', minHeight: '80px' }}
+                      style={{
+                        width: '100%',
+                        padding: 'var(--space-sm)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        fontSize: '0.875rem',
+                        resize: 'vertical'
+                      }}
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontWeight: '500' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: '500', marginBottom: 'var(--space-xs)' }}>
                       Location
                     </label>
                     <input
                       type="text"
-                      className="form-input"
                       value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="Where are you based?"
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      placeholder="Where are you located?"
+                      style={{
+                        width: '100%',
+                        padding: 'var(--space-sm)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        fontSize: '0.875rem'
+                      }}
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontWeight: '500' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: '500', marginBottom: 'var(--space-xs)' }}>
                       Website
                     </label>
                     <input
                       type="url"
-                      className="form-input"
                       value={formData.website}
-                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      onChange={(e) => handleInputChange('website', e.target.value)}
                       placeholder="https://yourwebsite.com"
+                      style={{
+                        width: '100%',
+                        padding: 'var(--space-sm)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        fontSize: '0.875rem'
+                      }}
                     />
                   </div>
 
-                  <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'flex-end' }}>
+                  <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
                     <button
                       type="button"
                       onClick={() => setIsEditing(false)}
                       className="btn"
-                      style={{ background: 'var(--muted)', color: 'var(--foreground)' }}
-                      disabled={updateLoading}
+                      style={{
+                        background: 'var(--muted)',
+                        color: 'var(--foreground)',
+                        flex: 1
+                      }}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="btn btn-primary"
                       disabled={updateLoading}
+                      className="btn btn-primary"
+                      style={{ flex: 1 }}
                     >
                       {updateLoading ? 'Updating...' : '💾 Save Changes'}
                     </button>
