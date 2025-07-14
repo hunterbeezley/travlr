@@ -19,16 +19,16 @@ Drop pins on that random taco spot you found, organize them into collections lik
 
 ### Setup
 
-#### Clone and install
+* Clone and install
 git clone https://github.com/hunterbeezley/Travlr.git
 cd Travlr
 npm install
 
-#### Environment setup
+* Environment setup
 cp .env.example .env.local
 # ^ Fill this out with your API keys (see below)
 
-##### API Keys Setup
+** API Keys Setup
 Create .env.local with:
 envNEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.your_mapbox_token_here
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -36,7 +36,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 Mapbox: Sign up at mapbox.com → Account → Access tokens
 Supabase: New project at supabase.com → Settings → API
 
-#### Run it
+* Run it
 npm run dev
 Open http://localhost:3000 and start dropping pins.
 
