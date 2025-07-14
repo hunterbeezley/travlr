@@ -18,7 +18,7 @@ Drop pins on that random taco spot you found, organize them into collections lik
 - A Supabase project 
 
 ### Setup
-
+```bash
 # Clone and install
 git clone https://github.com/hunterbeezley/Travlr.git
 cd Travlr
@@ -38,7 +38,6 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 Mapbox: Sign up at mapbox.com → Account → Access tokens
 Supabase: New project at supabase.com → Settings → API
-
 ⚡ What's Built So Far
 ✅ Pin dropping - Click map, add details
 ✅ Image uploads - Single or multiple pics per pin
@@ -46,15 +45,12 @@ Supabase: New project at supabase.com → Settings → API
 ✅ User profiles - With profile pics
 ✅ Authentication - Sign up, sign in
 🚧 Coming Soon: Discovery, following
-
-
 🛠️ Tech Stack
 Framework: Next.js 15 + React 19
 Backend: Supabase (PostgreSQL + Auth + Storage)
 Maps: Mapbox GL JS
 Styling: Pure CSS with custom properties
 TypeScript
-
 📁 Arch
 src/
 ├── app/                    # Next.js app router stuff
