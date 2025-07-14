@@ -1,116 +1,82 @@
-# Travlr
+# Travlr 🗺️
 
-A mapping application for organizing and sharing your adventures, interests and your city's best kept secrets.
+Drop pins, share spots, build your perfect city guide. Your adventures, organized.
 
-> **⚠️ Work in Progress**  
-> This project is currently under active development. Features and functionality are subject to change.
+> **🚧 Currently Building**  
+> This thing is evolving fast. Don't expect everything to work perfectly (yet).
 
-## 🚀 Getting Started
+## 🎯 What's This?
 
-### Prereqs
-- Node.js 18+ 
-- npm or yarn
-- A Mapbox account and API key
-- A Supabase project
+Travlr is for people who actually explore their cities. Drop pins on that random taco spot you found, organize them into collections like "Date Night Spots" or "Best Coffee in Brooklyn," and share them with friends who have taste.
 
-### Installation
+Think: Google Maps meets your actual personality.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/hunterbeezley/Travlr.git
-   cd Travlr
-   ```
+## 🚀 Get It Running
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+### You'll Need
+- Node.js 18+ (don't be that person running old versions)
+- npm or yarn (your choice, we're not judging)
+- A Mapbox account (free tier is fine)
+- A Supabase project (also free)
 
-3. **Set up environment variables**
-   
-   Create a `.env.local` file in the root directory:
-   ```env
-   NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
-   ```
-
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-5. **Open your browser**
-   
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
-### Building for Production
-
+### Setup
 ```bash
-npm run build
-npm start
-```
+# Clone and install
+git clone https://github.com/hunterbeezley/Travlr.git
+cd Travlr
+npm install
 
-## 🛠️ Tech Stack
+# Environment setup
+cp .env.example .env.local
+# ^ Fill this out with your API keys (see below)
 
-- **Framework**: Next.js 15 with React 19
-- **Styling**: Pure CSS with CSS Custom Properties
-- **Authentication**: Supabase Auth
-- **Database**: Supabase (PostgreSQL)
-- **Maps**: Mapbox GL JS
-- **TypeScript**: Full type safety
-- **Deployment**: Vercel (recommended)
-
-## 🗂️ Arch
-
-```
+# Run it
+npm run dev
+Open http://localhost:3000 and start dropping pins.
+API Keys Setup
+Create .env.local with:
+envNEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.your_mapbox_token_here
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+Mapbox: Sign up at mapbox.com → Account → Access tokens
+Supabase: New project at supabase.com → Settings → API
+⚡ What's Built So Far
+✅ Pin dropping - Click map, add details, boom
+✅ Image uploads - Single or multiple pics per pin
+✅ Collections - Group your pins (public/private)
+✅ User profiles - With profile pics that don't look terrible
+✅ Authentication - Sign up, sign in, don't lose your data
+🚧 Coming Soon: Feed, following, discovery that doesn't suck
+🛠️ Tech Stack
+Framework: Next.js 15 + React 19 (staying current)
+Backend: Supabase (PostgreSQL + Auth + Storage)
+Maps: Mapbox GL JS (way better than Google Maps)
+Styling: Pure CSS with custom properties (no framework bloat)
+TypeScript: Because we're not animals
+📁 How It's Organized
 src/
-├── app/                 # Next.js app directory
-│   ├── globals.css     # Global styles and design system
-│   ├── layout.tsx      # Root layout
-│   └── page.tsx        # Home page
-├── components/         # React components
-│   ├── Auth.tsx        # Authentication component
-│   └── Map.tsx         # Interactive map component
-├── hooks/              # Custom React hooks
-│   └── useAuth.ts      # Authentication hook
-└── lib/                # Utility libraries
-    └── supabase.ts     # Supabase client configuration
-```
+├── app/                    # Next.js app router stuff
+├── components/             # React components
+│   ├── Auth.tsx           # Login/signup 
+│   ├── Map.tsx            # The main map interface
+│   ├── PinCreationModal.tsx # Pin creation with image uploads
+│   ├── ProfilePictureUpload.tsx # Profile pic management
+│   └── ...more            # SingleImageUpload, MultipleImageUpload, etc.
+├── hooks/                 # Custom hooks
+└── lib/                   # Database services, utilities
+🔧 Dev Notes
+Image Handling: We've got both single and multiple image uploads working. The SingleImageUpload and MultipleImageUpload components handle the heavy lifting.
+Database: Using Supabase with proper RLS policies. No one's seeing your private collections.
+Storage: Images go to Supabase Storage with automatic resizing for profiles.
+🤝 Contributing
+This is a personal project but if you want to help build something cool:
 
-## 🔧 Env Setup
+Fork it
+Make it better
+PR with good commit messages
+Don't break the build
 
-### Mapbox Setup
-1. Sign up at [mapbox.com](https://mapbox.com)
-2. Create a new access token
-3. Add the token to your `.env.local` file
+📄 License
+MIT - Use it, fork it, whatever. Just don't sue me.
 
-### Supabase Setup
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Get your project URL and anon key from Settings > API
-3. Add both to your `.env.local` file
-
-## 🤝 Contributing
-
-This project is currently in early development. Contributions, issues, and feature requests are welcome!
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Ack
-
-- [Mapbox](https://mapbox.com) for mapping services
-- [Supabase](https://supabase.com) for backend infrastructure
-- [Next.js](https://nextjs.org) for the React framework
-- [Vercel](https://vercel.com) for deployment platform
-
----
-
-**Note**: This is a personal project and is not affiliated with any commercial entity. The app is provided as-is while under development.
+Currently caffeinated and building in public. Follow along or don't. ☕
