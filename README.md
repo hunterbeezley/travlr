@@ -18,21 +18,17 @@ Drop pins on that random taco spot you found, organize them into collections lik
 - A Supabase project 
 
 ### Setup
-```bash
-# Clone and install
+
+#### Clone and install
 git clone https://github.com/hunterbeezley/Travlr.git
 cd Travlr
 npm install
 
-# Environment setup
+#### Environment setup
 cp .env.example .env.local
 # ^ Fill this out with your API keys (see below)
 
-# Run it
-npm run dev
-Open http://localhost:3000 and start dropping pins.
-
-API Keys Setup
+##### API Keys Setup
 Create .env.local with:
 envNEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.your_mapbox_token_here
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -40,21 +36,27 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 Mapbox: Sign up at mapbox.com → Account → Access tokens
 Supabase: New project at supabase.com → Settings → API
 
-⚡ What's Built So Far
+#### Run it
+npm run dev
+Open http://localhost:3000 and start dropping pins.
+
+
+##  ⚡ What's Built So Far
 ✅ Pin dropping - Click map, add details
 ✅ Image uploads - Single or multiple pics per pin
 ✅ Collections - Group your pins (public/private)
-✅ User profiles - With profile pics 
+✅ User profiles - With profile pics
 ✅ Authentication - Sign up, sign in
 🚧 Coming Soon: Discovery, following
-🛠️ Tech Stack
+
+## 🛠️ Tech Stack
 Framework: Next.js 15 + React 19
 Backend: Supabase (PostgreSQL + Auth + Storage)
 Maps: Mapbox GL JS
 Styling: Pure CSS with custom properties
 TypeScript
 
-📁 Arch
+## 📁 Arch
 src/
 ├── app/                    # Next.js app router stuff
 ├── components/             # React components
@@ -66,15 +68,15 @@ src/
 ├── hooks/                 # Custom hooks
 └── lib/                   # Database services, utilities
 
-
-🤝 Contributing
+## 🤝 Contributing
 Add to the project:
+
 * Fork it
 * Make it better
 * PR with good commit messages
-* Don't break the build 
+* Don't break the build
 
-📄 License
+## 📄 License
 MIT - Use it, fork it
 
 
