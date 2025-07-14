@@ -19,7 +19,7 @@ Drop pins on that random taco spot you found, organize them into collections lik
 
 ### Setup
 
-* Clone and install
+#### Clone and install
 git clone https://github.com/hunterbeezley/Travlr.git
 cd Travlr
 npm install
