@@ -1,4 +1,4 @@
-# Travlr 🗺️
+# Travlr 
 
 Drop pins, share spots, build your perfect city guide.
 
