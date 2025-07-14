@@ -183,29 +183,48 @@ export default function PinEditModal({
   }
 
   const handleDelete = async () => {
-    if (!user || !pin) return
-
-    setDeleteLoading(true)
-    setError(null)
-
-    try {
-      const result = await DatabaseService.deletePin(pin.id, user.id)
-
-      if (result.success) {
-        console.log('✅ Pin deleted successfully')
-        onPinDeleted?.(pin.id)
-        onClose()
-      } else {
-        setError(result.error || 'Failed to delete pin')
-      }
-    } catch (error) {
-      console.error('💥 Unexpected error deleting pin:', error)
-      setError('An unexpected error occurred')
-    } finally {
-      setDeleteLoading(false)
-      setShowDeleteConfirm(false)
-    }
+  if (!user || !pin) {
+    console.error('❌ Cannot delete: missing user or pin')
+    return
   }
+
+  console.log('🗑️ Starting pin deletion process for pin:', pin.id)
+  setDeleteLoading(true)
+  setError(null)
+
+  try {
+    const result = await DatabaseService.deletePin(pin.id, user.id)
+    console.log('🔧 Delete result:', result)
+
+    if (result.success) {
+      console.log('✅ Pin deleted successfully from database')
+      
+      // Call the parent callback to update the UI
+      if (onPinDeleted) {
+        console.log('📤 Calling onPinDeleted callback with pin ID:', pin.id)
+        onPinDeleted(pin.id)
+      } else {
+        console.warn('⚠️ onPinDeleted callback not provided')
+      }
+      
+      // Close the modal
+      onClose()
+      
+      // Optional: Force a page reload as a fallback (remove this once issue is fixed)
+      // setTimeout(() => window.location.reload(), 500)
+      
+    } else {
+      console.error('❌ Pin deletion failed:', result.error)
+      setError(result.error || 'Failed to delete pin')
+    }
+  } catch (error) {
+    console.error('💥 Unexpected error deleting pin:', error)
+    setError('An unexpected error occurred while deleting the pin')
+  } finally {
+    setDeleteLoading(false)
+    setShowDeleteConfirm(false)
+  }
+}
 
   if (!isOpen || !pin) return null
 
@@ -282,37 +301,65 @@ export default function PinEditModal({
       }}>
         {/* Header */}
         <div style={{
-          padding: '1.5rem',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <h2 style={{
-            margin: 0,
-            fontSize: '1.25rem',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            ✏️ Edit Pin
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '0.5rem',
-              borderRadius: 'var(--radius)',
-              fontSize: '1.25rem',
-              transition: 'var(--transition)'
-            }}
-          >
-            ✕
-          </button>
-        </div>
+  padding: '1.5rem',
+  paddingRight: '4rem', // Extra space for the floating close button
+  borderBottom: '1px solid var(--border)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  position: 'relative'
+}}>
+  <h2 style={{
+    margin: 0,
+    fontSize: '1.25rem',
+    fontWeight: '600',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem'
+  }}>
+    ✏️ Edit Pin
+  </h2>
+  
+  {/* Enhanced Close Button */}
+  <button
+    onClick={onClose}
+    style={{
+      position: 'absolute',
+      top: '1rem',
+      right: '1rem',
+      width: '36px',
+      height: '36px',
+      borderRadius: '50%',
+      backgroundColor: 'rgba(0, 0, 0, 0.05)',
+      color: 'var(--foreground)',
+      border: '1px solid var(--border)',
+      cursor: 'pointer',
+      fontSize: '16px',
+      fontWeight: 'bold',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      transition: 'all 0.2s ease',
+      zIndex: 1001
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.backgroundColor = 'rgba(220, 38, 38, 0.1)'
+      e.currentTarget.style.color = 'var(--destructive)'
+      e.currentTarget.style.borderColor = 'var(--destructive)'
+      e.currentTarget.style.transform = 'scale(1.05)'
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'
+      e.currentTarget.style.color = 'var(--foreground)'
+      e.currentTarget.style.borderColor = 'var(--border)'
+      e.currentTarget.style.transform = 'scale(1)'
+    }}
+    title="Close"
+  >
+    ✕
+  </button>
+</div>
+
 
         {/* Content */}
         <form onSubmit={handleSubmit} style={{ padding: '1.5rem' }}>

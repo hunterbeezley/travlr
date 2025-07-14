@@ -56,12 +56,12 @@ export default function Map({ onMapClick }: MapProps) {
   const [pins, setPins] = useState<Pin[]>([])
   const [loadingPins, setLoadingPins] = useState(false)
 
-  // image viewer modal state
+  // Image viewer modal state
   const [showImageViewer, setShowImageViewer] = useState(false)
-const [selectedPinForImages, setSelectedPinForImages] = useState<{
-  id: string
-  title: string
-} | null>(null)
+  const [selectedPinForImages, setSelectedPinForImages] = useState<{
+    id: string
+    title: string
+  } | null>(null)
 
   // Pin editing state
   const [showEditModal, setShowEditModal] = useState(false)
@@ -156,23 +156,33 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
   // Store marker references to clean them up properly
   const markersRef = useRef<mapboxgl.Marker[]>([])
 
-  // Add pins to map using GeoJSON source (perfectly synced with map)
+  // Enhanced addPinsToMap function with better debugging
   const addPinsToMap = () => {
-    if (!map.current) return
+    if (!map.current) {
+      console.warn('⚠️ Cannot add pins: map not initialized')
+      return
+    }
 
     console.log('🔧 Adding pins to map:', pins.length, 'pins')
-    console.log('📍 Pin data:', pins)
+    console.log('📍 Pin IDs:', pins.map(p => p.id))
 
     // Remove existing pin source and layers if they exist
     if (map.current.getSource('pins')) {
-      console.log('🗑️ Removing existing pin layers')
-      if (map.current.getLayer('pins-layer')) {
-        map.current.removeLayer('pins-layer')
+      console.log('🗑️ Removing existing pin layers and source')
+      try {
+        if (map.current.getLayer('pins-layer')) {
+          map.current.removeLayer('pins-layer')
+          console.log('✅ Removed pins-layer')
+        }
+        if (map.current.getLayer('pins-icons')) {
+          map.current.removeLayer('pins-icons')
+          console.log('✅ Removed pins-icons')
+        }
+        map.current.removeSource('pins')
+        console.log('✅ Removed pins source')
+      } catch (error) {
+        console.error('❌ Error removing existing layers:', error)
       }
-      if (map.current.getLayer('pins-icons')) {
-        map.current.removeLayer('pins-icons')
-      }
-      map.current.removeSource('pins')
     }
 
     if (pins.length === 0) {
@@ -202,7 +212,7 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
       }))
     }
 
-    console.log('📊 GeoJSON data:', geojsonData)
+    console.log('📊 GeoJSON features:', geojsonData.features.length)
 
     // Add source
     map.current.addSource('pins', {
@@ -212,14 +222,14 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
 
     console.log('✅ Added pins source to map')
 
-    // Add simple circle pins (fallback approach that always works)
+    // Add circle pins layer
     map.current.addLayer({
       id: 'pins-layer',
       type: 'circle',
       source: 'pins',
       paint: {
         'circle-radius': 8,
-        'circle-color': '#dc2626', // Red color
+        'circle-color': '#dc2626',
         'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff'
       }
@@ -227,7 +237,7 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
 
     console.log('✅ Added pins-layer (circles)')
 
-    // Add category icons as text on top
+    // Add category icons layer
     map.current.addLayer({
       id: 'pins-icons',
       type: 'symbol',
@@ -247,93 +257,51 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
 
     // Add click handlers for popups
     const clickHandler = (e: any) => {
-  if (!e.features || !e.features[0]) return
-  
-  const feature = e.features[0]
-  const coordinates = (feature.geometry as any).coordinates.slice()
-  const props = feature.properties
+      if (!e.features || !e.features[0]) return
+      
+      const feature = e.features[0]
+      const coordinates = (feature.geometry as any).coordinates.slice()
+      const props = feature.properties
 
-  console.log('🖱️ Pin clicked:', props.title)
+      console.log('🖱️ Pin clicked:', props.title)
 
-  // Ensure popup appears correctly
-  while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-    coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
-  }
+      // Ensure popup appears correctly
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
+      }
 
-  // Check if this pin belongs to the current user
-  const isOwnPin = user && props.user_id === user.id
+      // Check if this pin belongs to the current user
+      const isOwnPin = user && props.user_id === user.id
 
-  const editButton = isOwnPin ? `
-    <button 
-      onclick="window.editPin('${props.id}')" 
-      style="
-        background: var(--accent); 
-        color: white; 
-        border: none; 
-        padding: 0.5rem 0.75rem; 
-        border-radius: var(--radius); 
-        cursor: pointer; 
-        font-size: 0.75rem;
-        margin-top: 8px;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.25rem;
-      "
-    >
-      ✏️ Edit Pin
-    </button>
-  ` : ''
+      const editButton = isOwnPin ? 
+        `<button onclick="editPin('${props.id}')" style="background: #dc2626; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px;">✏️ Edit</button>` : ''
 
-  // Add View Images button for all pins
-  const viewImagesButton = `
-    <button 
-      onclick="window.viewPinImages('${props.id}', '${props.title.replace(/'/g, "\\'")}' )" 
-      style="
-        background: var(--muted); 
-        color: var(--foreground); 
-        border: 1px solid var(--border); 
-        padding: 0.5rem 0.75rem; 
-        border-radius: var(--radius); 
-        cursor: pointer; 
-        font-size: 0.75rem;
-        margin-top: 8px;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.25rem;
-      "
-    >
-      🖼️ View Images
-    </button>
-  `
+      const viewImagesButton = `<button onclick="viewPinImages('${props.id}', '${props.title.replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px; margin-right: 8px;">🖼️ Images</button>`
 
-  const popupContent = `
-    <div style="padding: 12px; min-width: 200px; max-width: 300px;">
-      <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; line-height: 1.3;">
-        ${props.icon} ${props.title}
-      </h3>
-      ${props.description ? `<p style="margin: 0 0 8px 0; font-size: 14px; color: #666; line-height: 1.4;">${props.description}</p>` : ''}
-      ${props.image_url ? `<img src="${props.image_url}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;" alt="${props.title}" />` : ''}
-      <div style="font-size: 12px; color: #888; border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
-        📅 ${new Date(props.created_at).toLocaleDateString()}
-      </div>
-      ${viewImagesButton}
-      ${editButton}
-    </div>
-  `
+      const popupContent = `
+        <div style="min-width: 200px; max-width: 280px;">
+          <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">${props.title}</h3>
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #666;">${props.description}</p>
+          <div style="font-size: 12px; color: #888;">📍 ${props.category || 'other'}</div>
+          ${props.image_url ? 
+            `<img src="${props.image_url}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;" alt="${props.title}" />` : ''}
+          <div style="font-size: 12px; color: #888; border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
+            📅 ${new Date(props.created_at).toLocaleDateString()}
+          </div>
+          ${viewImagesButton}
+          ${editButton}
+        </div>
+      `
 
-  new mapboxgl.Popup({
-    closeButton: true,
-    closeOnClick: true,
-    maxWidth: '300px'
-  })
-    .setLngLat(coordinates)
-    .setHTML(popupContent)
-    .addTo(map.current!)
-}
+      new mapboxgl.Popup({
+        closeButton: true,
+        closeOnClick: false, // Disable close on click so we can handle it manually
+        maxWidth: '300px'
+      })
+        .setLngLat(coordinates)
+        .setHTML(popupContent)
+        .addTo(map.current!)
+    }
 
     // Add click handlers to both layers
     map.current.on('click', 'pins-layer', clickHandler)
@@ -363,13 +331,28 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
   }
 
   // Global function for edit button clicks (called from popup HTML)
- useEffect(() => {
-  // Edit pin function (existing)
-  (window as any).editPin = (pinId: string) => {
-    const pin = pins.find(p => p.id === pinId)
-    if (pin && user && pin.user_id === user.id) {
-      setSelectedPin(pin)
-      setShowEditModal(true)
+  useEffect(() => {
+    // Edit pin function (existing)
+    (window as any).editPin = (pinId: string) => {
+      const pin = pins.find(p => p.id === pinId)
+      if (pin && user && pin.user_id === user.id) {
+        setSelectedPin(pin)
+        setShowEditModal(true)
+        
+        // Close any open popups
+        const popups = document.getElementsByClassName('mapboxgl-popup')
+        for (let i = 0; i < popups.length; i++) {
+          const popup = popups[i] as HTMLElement
+          popup.remove()
+        }
+      }
+    }
+
+    // View pin images function (new)
+    (window as any).viewPinImages = (pinId: string, pinTitle: string) => {
+      console.log('🖼️ Opening image viewer for pin:', pinId, pinTitle)
+      setSelectedPinForImages({ id: pinId, title: pinTitle })
+      setShowImageViewer(true)
       
       // Close any open popups
       const popups = document.getElementsByClassName('mapboxgl-popup')
@@ -378,29 +361,12 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
         popup.remove()
       }
     }
-  }
-  
 
-  // View pin images function (new)
-  (window as any).viewPinImages = (pinId: string, pinTitle: string) => {
-    console.log('🖼️ Opening image viewer for pin:', pinId, pinTitle)
-    setSelectedPinForImages({ id: pinId, title: pinTitle })
-    setShowImageViewer(true)
-    
-    // Close any open popups
-    const popups = document.getElementsByClassName('mapboxgl-popup')
-    for (let i = 0; i < popups.length; i++) {
-      const popup = popups[i] as HTMLElement
-      popup.remove()
+    return () => {
+      delete (window as any).editPin
+      delete (window as any).viewPinImages
     }
-  }
-
-  return () => {
-    delete (window as any).editPin
-    delete (window as any).viewPinImages
-  }
-}, [pins, user])
-
+  }, [pins, user])
 
   // Load pins when user changes or component mounts
   useEffect(() => {
@@ -409,12 +375,14 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
     }
   }, [user])
 
-  // Add pins to map when pins data changes
+  // Enhanced useEffect to handle all pin changes (add, update, delete)
   useEffect(() => {
-    if (map.current && pins.length > 0) {
+    console.log('🔄 useEffect triggered - pins changed, length:', pins.length)
+    if (map.current) {
+      // Always call addPinsToMap - it handles empty pins array correctly
       addPinsToMap()
     }
-  }, [pins])
+  }, [pins]) // This dependency ensures map updates whenever pins array changes
 
   // Initialize map only once
   useEffect(() => {
@@ -430,7 +398,7 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
       antialias: true,
       dragPan: true,
       scrollZoom: true,
-      doubleClickZoom: true,
+      doubleClickZoom: false, // Disable double-click zoom to prevent conflicts with pin creation
       touchZoomRotate: true
     })
 
@@ -467,19 +435,73 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
     }
   }, [])
 
-  // Handle click events for pin creation
+  // Handle click events for popup closing and pin viewing
   useEffect(() => {
     if (!map.current) return
 
     const handleClick = (e: mapboxgl.MapMouseEvent) => {
-      // Check if we clicked on a pin layer - if so, don't create a new pin
-      const features = map.current!.queryRenderedFeatures(e.point, {
-        layers: ['pins-layer', 'pins-icons']
-      })
+      // Check if we clicked on a pin layer - if so, don't close popups
+      // First check if the layers exist to avoid errors
+      const layersToCheck = []
+      if (map.current!.getLayer('pins-layer')) {
+        layersToCheck.push('pins-layer')
+      }
+      if (map.current!.getLayer('pins-icons')) {
+        layersToCheck.push('pins-icons')
+      }
 
-      if (features.length > 0) {
-        console.log('🎯 Clicked on existing pin, not creating new pin')
-        return // Don't create a new pin if we clicked on an existing one
+      if (layersToCheck.length > 0) {
+        const features = map.current!.queryRenderedFeatures(e.point, {
+          layers: layersToCheck
+        })
+
+        if (features.length > 0) {
+          console.log('🎯 Clicked on existing pin, keeping popup open')
+          return // Don't close popups if we clicked on a pin
+        }
+      }
+
+      // Close any open popups when clicking elsewhere on the map
+      console.log('🗺️ Clicked on map, closing any open popups')
+      const popups = document.getElementsByClassName('mapboxgl-popup')
+      for (let i = popups.length - 1; i >= 0; i--) {
+        const popup = popups[i] as HTMLElement
+        popup.remove()
+      }
+    }
+
+    map.current.on('click', handleClick)
+
+    return () => {
+      if (map.current) {
+        map.current.off('click', handleClick)
+      }
+    }
+  }, [user])
+
+  // Handle double-click events for pin creation
+  useEffect(() => {
+    if (!map.current) return
+
+    const handleDoubleClick = (e: mapboxgl.MapMouseEvent) => {
+      // Check if we double-clicked on a pin layer - if so, don't create a new pin
+      const layersToCheck = []
+      if (map.current!.getLayer('pins-layer')) {
+        layersToCheck.push('pins-layer')
+      }
+      if (map.current!.getLayer('pins-icons')) {
+        layersToCheck.push('pins-icons')
+      }
+
+      if (layersToCheck.length > 0) {
+        const features = map.current!.queryRenderedFeatures(e.point, {
+          layers: layersToCheck
+        })
+
+        if (features.length > 0) {
+          console.log('🎯 Double-clicked on existing pin, not creating new pin')
+          return // Don't create a new pin if we double-clicked on an existing one
+        }
       }
 
       // Only create pins for logged-in users
@@ -488,7 +510,14 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
         return
       }
 
-      console.log('📍 Creating new pin at:', e.lngLat.lat, e.lngLat.lng)
+      console.log('📍 Double-clicked! Creating new pin at:', e.lngLat.lat, e.lngLat.lng)
+
+      // Close any open popups first
+      const popups = document.getElementsByClassName('mapboxgl-popup')
+      for (let i = popups.length - 1; i >= 0; i--) {
+        const popup = popups[i] as HTMLElement
+        popup.remove()
+      }
 
       // Set selected location and show modal
       setSelectedLocation({
@@ -501,14 +530,14 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
       onMapClick?.(e.lngLat.lng, e.lngLat.lat)
     }
 
-    map.current.on('click', handleClick)
+    map.current.on('dblclick', handleDoubleClick)
 
     return () => {
       if (map.current) {
-        map.current.off('click', handleClick)
+        map.current.off('dblclick', handleDoubleClick)
       }
     }
-  }, [onMapClick, user]) // Note: don't include pins here to avoid recreating the handler
+  }, [onMapClick, user])
 
   // Update map style when changed
   useEffect(() => {
@@ -533,11 +562,32 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
     setSelectedPin(null)
   }
 
-  // Handle pin deletion success
+  // Enhanced handlePinDeleted with modal auto-close
   const handlePinDeleted = (pinId: string) => {
-    setPins(prev => prev.filter(pin => pin.id !== pinId))
-    setShowEditModal(false)
-    setSelectedPin(null)
+    console.log('🗑️ Map: handlePinDeleted called for pin:', pinId)
+    console.log('📊 Current pins before deletion:', pins.length)
+    
+    // Update the pins state - React will handle the map update via useEffect
+    setPins(prev => {
+      const newPins = prev.filter(pin => pin.id !== pinId)
+      console.log('📊 Pins after filtering:', newPins.length)
+      return newPins
+    })
+    
+    // Auto-close any modals that are showing the deleted pin
+    if (selectedPin?.id === pinId) {
+      console.log('🔄 Closing edit modal for deleted pin')
+      setShowEditModal(false)
+      setSelectedPin(null)
+    }
+    
+    if (selectedPinForImages?.id === pinId) {
+      console.log('🔄 Closing image viewer modal for deleted pin')
+      setShowImageViewer(false)
+      setSelectedPinForImages(null)
+    }
+    
+    console.log('✅ Pin deletion handling complete')
   }
 
   return (
@@ -589,28 +639,17 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
                   setSearchQuery(e.target.value)
                   handleSearch(e.target.value)
                 }}
-                placeholder="Search places..."
+                placeholder="Search for places..."
                 style={{
                   flex: 1,
-                  padding: '0.5rem',
                   border: 'none',
                   background: 'transparent',
-                  fontSize: '1rem',
-                  outline: 'none'
+                  outline: 'none',
+                  fontSize: '0.875rem',
+                  padding: '0.5rem'
                 }}
-                autoFocus
               />
             )}
-            {/* Pin Image Viewer Modal */}
-            <PinImageViewerModal
-            isOpen={showImageViewer}
-            onClose={() => {
-              setShowImageViewer(false)
-              setSelectedPinForImages(null)
-            }}
-            pinId={selectedPinForImages?.id || ''}
-            pinTitle={selectedPinForImages?.title}
-            />
           </div>
 
           {/* Search Results */}
@@ -622,12 +661,13 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
               right: 0,
               background: 'var(--card)',
               border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              marginTop: '0.25rem',
+              borderRadius: 'var(--radius-lg)',
+              marginTop: '0.5rem',
               boxShadow: 'var(--shadow-lg)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 20,
               maxHeight: '200px',
-              overflowY: 'auto',
-              zIndex: 20
+              overflowY: 'auto'
             }}>
               {searchResults.map((result) => (
                 <button
@@ -722,7 +762,7 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
           backdropFilter: 'blur(8px)',
           textAlign: 'center'
         }}>
-          📍 Click anywhere on the map to create a pin • Click on existing pins to edit
+          📍 Double-click anywhere on the map to create a pin • Click on existing pins to view
         </div>
       )}
 
@@ -780,6 +820,19 @@ const [selectedPinForImages, setSelectedPinForImages] = useState<{
         onPinUpdated={handlePinUpdated}
         onPinDeleted={handlePinDeleted}
       />
+
+      {/* Pin Image Viewer Modal */}
+      {showImageViewer && selectedPinForImages && (
+        <PinImageViewerModal
+          isOpen={showImageViewer}
+          onClose={() => {
+            setShowImageViewer(false)
+            setSelectedPinForImages(null)
+          }}
+          pinId={selectedPinForImages.id}
+          pinTitle={selectedPinForImages.title}
+        />
+      )}
     </div>
   )
 }

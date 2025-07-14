@@ -202,20 +202,52 @@ static async deletePin(pinId: string, userId: string) {
   console.log('🔧 DatabaseService.deletePin called with:', { pinId, userId })
 
   try {
-    // Verify ownership and delete in one query
-    const { error } = await supabase
+    // First verify the user owns this pin
+    const { data: existingPin, error: fetchError } = await supabase
       .from('pins')
-      .delete()
+      .select('user_id, collection_id')
+      .eq('id', pinId)
+      .single()
+
+    if (fetchError) {
+      console.error('❌ Error fetching pin for ownership check:', fetchError)
+      return { success: false, error: 'Pin not found' }
+    }
+
+    if (existingPin.user_id !== userId) {
+      console.error('❌ User does not own this pin')
+      return { success: false, error: 'You can only delete your own pins' }
+    }
+
+    console.log('✅ Pin ownership verified, proceeding with deletion')
+
+    // Delete pin images first (to maintain referential integrity)
+    const imageCleanupResult = await this.deletePinImages(pinId, userId)
+    if (!imageCleanupResult.success) {
+      console.warn('⚠️ Failed to clean up pin images, but continuing with pin deletion')
+    }
+
+    // Now delete the pin from the database
+    const { error: deleteError, count } = await supabase
+      .from('pins')
+      .delete({ count: 'exact' })
       .eq('id', pinId)
       .eq('user_id', userId)
 
-    if (error) {
-      console.error('❌ Database error deleting pin:', error)
-      return { success: false, error: error.message }
+    if (deleteError) {
+      console.error('❌ Database error deleting pin:', deleteError)
+      return { success: false, error: deleteError.message }
     }
 
-    console.log('✅ Pin deleted successfully')
-    return { success: true }
+    // Verify deletion occurred
+    if (count === 0) {
+      console.error('❌ No rows were deleted - pin may not exist or user lacks permission')
+      return { success: false, error: 'Pin could not be deleted' }
+    }
+
+    console.log('✅ Pin deleted successfully, rows affected:', count)
+    return { success: true, deletedPinId: pinId }
+    
   } catch (error) {
     console.error('💥 DatabaseService error:', error)
     return { success: false, error: 'Failed to delete pin' }
