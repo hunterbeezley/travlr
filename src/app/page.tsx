@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import Map from '@/components/Map'
 import UserAvatar from '@/components/UserAvatar'
 import ProfileCompletion from '@/components/ProfileCompletion'
+import Auth from '@/components/Auth'  // ← ADD THIS IMPORT
 import { supabase } from '@/lib/supabase'
 
 interface Pin {
@@ -147,106 +148,57 @@ export default function HomePage() {
     )
   }
 
+  // ← REPLACE THIS ENTIRE SECTION with the Auth component
   if (!user) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '2rem'
-      }}>
-        <div style={{
-          background: 'var(--card)',
-          padding: '3rem',
-          borderRadius: 'var(--radius-xl)',
-          boxShadow: 'var(--shadow-xl)',
-          textAlign: 'center',
-          maxWidth: '28rem',
-          width: '100%'
+      <div className="auth-page">
+        <div className="auth-container" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2rem'
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            marginBottom: '2rem'
-          }}>
-            <svg width="40" height="40" viewBox="0 0 400 300" style={{ flexShrink: 0 }}>
-              {/* Outer circle */}
-              <circle 
-                cx="200" 
-                cy="150" 
-                r="45" 
-                fill="none" 
-                stroke="#EA8B47" 
-                strokeWidth="4"
-              />
-              {/* Inner orange dot */}
-              <circle 
-                cx="200" 
-                cy="150" 
-                r="15" 
-                fill="#EA8B47"
-              />
-            </svg>
-            <h1 style={{
-              fontSize: '2rem',
-              fontWeight: '700',
-              background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              margin: 0
-            }}>
-              Travlr
-            </h1>
-          </div>
-          
-          <p style={{
-            fontSize: '1.125rem',
-            color: 'var(--muted-foreground)',
-            marginBottom: '2rem',
-            lineHeight: 1.6
-          }}>
-            Welcome to Travlr! Create collections of your favorite places and share them with the world.
-          </p>
-
-          <button
-            onClick={async () => {
-              const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                  redirectTo: `${window.location.origin}/`
-                }
-              })
-              if (error) {
-                console.error('Error signing in:', error)
-                alert('Error signing in with Google')
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: '0.875rem 1.5rem',
-              background: 'var(--accent)',
-              color: 'white',
-              border: 'none',
-              borderRadius: 'var(--radius)',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'var(--transition)',
+          <div style={{ maxWidth: '400px', width: '100%' }}>
+            {/* App Header */}
+            <div style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = 'var(--accent-hover)'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'var(--accent)'}
-          >
-            🌐 Continue with Google
-          </button>
+              gap: '0.5rem',
+              marginBottom: '2rem',
+              justifyContent: 'center'
+            }}>
+              <svg width="40" height="40" viewBox="0 0 400 300" style={{ flexShrink: 0 }}>
+                <circle 
+                  cx="200" 
+                  cy="150" 
+                  r="45" 
+                  fill="none" 
+                  stroke="#EA8B47" 
+                  strokeWidth="4"
+                />
+                <circle 
+                  cx="200" 
+                  cy="150" 
+                  r="15" 
+                  fill="#EA8B47"
+                />
+              </svg>
+              <h1 style={{
+                fontSize: '2rem',
+                fontWeight: '700',
+                background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                margin: 0
+              }}>
+                Travlr
+              </h1>
+            </div>
+
+            {/* Use the Auth component instead of hardcoded Google button */}
+            <Auth />
+          </div>
         </div>
       </div>
     )
