@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -30,23 +28,23 @@ export function useAuth(): AuthData {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
+  const fetchUserProfile = async (currentUser: User): Promise<UserProfile | null> => {
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', userId)
+        .eq('id', currentUser.id)
         .single()
 
       if (profileError) {
         if (profileError.code === 'PGRST116') {
           // No user record exists, create one
-          console.log('No user record found for navbar, creating one...')
+          console.log('No user record found, creating one...')
           const { data: newUser, error: createError } = await supabase
             .from('users')
             .insert({
-              id: userId,
-              email: user?.email,
+              id: currentUser.id,
+              email: currentUser.email, // ← Fix: use currentUser parameter
               created_at: new Date().toISOString()
             })
             .select()
@@ -73,7 +71,7 @@ export function useAuth(): AuthData {
 
   const refreshProfile = async () => {
     if (user) {
-      const profileData = await fetchUserProfile(user.id)
+      const profileData = await fetchUserProfile(user)
       setProfile(profileData)
     }
   }
@@ -85,7 +83,7 @@ export function useAuth(): AuthData {
       setUser(currentUser)
 
       if (currentUser) {
-        const profileData = await fetchUserProfile(currentUser.id)
+        const profileData = await fetchUserProfile(currentUser)
         setProfile(profileData)
       } else {
         setProfile(null)
@@ -102,7 +100,7 @@ export function useAuth(): AuthData {
         setUser(currentUser)
 
         if (currentUser) {
-          const profileData = await fetchUserProfile(currentUser.id)
+          const profileData = await fetchUserProfile(currentUser)
           setProfile(profileData)
         } else {
           setProfile(null)
