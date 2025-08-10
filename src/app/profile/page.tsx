@@ -6,6 +6,7 @@ import UserAvatar from '@/components/UserAvatar'
 import ProfileCompletion from '@/components/ProfileCompletion'
 import Auth from '@/components/Auth'
 import { supabase } from '@/lib/supabase'
+import { DatabaseService } from '@/lib/database'
 
 interface UserProfile {
   id: string
@@ -19,6 +20,30 @@ interface UserProfile {
   profile_image_path?: string | null
   created_at: string
   updated_at?: string
+}
+
+interface Collection {
+  id: string
+  title: string
+  description?: string | null
+  is_public: boolean
+  created_at: string
+  updated_at: string
+  pin_count?: number
+  first_pin_image?: string | null
+}
+
+interface Pin {
+  id: string
+  title: string
+  description?: string | null
+  latitude: number
+  longitude: number
+  image_url?: string | null
+  category?: string | null
+  created_at: string
+  user_id: string
+  collection_id: string
 }
 
 const getDisplayName = (profile: any, user: any) => {
@@ -41,6 +66,17 @@ export default function ProfilePage() {
   })
   const [updateLoading, setUpdateLoading] = useState(false)
   const [updateError, setUpdateError] = useState('')
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [pins, setPins] = useState<Pin[]>([])
+  const [loadingCollections, setLoadingCollections] = useState(true)
+  const [loadingPins, setLoadingPins] = useState(true)
+  const [showCreateCollection, setShowCreateCollection] = useState(false)
+  const [newCollectionForm, setNewCollectionForm] = useState({
+    title: '',
+    description: '',
+    is_public: false
+  })
+  const [createCollectionLoading, setCreateCollectionLoading] = useState(false)
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -67,6 +103,77 @@ export default function ProfilePage() {
       setShowProfileCompletion(isIncomplete)
     }
   }, [user, profile, loading])
+
+  // Fetch collections and pins when user loads
+  useEffect(() => {
+    if (user && !loading) {
+      fetchCollections()
+      fetchPins()
+    }
+  }, [user, loading])
+
+  const fetchCollections = async () => {
+    if (!user) return
+
+    setLoadingCollections(true)
+    try {
+      // Get collections with pin count
+      const { data, error } = await supabase
+        .rpc('get_user_collections_with_stats', { user_uuid: user.id })
+
+      if (error) {
+        console.error('Error fetching collections:', error)
+        return
+      }
+
+      setCollections(data || [])
+    } catch (error) {
+      console.error('Error fetching collections:', error)
+    } finally {
+      setLoadingCollections(false)
+    }
+  }
+
+  const fetchPins = async () => {
+    if (!user) return
+
+    setLoadingPins(true)
+    try {
+      const pinsData = await DatabaseService.getUserPins(user.id)
+      setPins(pinsData || [])
+    } catch (error) {
+      console.error('Error fetching pins:', error)
+    } finally {
+      setLoadingPins(false)
+    }
+  }
+
+  const handleCreateCollection = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user || !newCollectionForm.title.trim()) return
+
+    setCreateCollectionLoading(true)
+    try {
+      const result = await DatabaseService.createCollection(
+        user.id,
+        newCollectionForm.title.trim(),
+        newCollectionForm.description.trim() || undefined,
+        newCollectionForm.is_public
+      )
+
+      if (result.success) {
+        setShowCreateCollection(false)
+        setNewCollectionForm({ title: '', description: '', is_public: false })
+        fetchCollections() // Refresh collections
+      } else {
+        console.error('Failed to create collection:', result.error)
+      }
+    } catch (error) {
+      console.error('Error creating collection:', error)
+    } finally {
+      setCreateCollectionLoading(false)
+    }
+  }
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -637,11 +744,11 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Coming Soon Sections */}
+          {/* Collections and Pins Sections */}
           <div style={{
             display: 'grid',
             gap: '2rem',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))'
           }}>
             {/* Collections */}
             <div style={{
@@ -649,24 +756,219 @@ export default function ProfilePage() {
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-lg)',
               padding: '2rem',
-              textAlign: 'center'
+              minHeight: '400px'
             }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📂</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                My Collections
-              </h3>
-              <p style={{ color: 'var(--muted-foreground)', marginBottom: '1rem' }}>
-                Your saved collections will appear here
-              </p>
               <div style={{
-                padding: '0.5rem 1rem',
-                background: 'var(--muted)',
-                borderRadius: 'var(--radius)',
-                fontSize: '0.875rem',
-                color: 'var(--muted-foreground)'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1.5rem'
               }}>
-                Coming Soon
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>📂</span>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
+                    My Collections
+                  </h3>
+                  <span style={{
+                    fontSize: '0.875rem',
+                    color: 'var(--muted-foreground)',
+                    background: 'var(--muted)',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: 'var(--radius)',
+                    fontWeight: '500'
+                  }}>
+                    {collections.length}
+                  </span>
+                </div>
+                
+                <button
+                  onClick={() => setShowCreateCollection(true)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: 'var(--accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 'var(--radius)',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    transition: 'var(--transition)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--accent-hover)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'var(--accent)'
+                  }}
+                >
+                  ➕ New Collection
+                </button>
               </div>
+
+              {loadingCollections ? (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '200px',
+                  flexDirection: 'column',
+                  gap: '1rem'
+                }}>
+                  <div className="spinner" style={{ width: '2rem', height: '2rem' }} />
+                  <p style={{ color: 'var(--muted-foreground)' }}>Loading collections...</p>
+                </div>
+              ) : collections.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '3rem 1rem',
+                  color: 'var(--muted-foreground)'
+                }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📂</div>
+                  <h4 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                    No Collections Yet
+                  </h4>
+                  <p style={{ marginBottom: '1.5rem' }}>
+                    Create your first collection to organize your pins
+                  </p>
+                  <button
+                    onClick={() => setShowCreateCollection(true)}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: 'var(--accent)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 'var(--radius)',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    ➕ Create Collection
+                  </button>
+                </div>
+              ) : (
+                <div style={{
+                  display: 'grid',
+                  gap: '1rem',
+                  maxHeight: '300px',
+                  overflowY: 'auto'
+                }}>
+                  {collections.map((collection) => (
+                    <div
+                      key={collection.id}
+                      style={{
+                        padding: '1rem',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        background: 'var(--background)',
+                        transition: 'var(--transition)',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--accent)'
+                        e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '0.75rem'
+                      }}>
+                        {collection.first_pin_image ? (
+                          <img
+                            src={collection.first_pin_image}
+                            alt={collection.title}
+                            style={{
+                              width: '48px',
+                              height: '48px',
+                              borderRadius: 'var(--radius)',
+                              objectFit: 'cover',
+                              flexShrink: 0
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: 'var(--radius)',
+                            background: 'var(--muted)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.5rem',
+                            flexShrink: 0
+                          }}>
+                            📂
+                          </div>
+                        )}
+                        
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            marginBottom: '0.25rem'
+                          }}>
+                            <h4 style={{
+                              fontSize: '1rem',
+                              fontWeight: '600',
+                              margin: 0,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {collection.title}
+                            </h4>
+                            {collection.is_public && (
+                              <span style={{
+                                fontSize: '0.75rem',
+                                background: 'rgba(34, 197, 94, 0.1)',
+                                color: '#22c55e',
+                                padding: '0.125rem 0.375rem',
+                                borderRadius: 'var(--radius)',
+                                fontWeight: '500'
+                              }}>
+                                Public
+                              </span>
+                            )}
+                          </div>
+                          
+                          {collection.description && (
+                            <p style={{
+                              fontSize: '0.875rem',
+                              color: 'var(--muted-foreground)',
+                              margin: '0 0 0.5rem 0',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {collection.description}
+                            </p>
+                          )}
+                          
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1rem',
+                            fontSize: '0.75rem',
+                            color: 'var(--muted-foreground)'
+                          }}>
+                            <span>📍 {collection.pin_count || 0} pins</span>
+                            <span>📅 {new Date(collection.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Pins */}
@@ -675,28 +977,379 @@ export default function ProfilePage() {
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-lg)',
               padding: '2rem',
-              textAlign: 'center'
+              minHeight: '400px'
             }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📍</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                My Pins
-              </h3>
-              <p style={{ color: 'var(--muted-foreground)', marginBottom: '1rem' }}>
-                Your saved pins will appear here
-              </p>
               <div style={{
-                padding: '0.5rem 1rem',
-                background: 'var(--muted)',
-                borderRadius: 'var(--radius)',
-                fontSize: '0.875rem',
-                color: 'var(--muted-foreground)'
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '1.5rem'
               }}>
-                Coming Soon
+                <span style={{ fontSize: '1.5rem' }}>📍</span>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
+                  My Pins
+                </h3>
+                <span style={{
+                  fontSize: '0.875rem',
+                  color: 'var(--muted-foreground)',
+                  background: 'var(--muted)',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: 'var(--radius)',
+                  fontWeight: '500'
+                }}>
+                  {pins.length}
+                </span>
               </div>
+
+              {loadingPins ? (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '200px',
+                  flexDirection: 'column',
+                  gap: '1rem'
+                }}>
+                  <div className="spinner" style={{ width: '2rem', height: '2rem' }} />
+                  <p style={{ color: 'var(--muted-foreground)' }}>Loading pins...</p>
+                </div>
+              ) : pins.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '3rem 1rem',
+                  color: 'var(--muted-foreground)'
+                }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📍</div>
+                  <h4 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                    No Pins Yet
+                  </h4>
+                  <p style={{ marginBottom: '1.5rem' }}>
+                    Go to the map and start adding pins to your collections
+                  </p>
+                  <button
+                    onClick={() => router.push('/')}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: 'var(--accent)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 'var(--radius)',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    🗺️ Go to Map
+                  </button>
+                </div>
+              ) : (
+                <div style={{
+                  display: 'grid',
+                  gap: '1rem',
+                  maxHeight: '300px',
+                  overflowY: 'auto'
+                }}>
+                  {pins.slice(0, 10).map((pin) => (
+                    <div
+                      key={pin.id}
+                      style={{
+                        padding: '1rem',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        background: 'var(--background)',
+                        transition: 'var(--transition)',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--accent)'
+                        e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '0.75rem'
+                      }}>
+                        {pin.image_url ? (
+                          <img
+                            src={pin.image_url}
+                            alt={pin.title}
+                            style={{
+                              width: '48px',
+                              height: '48px',
+                              borderRadius: 'var(--radius)',
+                              objectFit: 'cover',
+                              flexShrink: 0
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: 'var(--radius)',
+                            background: 'var(--muted)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.5rem',
+                            flexShrink: 0
+                          }}>
+                            📍
+                          </div>
+                        )}
+                        
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <h4 style={{
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            margin: '0 0 0.25rem 0',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {pin.title}
+                          </h4>
+                          
+                          {pin.description && (
+                            <p style={{
+                              fontSize: '0.875rem',
+                              color: 'var(--muted-foreground)',
+                              margin: '0 0 0.5rem 0',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {pin.description}
+                            </p>
+                          )}
+                          
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1rem',
+                            fontSize: '0.75rem',
+                            color: 'var(--muted-foreground)'
+                          }}>
+                            {pin.category && (
+                              <span>🏷️ {pin.category}</span>
+                            )}
+                            <span>📅 {new Date(pin.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {pins.length > 10 && (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '1rem',
+                      color: 'var(--muted-foreground)',
+                      fontSize: '0.875rem'
+                    }}>
+                      ... and {pins.length - 10} more pins
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </main>
+
+      {/* Create Collection Modal */}
+      {showCreateCollection && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '100%',
+            boxShadow: 'var(--shadow-xl)'
+          }}>
+            <h3 style={{
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              📂 Create New Collection
+            </h3>
+
+            <form onSubmit={handleCreateCollection}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  marginBottom: '0.5rem'
+                }}>
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  value={newCollectionForm.title}
+                  onChange={(e) => setNewCollectionForm(prev => ({
+                    ...prev,
+                    title: e.target.value
+                  }))}
+                  required
+                  maxLength={100}
+                  placeholder="e.g., Tokyo Food Tour"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    fontSize: '0.875rem',
+                    background: 'var(--background)'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  marginBottom: '0.5rem'
+                }}>
+                  Description
+                </label>
+                <textarea
+                  value={newCollectionForm.description}
+                  onChange={(e) => setNewCollectionForm(prev => ({
+                    ...prev,
+                    description: e.target.value
+                  }))}
+                  maxLength={200}
+                  rows={3}
+                  placeholder="Describe your collection..."
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    fontSize: '0.875rem',
+                    background: 'var(--background)',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={newCollectionForm.is_public}
+                    onChange={(e) => setNewCollectionForm(prev => ({
+                      ...prev,
+                      is_public: e.target.checked
+                    }))}
+                    style={{
+                      width: '1rem',
+                      height: '1rem'
+                    }}
+                  />
+                  Make this collection public
+                </label>
+                <p style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--muted-foreground)',
+                  marginTop: '0.25rem',
+                  marginLeft: '1.5rem'
+                }}>
+                  Public collections can be discovered by other users
+                </p>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: '1rem',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateCollection(false)
+                    setNewCollectionForm({ title: '', description: '', is_public: false })
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--muted)',
+                    color: 'var(--foreground)',
+                    border: 'none',
+                    borderRadius: 'var(--radius)',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={createCollectionLoading || !newCollectionForm.title.trim()}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: createCollectionLoading ? 'var(--muted)' : 'var(--accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 'var(--radius)',
+                    cursor: createCollectionLoading ? 'not-allowed' : 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  {createCollectionLoading ? (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <div className="spinner" style={{
+                        width: '1rem',
+                        height: '1rem'
+                      }} />
+                      Creating...
+                    </div>
+                  ) : (
+                    'Create Collection'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
