@@ -30,6 +30,8 @@ export function useAuth(): AuthData {
 
   const fetchUserProfile = async (currentUser: User): Promise<UserProfile | null> => {
     try {
+      console.log('Fetching profile for user:', currentUser.id)
+
       const { data: profileData, error: profileError } = await supabase
         .from('users')
         .select('*')
@@ -37,31 +39,20 @@ export function useAuth(): AuthData {
         .single()
 
       if (profileError) {
+        console.log('Profile fetch error:', profileError.code, profileError.message)
+
         if (profileError.code === 'PGRST116') {
-          // No user record exists, create one
-          console.log('No user record found, creating one...')
-          const { data: newUser, error: createError } = await supabase
-            .from('users')
-            .insert({
-              id: currentUser.id,
-              email: currentUser.email, // ← Fix: use currentUser parameter
-              created_at: new Date().toISOString()
-            })
-            .select()
-            .single()
-
-          if (createError) {
-            console.error('Error creating user record:', createError)
-            return null
-          }
-
-          return newUser as UserProfile
-        } else {
-          console.error('Error fetching user profile:', profileError)
+          // User record doesn't exist - this shouldn't happen with the trigger
+          // but handle gracefully by returning null and letting the app continue
+          console.warn('No user profile found. Profile will be created on next signup or needs manual creation.')
           return null
         }
+
+        console.error('Error fetching user profile:', profileError)
+        return null
       }
 
+      console.log('Profile fetched successfully')
       return profileData as UserProfile
     } catch (error) {
       console.error('Error in fetchUserProfile:', error)
@@ -77,40 +68,86 @@ export function useAuth(): AuthData {
   }
 
   useEffect(() => {
+    let mounted = true
+
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      const currentUser = session?.user ?? null
-      setUser(currentUser)
+      try {
+        console.log('Getting session...')
+        const { data: { session }, error } = await supabase.auth.getSession()
 
-      if (currentUser) {
-        const profileData = await fetchUserProfile(currentUser)
-        setProfile(profileData)
-      } else {
-        setProfile(null)
+        if (error) {
+          console.error('Session error:', error)
+        }
+
+        if (!mounted) return
+
+        const currentUser = session?.user ?? null
+        console.log('Current user:', currentUser?.id || 'none')
+        setUser(currentUser)
+
+        if (currentUser) {
+          const profileData = await fetchUserProfile(currentUser)
+          if (mounted) {
+            setProfile(profileData)
+          }
+        } else {
+          if (mounted) {
+            setProfile(null)
+          }
+        }
+
+        if (mounted) {
+          console.log('Setting loading to false')
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Error in getSession:', error)
+        if (mounted) {
+          setLoading(false)
+        }
       }
-
-      setLoading(false)
     }
+
+    // Safety timeout - ensure loading is set to false after 5 seconds max
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('Loading timeout - forcing loading to false')
+        setLoading(false)
+      }
+    }, 5000)
 
     getSession()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event)
+        if (!mounted) return
+
         const currentUser = session?.user ?? null
         setUser(currentUser)
 
         if (currentUser) {
           const profileData = await fetchUserProfile(currentUser)
-          setProfile(profileData)
+          if (mounted) {
+            setProfile(profileData)
+          }
         } else {
-          setProfile(null)
+          if (mounted) {
+            setProfile(null)
+          }
         }
 
-        setLoading(false)
+        if (mounted) {
+          setLoading(false)
+        }
       }
     )
 
-    return () => subscription?.unsubscribe()
+    return () => {
+      mounted = false
+      clearTimeout(timeout)
+      subscription?.unsubscribe()
+    }
   }, [])
 
   return { user, profile, loading, refreshProfile }

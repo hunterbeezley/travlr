@@ -60,6 +60,7 @@ export default function Map({ onMapClick }: MapProps) {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+  const [isStyleLoaded, setIsStyleLoaded] = useState(false)
   
   // Pin creation state
   const [showPinModal, setShowPinModal] = useState(false)
@@ -248,6 +249,11 @@ export default function Map({ onMapClick }: MapProps) {
   const addPinsToMap = () => {
     if (!map.current) {
       console.warn('⚠️ Cannot add pins: map not initialized')
+      return
+    }
+
+    if (!isStyleLoaded) {
+      console.warn('⚠️ Cannot add pins: map style not loaded yet')
       return
     }
 
@@ -472,11 +478,11 @@ export default function Map({ onMapClick }: MapProps) {
   // Enhanced useEffect to handle all pin changes (add, update, delete)
   useEffect(() => {
     console.log('🔄 useEffect triggered - pins changed, length:', pins.length)
-    if (map.current) {
+    if (map.current && isStyleLoaded) {
       // Always call addPinsToMap - it handles empty pins array correctly
       addPinsToMap()
     }
-  }, [pins]) // This dependency ensures map updates whenever pins array changes
+  }, [pins, isStyleLoaded]) // This dependency ensures map updates whenever pins array changes or style loads
 
   // Initialize map only once
   useEffect(() => {
@@ -519,6 +525,12 @@ export default function Map({ onMapClick }: MapProps) {
       setLng(Number(map.current.getCenter().lng.toFixed(4)))
       setLat(Number(map.current.getCenter().lat.toFixed(4)))
       setZoom(Number(map.current.getZoom().toFixed(2)))
+    })
+
+    // Wait for style to load before allowing pin operations
+    map.current.on('load', () => {
+      console.log('✅ Map style loaded')
+      setIsStyleLoaded(true)
     })
 
     return () => {
@@ -636,7 +648,17 @@ export default function Map({ onMapClick }: MapProps) {
   // Update map style when changed
   useEffect(() => {
     if (map.current) {
+      console.log('🎨 Changing map style to:', mapStyle)
+      setIsStyleLoaded(false) // Style is no longer loaded
       map.current.setStyle(mapStyle)
+
+      // Wait for the new style to load
+      const handleStyleLoad = () => {
+        console.log('✅ New map style loaded')
+        setIsStyleLoaded(true)
+      }
+
+      map.current.once('style.load', handleStyleLoad)
     }
   }, [mapStyle])
 
