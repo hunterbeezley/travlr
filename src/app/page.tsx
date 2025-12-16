@@ -163,34 +163,28 @@ export default function HomePage() {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              marginBottom: '2rem',
+              gap: '1rem',
+              marginBottom: '3rem',
               justifyContent: 'center'
             }}>
-              <svg width="40" height="40" viewBox="0 0 400 300" style={{ flexShrink: 0 }}>
-                <circle 
-                  cx="200" 
-                  cy="150" 
-                  r="45" 
-                  fill="none" 
-                  stroke="#EA8B47" 
-                  strokeWidth="4"
-                />
-                <circle 
-                  cx="200" 
-                  cy="150" 
-                  r="15" 
-                  fill="#EA8B47"
-                />
+              <svg width="48" height="48" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+                {/* Geometric logo */}
+                <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
+                <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
+                <circle cx="24" cy="24" r="8" fill="var(--color-red)"/>
+                <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
+                <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
+                <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
+                <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
               </svg>
               <h1 style={{
-                fontSize: '2rem',
+                fontSize: '3rem',
                 fontWeight: '700',
-                background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                margin: 0
+                color: 'var(--color-white)',
+                margin: 0,
+                fontFamily: 'var(--font-display)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
               }}>
                 Travlr
               </h1>
@@ -218,44 +212,33 @@ export default function HomePage() {
       <nav className="navbar">
         <div className="navbar-content">
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <svg width="32" height="32" viewBox="0 0 400 300" style={{ flexShrink: 0 }}>
-              {/* Outer circle */}
-              <circle 
-                cx="200" 
-                cy="150" 
-                r="45" 
-                fill="none" 
-                stroke="#EA8B47" 
-                strokeWidth="6"
-              />
-              {/* Inner orange dot */}
-              <circle 
-                cx="200" 
-                cy="150" 
-                r="15" 
-                fill="#EA8B47"
-              />
+          <div className="navbar-brand" style={{ cursor: 'default' }}>
+            <svg width="32" height="32" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+              <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
+              <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
+              <circle cx="24" cy="24" r="6" fill="var(--color-red)"/>
+              <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
+              <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
+              <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
+              <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
             </svg>
-            <span style={{ color: '#EA8B47', fontWeight: '700', fontSize: '1.5rem' }}>
-              Travlr
-            </span>
+            Travlr
           </div>
-          
+
           {/* Navigation Menu */}
           <div className="navbar-nav">
             <button
               onClick={() => router.push('/')}
               className="nav-link active"
             >
-              🗺️ Map
+              MAP
             </button>
-            
+
             <button
               onClick={() => router.push('/profile')}
               className="nav-link"
             >
-              👤 Profile
+              PROFILE
             </button>
           </div>
 
@@ -273,7 +256,7 @@ export default function HomePage() {
               className="btn btn-destructive btn-small"
               title="Sign out"
             >
-              🚪 Sign out
+              EXIT
             </button>
           </div>
         </div>

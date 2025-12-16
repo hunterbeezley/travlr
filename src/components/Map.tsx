@@ -86,26 +86,26 @@ export default function Map({ onMapClick }: MapProps) {
   const [allPins, setAllPins] = useState<Pin[]>([]) // Cache all pins
 
   const mapStyles = [
-    { name: 'Streets', value: 'mapbox://styles/mapbox/streets-v12', icon: '🏙️' },
-    { name: 'Satellite', value: 'mapbox://styles/mapbox/satellite-v9', icon: '🛰️' },
-    { name: 'Outdoors', value: 'mapbox://styles/mapbox/outdoors-v12', icon: '🏔️' },
-    { name: 'Dark', value: 'mapbox://styles/mapbox/dark-v11', icon: '🌙' },
+    { name: 'Streets', value: 'mapbox://styles/mapbox/streets-v12', icon: 'ST' },
+    { name: 'Satellite', value: 'mapbox://styles/mapbox/satellite-v9', icon: 'SA' },
+    { name: 'Outdoors', value: 'mapbox://styles/mapbox/outdoors-v12', icon: 'OU' },
+    { name: 'Dark', value: 'mapbox://styles/mapbox/dark-v11', icon: 'DK' },
   ]
 
   const getCategoryIcon = (category: string | null) => {
     const icons: { [key: string]: string } = {
-      restaurant: '🍽️',
-      cafe: '☕',
-      bar: '🍺',
-      attraction: '🎯',
-      nature: '🌲',
-      shopping: '🛍️',
-      hotel: '🏨',
-      transport: '🚌',
-      activity: '🎪',
-      other: '📍'
+      restaurant: 'RE',
+      cafe: 'CA',
+      bar: 'BR',
+      attraction: 'AT',
+      nature: 'NA',
+      shopping: 'SH',
+      hotel: 'HT',
+      transport: 'TR',
+      activity: 'AC',
+      other: 'OT'
     }
-    return icons[category || 'other'] || '📍'
+    return icons[category || 'other'] || 'OT'
   }
 
   // Search functionality
@@ -367,20 +367,20 @@ export default function Map({ onMapClick }: MapProps) {
       // Check if this pin belongs to the current user
       const isOwnPin = user && props.user_id === user.id
 
-      const editButton = isOwnPin ? 
-        `<button onclick="editPin('${props.id}')" style="background: #dc2626; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px;">✏️ Edit</button>` : ''
+      const editButton = isOwnPin ?
+        `<button onclick="editPin('${props.id}')" style="background: var(--color-red); color: white; border: 2px solid var(--color-red); padding: 6px 12px; cursor: pointer; font-size: 10px; margin-top: 8px; font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.1em;">EDIT</button>` : ''
 
-      const viewImagesButton = `<button onclick="viewPinImages('${props.id}', '${props.title.replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px; margin-right: 8px;">🖼️ Images</button>`
+      const viewImagesButton = `<button onclick="viewPinImages('${props.id}', '${props.title.replace(/'/g, "\\'")}')" style="background: transparent; color: var(--color-white); border: 2px solid var(--color-white); padding: 6px 12px; cursor: pointer; font-size: 10px; margin-top: 8px; margin-right: 8px; font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.1em;">VIEW</button>`
 
       const popupContent = `
-        <div style="min-width: 200px; max-width: 280px;">
-          <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">${props.title}</h3>
-          <p style="margin: 0 0 8px 0; font-size: 14px; color: #666;">${props.description}</p>
-          <div style="font-size: 12px; color: #888;">📍 ${props.category || 'other'}</div>
-          ${props.image_url ? 
-            `<img src="${props.image_url}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;" alt="${props.title}" />` : ''}
-          <div style="font-size: 12px; color: #888; border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
-            📅 ${new Date(props.created_at).toLocaleDateString()}
+        <div style="min-width: 200px; max-width: 280px; font-family: var(--font-mono);">
+          <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">${props.title}</h3>
+          <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--muted-foreground);">${props.description}</p>
+          <div style="font-size: 10px; color: var(--color-red); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">[${props.category || 'other'}]</div>
+          ${props.image_url ?
+            `<img src="${props.image_url}" style="width: 100%; height: 120px; object-fit: cover; margin: 8px 0; border: 2px solid var(--border);" alt="${props.title}" />` : ''}
+          <div style="font-size: 10px; color: var(--muted-foreground); border-top: 2px solid var(--border); padding-top: 8px; margin-top: 8px; font-weight: 600; letter-spacing: 0.05em;">
+            ${new Date(props.created_at).toLocaleDateString()}
           </div>
           ${viewImagesButton}
           ${editButton}
@@ -748,22 +748,25 @@ export default function Map({ onMapClick }: MapProps) {
         }}>
           {/* Header */}
           <div style={{
-            fontSize: '1rem',
-            fontWeight: '600',
+            fontSize: '0.875rem',
+            fontWeight: '700',
             marginBottom: '1rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
+            gap: '0.5rem',
+            fontFamily: 'var(--font-mono)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em'
           }}>
-            📁 Collections
+            Collections
             <span style={{
               fontSize: '0.75rem',
-              fontWeight: '400',
-              color: 'var(--muted-foreground)',
+              fontWeight: '600',
+              color: 'var(--color-red)',
               backgroundColor: 'var(--muted)',
               padding: '0.125rem 0.5rem',
-              borderRadius: 'var(--radius)',
-              marginLeft: 'auto'
+              marginLeft: 'auto',
+              fontFamily: 'var(--font-mono)'
             }}>
               {allPins.length}
             </span>
@@ -783,8 +786,7 @@ export default function Map({ onMapClick }: MapProps) {
               style={{
                 width: '100%',
                 padding: '0.75rem',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
+                border: '2px solid var(--border)',
                 backgroundColor: selectedCollectionId === null ? 'var(--accent)' : 'transparent',
                 color: selectedCollectionId === null ? 'white' : 'var(--foreground)',
                 textAlign: 'left',
@@ -793,16 +795,20 @@ export default function Map({ onMapClick }: MapProps) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                fontWeight: selectedCollectionId === null ? '600' : '400'
+                fontWeight: '600',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                fontSize: '0.75rem',
+                letterSpacing: '0.05em'
               }}
             >
-              🗺️ All Pins
+              All Pins
               <span style={{
                 fontSize: '0.75rem',
                 marginLeft: 'auto',
                 backgroundColor: selectedCollectionId === null ? 'rgba(255,255,255,0.2)' : 'var(--muted)',
                 padding: '0.125rem 0.5rem',
-                borderRadius: 'var(--radius)'
+                fontFamily: 'var(--font-mono)'
               }}>
                 {allPins.length}
               </span>
@@ -823,8 +829,7 @@ export default function Map({ onMapClick }: MapProps) {
                 style={{
                   width: '100%',
                   padding: '0.75rem',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius)',
+                  border: '2px solid var(--border)',
                   backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
                   color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
                   textAlign: 'left',
@@ -851,14 +856,17 @@ export default function Map({ onMapClick }: MapProps) {
                   <div style={{
                     width: '48px',
                     height: '48px',
-                    borderRadius: 'var(--radius)',
+                    border: '2px solid var(--border)',
                     backgroundColor: 'var(--muted)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.5rem'
+                    fontSize: '1rem',
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: '700',
+                    color: 'var(--color-red)'
                   }}>
-                    📁
+                    [ ]
                   </div>
                 )}
 
@@ -902,12 +910,20 @@ export default function Map({ onMapClick }: MapProps) {
                 padding: '2rem 1rem',
                 textAlign: 'center',
                 color: 'var(--muted-foreground)',
-                fontSize: '0.875rem'
+                fontSize: '0.75rem',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
               }}>
-                <div style={{ marginBottom: '0.5rem' }}>📁</div>
+                <div style={{
+                  marginBottom: '0.5rem',
+                  fontSize: '1.5rem',
+                  fontWeight: '700',
+                  color: 'var(--color-red)'
+                }}>[ ]</div>
                 <div>No collections yet</div>
-                <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                  Create pins to organize them into collections
+                <div style={{ fontSize: '0.65rem', marginTop: '0.5rem', opacity: 0.7 }}>
+                  Create pins to organize them
                 </div>
               </div>
             )}
@@ -940,18 +956,22 @@ export default function Map({ onMapClick }: MapProps) {
             <button
               onClick={() => setShowSearch(!showSearch)}
               style={{
-                background: 'none',
-                border: 'none',
+                background: 'var(--color-red)',
+                border: '2px solid var(--color-red)',
+                color: 'white',
                 cursor: 'pointer',
-                padding: '0.5rem',
-                borderRadius: 'var(--radius)',
+                padding: '0.5rem 0.75rem',
                 transition: 'var(--transition)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: '700',
+                fontSize: '0.75rem',
+                letterSpacing: '0.1em'
               }}
             >
-              🔍
+              {showSearch ? '×' : 'SEARCH'}
             </button>
             
             {showSearch && (
@@ -1047,20 +1067,27 @@ export default function Map({ onMapClick }: MapProps) {
               onClick={() => setMapStyle(style.value)}
               style={{
                 padding: '0.5rem 0.75rem',
-                border: 'none',
-                borderRadius: 'var(--radius)',
+                border: '2px solid var(--border)',
                 cursor: 'pointer',
-                fontSize: '0.75rem',
-                fontWeight: '500',
+                fontSize: '0.65rem',
+                fontWeight: '700',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.25rem',
+                gap: '0.5rem',
                 transition: 'var(--transition)',
                 background: mapStyle === style.value ? 'var(--accent)' : 'transparent',
-                color: mapStyle === style.value ? 'white' : 'var(--foreground)'
+                color: mapStyle === style.value ? 'white' : 'var(--foreground)',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
               }}
             >
-              <span>{style.icon}</span>
+              <span style={{
+                display: 'inline-block',
+                padding: '2px 4px',
+                background: mapStyle === style.value ? 'rgba(255,255,255,0.2)' : 'var(--muted)',
+                fontWeight: '700'
+              }}>{style.icon}</span>
               <span>{style.name}</span>
             </button>
           ))}
@@ -1076,16 +1103,19 @@ export default function Map({ onMapClick }: MapProps) {
           transform: 'translateX(-50%)',
           zIndex: 10,
           background: 'var(--card)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '0.75rem 1rem',
-          fontSize: '0.875rem',
-          color: 'var(--muted-foreground)',
+          border: '2px solid var(--color-red)',
+          padding: '0.75rem 1.5rem',
+          fontSize: '0.65rem',
+          color: 'var(--foreground)',
           boxShadow: 'var(--shadow-lg)',
           backdropFilter: 'blur(8px)',
-          textAlign: 'center'
+          textAlign: 'center',
+          fontFamily: 'var(--font-mono)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          fontWeight: '600'
         }}>
-          📍 Double-click anywhere on the map to create a pin • Click on existing pins to view
+          <span style={{ color: 'var(--color-red)' }}>[DBL-CLICK]</span> Create Pin <span style={{ color: 'var(--muted-foreground)' }}>•</span> <span style={{ color: 'var(--color-red)' }}>[CLICK]</span> View Pin
         </div>
       )}
 
@@ -1097,15 +1127,17 @@ export default function Map({ onMapClick }: MapProps) {
           right: '1rem',
           zIndex: 10,
           background: 'var(--card)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)',
+          border: '2px solid var(--border)',
           padding: '0.5rem 0.75rem',
           fontSize: '0.75rem',
-          color: 'var(--muted-foreground)',
+          color: 'var(--foreground)',
           boxShadow: 'var(--shadow)',
-          backdropFilter: 'blur(8px)'
+          backdropFilter: 'blur(8px)',
+          fontFamily: 'var(--font-mono)',
+          fontWeight: '700',
+          letterSpacing: '0.1em'
         }}>
-          📍 {pins.length} pin{pins.length !== 1 ? 's' : ''}
+          <span style={{ color: 'var(--color-red)' }}>{pins.length.toString().padStart(2, '0')}</span> PIN{pins.length !== 1 ? 'S' : ''}
         </div>
       )}
 

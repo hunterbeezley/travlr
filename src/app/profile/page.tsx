@@ -335,14 +335,14 @@ export default function ProfilePage() {
               onClick={() => router.push('/')}
               className="nav-link"
             >
-              🗺️ Map
+              MAP
             </button>
-            
+
             <button
               onClick={() => router.push('/profile')}
               className="nav-link active"
             >
-              👤 Profile
+              PROFILE
             </button>
           </div>
 
@@ -360,7 +360,7 @@ export default function ProfilePage() {
               className="btn btn-destructive btn-small"
               title="Sign out"
             >
-              🚪 Sign out
+              EXIT
             </button>
           </div>
         </div>
@@ -444,7 +444,7 @@ export default function ProfilePage() {
                       e.currentTarget.style.background = 'var(--accent)'
                     }}
                   >
-                    {isEditing ? '✕ Cancel' : '✏️ Edit Profile'}
+                    {isEditing ? '[CANCEL]' : 'EDIT PROFILE'}
                   </button>
                 </div>
 
@@ -470,14 +470,14 @@ export default function ProfilePage() {
                       color: 'var(--muted-foreground)'
                     }}>
                       {profile?.location && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span>📍</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                          <span style={{ color: 'var(--color-red)', fontWeight: '700' }}>[LOC]</span>
                           <span>{profile.location}</span>
                         </div>
                       )}
                       {profile?.website && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span>🔗</span>
+                          <span>[WEB]</span>
                           <a 
                             href={profile.website} 
                             target="_blank" 
@@ -492,11 +492,11 @@ export default function ProfilePage() {
                         </div>
                       )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span>📧</span>
+                        <span>[EMAIL]</span>
                         <span>{user.email}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span>📅</span>
+                        <span>[DATE]</span>
                         <span>Joined {new Date(profile?.created_at || '').toLocaleDateString()}</span>
                       </div>
                     </div>
@@ -960,8 +960,8 @@ export default function ProfilePage() {
                             fontSize: '0.75rem',
                             color: 'var(--muted-foreground)'
                           }}>
-                            <span>📍 {collection.pin_count || 0} pins</span>
-                            <span>📅 {new Date(collection.created_at).toLocaleDateString()}</span>
+                            <span>[PIN] {collection.pin_count || 0} pins</span>
+                            <span>[DATE] {new Date(collection.created_at).toLocaleDateString()}</span>
                           </div>
                         </div>
                       </div>
@@ -985,7 +985,7 @@ export default function ProfilePage() {
                 gap: '0.5rem',
                 marginBottom: '1.5rem'
               }}>
-                <span style={{ fontSize: '1.5rem' }}>📍</span>
+                <span style={{ fontSize: '1.5rem' }}>[PIN]</span>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
                   My Pins
                 </h3>
@@ -1019,7 +1019,7 @@ export default function ProfilePage() {
                   padding: '3rem 1rem',
                   color: 'var(--muted-foreground)'
                 }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📍</div>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>[PIN]</div>
                   <h4 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
                     No Pins Yet
                   </h4>
@@ -1039,7 +1039,7 @@ export default function ProfilePage() {
                       fontWeight: '500'
                     }}
                   >
-                    🗺️ Go to Map
+                    GO TO MAP
                   </button>
                 </div>
               ) : (
@@ -1098,7 +1098,7 @@ export default function ProfilePage() {
                             fontSize: '1.5rem',
                             flexShrink: 0
                           }}>
-                            📍
+                            [PIN]
                           </div>
                         )}
                         
@@ -1135,9 +1135,9 @@ export default function ProfilePage() {
                             color: 'var(--muted-foreground)'
                           }}>
                             {pin.category && (
-                              <span>🏷️ {pin.category}</span>
+                              <span>[TAG] {pin.category}</span>
                             )}
-                            <span>📅 {new Date(pin.created_at).toLocaleDateString()}</span>
+                            <span>[DATE] {new Date(pin.created_at).toLocaleDateString()}</span>
                           </div>
                         </div>
                       </div>
