@@ -37,6 +37,17 @@ interface Pin {
   collection_id: string
 }
 
+interface Collection {
+  id: string
+  title: string
+  description: string | null
+  is_public: boolean
+  created_at: string
+  updated_at: string
+  pin_count?: number
+  first_pin_image?: string | null
+}
+
 export default function Map({ onMapClick }: MapProps) {
   const { user } = useAuth()
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -66,6 +77,12 @@ export default function Map({ onMapClick }: MapProps) {
   // Pin editing state
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null)
+
+  // Collections state
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [loadingCollections, setLoadingCollections] = useState(false)
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
+  const [allPins, setAllPins] = useState<Pin[]>([]) // Cache all pins
 
   const mapStyles = [
     { name: 'Streets', value: 'mapbox://styles/mapbox/streets-v12', icon: '🏙️' },
@@ -127,13 +144,14 @@ export default function Map({ onMapClick }: MapProps) {
   // Load pins from database
   const loadPins = async () => {
     if (!user) {
+      setAllPins([])
       setPins([])
       return
     }
 
     setLoadingPins(true)
     try {
-      // You can modify this query based on your needs
+      // Load all pins for client-side filtering
       const { data, error } = await supabase
         .from('pins')
         .select('*')
@@ -145,12 +163,82 @@ export default function Map({ onMapClick }: MapProps) {
         return
       }
 
-      setPins(data || [])
+      setAllPins(data || [])
     } catch (error) {
       console.error('Error loading pins:', error)
     } finally {
       setLoadingPins(false)
     }
+  }
+
+  // Load collections from database
+  const loadCollections = async () => {
+    if (!user) return
+
+    setLoadingCollections(true)
+    try {
+      const { data, error } = await supabase
+        .rpc('get_user_collections_with_stats', { user_uuid: user.id })
+
+      if (error) {
+        console.error('Error loading collections:', error)
+        return
+      }
+
+      setCollections(data || [])
+    } catch (error) {
+      console.error('Error loading collections:', error)
+    } finally {
+      setLoadingCollections(false)
+    }
+  }
+
+  // Filter pins by collection
+  const filterPinsByCollection = (collectionId: string | null) => {
+    if (collectionId === null) {
+      setPins(allPins) // Show all pins
+    } else {
+      setPins(allPins.filter(pin => pin.collection_id === collectionId))
+    }
+  }
+
+  // Fit map bounds to show all pins
+  const fitMapToPins = (pinsToFit: Pin[]) => {
+    if (!map.current || pinsToFit.length === 0) return
+
+    if (pinsToFit.length === 1) {
+      // Single pin - fly to it
+      const pin = pinsToFit[0]
+      map.current.flyTo({
+        center: [pin.longitude, pin.latitude],
+        zoom: 14,
+        duration: 1000
+      })
+    } else {
+      // Multiple pins - calculate bounds
+      const bounds = new mapboxgl.LngLatBounds()
+      pinsToFit.forEach(pin => {
+        bounds.extend([pin.longitude, pin.latitude])
+      })
+
+      map.current.fitBounds(bounds, {
+        padding: { top: 80, bottom: 80, left: 350, right: 80 },
+        duration: 1000,
+        maxZoom: 15
+      })
+    }
+  }
+
+  // Handle collection selection
+  const handleCollectionSelect = (collectionId: string | null) => {
+    setSelectedCollectionId(collectionId)
+
+    const filteredPins = collectionId === null
+      ? allPins
+      : allPins.filter(pin => pin.collection_id === collectionId)
+
+    setPins(filteredPins)
+    fitMapToPins(filteredPins)
   }
 
   // Store marker references to clean them up properly
@@ -372,8 +460,14 @@ export default function Map({ onMapClick }: MapProps) {
   useEffect(() => {
     if (user) {
       loadPins()
+      loadCollections()
     }
   }, [user])
+
+  // Filter pins whenever allPins or selectedCollectionId changes
+  useEffect(() => {
+    filterPinsByCollection(selectedCollectionId)
+  }, [allPins, selectedCollectionId])
 
   // Enhanced useEffect to handle all pin changes (add, update, delete)
   useEffect(() => {
@@ -548,14 +642,28 @@ export default function Map({ onMapClick }: MapProps) {
 
   // Handle pin creation success
   const handlePinCreated = (pin: Pin) => {
-    setPins(prev => [pin, ...prev])
+    // Add to allPins cache
+    setAllPins(prev => [pin, ...prev])
+
+    // If no filter OR pin matches current filter, add to visible pins
+    if (selectedCollectionId === null || pin.collection_id === selectedCollectionId) {
+      setPins(prev => [pin, ...prev])
+    }
+
+    // Refresh collections to update pin counts
+    loadCollections()
+
     setShowPinModal(false)
     setSelectedLocation(null)
   }
 
   // Handle pin update success
   const handlePinUpdated = (updatedPin: Pin) => {
-    setPins(prev => prev.map(pin => 
+    // Update in both caches
+    setAllPins(prev => prev.map(pin =>
+      pin.id === updatedPin.id ? updatedPin : pin
+    ))
+    setPins(prev => prev.map(pin =>
       pin.id === updatedPin.id ? updatedPin : pin
     ))
     setShowEditModal(false)
@@ -566,32 +674,225 @@ export default function Map({ onMapClick }: MapProps) {
   const handlePinDeleted = (pinId: string) => {
     console.log('🗑️ Map: handlePinDeleted called for pin:', pinId)
     console.log('📊 Current pins before deletion:', pins.length)
-    
-    // Update the pins state - React will handle the map update via useEffect
+
+    // Remove from both caches
+    setAllPins(prev => prev.filter(pin => pin.id !== pinId))
     setPins(prev => {
       const newPins = prev.filter(pin => pin.id !== pinId)
       console.log('📊 Pins after filtering:', newPins.length)
       return newPins
     })
-    
+
+    // Refresh collections to update pin counts
+    loadCollections()
+
     // Auto-close any modals that are showing the deleted pin
     if (selectedPin?.id === pinId) {
       console.log('🔄 Closing edit modal for deleted pin')
       setShowEditModal(false)
       setSelectedPin(null)
     }
-    
+
     if (selectedPinForImages?.id === pinId) {
       console.log('🔄 Closing image viewer modal for deleted pin')
       setShowImageViewer(false)
       setSelectedPinForImages(null)
     }
-    
+
     console.log('✅ Pin deletion handling complete')
   }
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {/* Collections Sidebar */}
+      {user && (
+        <div style={{
+          position: 'absolute',
+          left: '1rem',
+          top: '5rem',
+          bottom: '1rem',
+          width: '280px',
+          backgroundColor: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-lg)',
+          backdropFilter: 'blur(8px)',
+          padding: '1rem',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: 'calc(100vh - 12rem)',
+          overflow: 'hidden'
+        }}>
+          {/* Header */}
+          <div style={{
+            fontSize: '1rem',
+            fontWeight: '600',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            📁 Collections
+            <span style={{
+              fontSize: '0.75rem',
+              fontWeight: '400',
+              color: 'var(--muted-foreground)',
+              backgroundColor: 'var(--muted)',
+              padding: '0.125rem 0.5rem',
+              borderRadius: 'var(--radius)',
+              marginLeft: 'auto'
+            }}>
+              {allPins.length}
+            </span>
+          </div>
+
+          {/* Collection List */}
+          <div style={{
+            overflowY: 'auto',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem'
+          }}>
+            {/* All Pins Button */}
+            <button
+              onClick={() => handleCollectionSelect(null)}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+                backgroundColor: selectedCollectionId === null ? 'var(--accent)' : 'transparent',
+                color: selectedCollectionId === null ? 'white' : 'var(--foreground)',
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'var(--transition)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontWeight: selectedCollectionId === null ? '600' : '400'
+              }}
+            >
+              🗺️ All Pins
+              <span style={{
+                fontSize: '0.75rem',
+                marginLeft: 'auto',
+                backgroundColor: selectedCollectionId === null ? 'rgba(255,255,255,0.2)' : 'var(--muted)',
+                padding: '0.125rem 0.5rem',
+                borderRadius: 'var(--radius)'
+              }}>
+                {allPins.length}
+              </span>
+            </button>
+
+            {/* Loading State */}
+            {loadingCollections && (
+              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
+                Loading collections...
+              </div>
+            )}
+
+            {/* Collection Items */}
+            {!loadingCollections && collections.map(collection => (
+              <button
+                key={collection.id}
+                onClick={() => handleCollectionSelect(collection.id)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
+                  color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  transition: 'var(--transition)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem'
+                }}
+              >
+                {/* Thumbnail */}
+                {collection.first_pin_image ? (
+                  <img
+                    src={collection.first_pin_image}
+                    alt=""
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: 'var(--radius)',
+                      objectFit: 'cover'
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: 'var(--radius)',
+                    backgroundColor: 'var(--muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.5rem'
+                  }}>
+                    📁
+                  </div>
+                )}
+
+                {/* Collection Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontWeight: '500',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {collection.title}
+                  </div>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    opacity: 0.8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <span>{collection.pin_count || 0} pins</span>
+                    {collection.is_public && (
+                      <span style={{
+                        backgroundColor: selectedCollectionId === collection.id ? 'rgba(255,255,255,0.2)' : 'rgba(34,197,94,0.1)',
+                        color: selectedCollectionId === collection.id ? 'white' : '#22c55e',
+                        padding: '0.125rem 0.375rem',
+                        borderRadius: 'var(--radius)',
+                        fontSize: '0.625rem'
+                      }}>
+                        Public
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
+
+            {/* Empty State */}
+            {!loadingCollections && collections.length === 0 && (
+              <div style={{
+                padding: '2rem 1rem',
+                textAlign: 'center',
+                color: 'var(--muted-foreground)',
+                fontSize: '0.875rem'
+              }}>
+                <div style={{ marginBottom: '0.5rem' }}>📁</div>
+                <div>No collections yet</div>
+                <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                  Create pins to organize them into collections
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Search Bar */}
       <div style={{ 
         position: 'absolute', 

@@ -220,7 +220,7 @@ export default function PinImageViewerModal({
             </div>
           ) : (
             <>
-              <ImageSlideshow images={images.map(img => img.url)} />
+              <ImageSlideshow images={images} />
               <div style={{
                 textAlign: 'center',
                 marginTop: '1rem',
