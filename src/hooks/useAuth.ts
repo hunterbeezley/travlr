@@ -12,6 +12,7 @@ interface UserProfile {
   website?: string | null
   profile_image_url?: string | null
   profile_image_path?: string | null
+  preferences?: any // JSONB field for user preferences
   created_at: string
   updated_at?: string
 }

@@ -88,9 +88,9 @@ export default function ImageSlideshow({
                 left: '0.5rem',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
                 color: 'white',
-                border: 'none',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '50%',
                 width: '36px',
                 height: '36px',
@@ -100,13 +100,14 @@ export default function ImageSlideshow({
                 cursor: 'pointer',
                 fontSize: '1rem',
                 transition: 'var(--transition)',
-                backdropFilter: 'blur(4px)'
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)'
               }}
             >
               ←
@@ -119,9 +120,9 @@ export default function ImageSlideshow({
                 right: '0.5rem',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
                 color: 'white',
-                border: 'none',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '50%',
                 width: '36px',
                 height: '36px',
@@ -131,13 +132,14 @@ export default function ImageSlideshow({
                 cursor: 'pointer',
                 fontSize: '1rem',
                 transition: 'var(--transition)',
-                backdropFilter: 'blur(4px)'
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.8)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)'
               }}
             >
               →
@@ -156,7 +158,9 @@ export default function ImageSlideshow({
             padding: '0.25rem 0.5rem',
             borderRadius: 'var(--radius)',
             fontSize: '0.75rem',
-            backdropFilter: 'blur(4px)'
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
             {currentIndex + 1} / {sortedImages.length}
           </div>

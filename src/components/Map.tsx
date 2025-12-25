@@ -3,6 +3,7 @@ import { useRef, useEffect, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { useAuth } from '@/hooks/useAuth'
+import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { supabase } from '@/lib/supabase'
 import PinCreationModal from './PinCreationModal'
 import PinEditModal from './PinEditModal'
@@ -50,12 +51,13 @@ interface Collection {
 
 export default function Map({ onMapClick }: MapProps) {
   const { user } = useAuth()
+  const { preferences, updatePreference } = useUserPreferences()
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const [lng, setLng] = useState(-122.6765)
   const [lat, setLat] = useState(45.5152)
   const [zoom, setZoom] = useState(11)
-  const [mapStyle, setMapStyle] = useState('mapbox://styles/mapbox/streets-v12')
+  const [mapStyle, setMapStyle] = useState(preferences.map_style || 'mapbox://styles/mapbox/streets-v12')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -462,6 +464,25 @@ export default function Map({ onMapClick }: MapProps) {
     }
   }, [pins, user])
 
+  // Load saved map style from preferences
+  useEffect(() => {
+    if (preferences.map_style && preferences.map_style !== mapStyle) {
+      console.log('📍 Loading saved map style:', preferences.map_style)
+      setMapStyle(preferences.map_style)
+    }
+  }, [preferences.map_style])
+
+  // Handler to change map style and save preference
+  const handleMapStyleChange = (newStyle: string) => {
+    console.log('🎨 Changing map style to:', newStyle)
+    setMapStyle(newStyle)
+
+    // Save to user preferences (only if logged in)
+    if (user) {
+      updatePreference('map_style', newStyle)
+    }
+  }
+
   // Load pins when user changes or component mounts
   useEffect(() => {
     if (user) {
@@ -734,11 +755,12 @@ export default function Map({ onMapClick }: MapProps) {
           top: '5rem',
           bottom: '1rem',
           width: '280px',
-          backgroundColor: 'var(--card)',
-          border: '1px solid var(--border)',
+          backgroundColor: 'rgba(39, 39, 42, 0.7)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 'var(--radius-lg)',
           boxShadow: 'var(--shadow-lg)',
-          backdropFilter: 'blur(8px)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           padding: '1rem',
           zIndex: 10,
           display: 'flex',
@@ -946,12 +968,13 @@ export default function Map({ onMapClick }: MapProps) {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            background: 'var(--card)',
-            border: '1px solid var(--border)',
+            background: 'rgba(39, 39, 42, 0.7)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: 'var(--radius-lg)',
             padding: '0.5rem',
             boxShadow: 'var(--shadow-lg)',
-            backdropFilter: 'blur(8px)'
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)'
           }}>
             <button
               onClick={() => setShowSearch(!showSearch)}
@@ -1002,12 +1025,13 @@ export default function Map({ onMapClick }: MapProps) {
               top: '100%',
               left: 0,
               right: 0,
-              background: 'var(--card)',
-              border: '1px solid var(--border)',
+              background: 'rgba(39, 39, 42, 0.7)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: 'var(--radius-lg)',
               marginTop: '0.5rem',
               boxShadow: 'var(--shadow-lg)',
               backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
               zIndex: 20,
               maxHeight: '200px',
               overflowY: 'auto'
@@ -1048,47 +1072,43 @@ export default function Map({ onMapClick }: MapProps) {
       <div style={{
         position: 'absolute',
         top: '0.75rem',
-        right: '1rem',
+        right: '5rem',
         zIndex: 10
       }}>
         <div style={{
           display: 'flex',
-          gap: '0.5rem',
-          background: 'var(--card)',
-          border: '1px solid var(--border)',
+          gap: '0.25rem',
+          background: 'rgba(39, 39, 42, 0.7)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 'var(--radius-lg)',
           padding: '0.25rem',
           boxShadow: 'var(--shadow-lg)',
-          backdropFilter: 'blur(8px)'
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)'
         }}>
           {mapStyles.map((style) => (
             <button
               key={style.value}
-              onClick={() => setMapStyle(style.value)}
+              onClick={() => handleMapStyleChange(style.value)}
+              title={style.name}
               style={{
-                padding: '0.5rem 0.75rem',
-                border: '2px solid var(--border)',
+                padding: '0.375rem 0.5rem',
+                border: '1px solid var(--border)',
                 cursor: 'pointer',
-                fontSize: '0.65rem',
+                fontSize: '0.625rem',
                 fontWeight: '700',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
+                justifyContent: 'center',
                 transition: 'var(--transition)',
                 background: mapStyle === style.value ? 'var(--accent)' : 'transparent',
                 color: mapStyle === style.value ? 'white' : 'var(--foreground)',
                 fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em'
+                letterSpacing: '0.05em',
+                minWidth: '32px'
               }}
             >
-              <span style={{
-                display: 'inline-block',
-                padding: '2px 4px',
-                background: mapStyle === style.value ? 'rgba(255,255,255,0.2)' : 'var(--muted)',
-                fontWeight: '700'
-              }}>{style.icon}</span>
-              <span>{style.name}</span>
+              {style.icon}
             </button>
           ))}
         </div>
@@ -1102,13 +1122,14 @@ export default function Map({ onMapClick }: MapProps) {
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 10,
-          background: 'var(--card)',
+          background: 'rgba(39, 39, 42, 0.7)',
           border: '2px solid var(--color-red)',
           padding: '0.75rem 1.5rem',
           fontSize: '0.65rem',
           color: 'var(--foreground)',
           boxShadow: 'var(--shadow-lg)',
-          backdropFilter: 'blur(8px)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           textAlign: 'center',
           fontFamily: 'var(--font-mono)',
           textTransform: 'uppercase',
@@ -1126,13 +1147,14 @@ export default function Map({ onMapClick }: MapProps) {
           bottom: '1rem',
           right: '1rem',
           zIndex: 10,
-          background: 'var(--card)',
-          border: '2px solid var(--border)',
+          background: 'rgba(39, 39, 42, 0.7)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           padding: '0.5rem 0.75rem',
           fontSize: '0.75rem',
           color: 'var(--foreground)',
           boxShadow: 'var(--shadow)',
           backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
           fontFamily: 'var(--font-mono)',
           fontWeight: '700',
           letterSpacing: '0.1em'

@@ -40,8 +40,39 @@ Create `.env.local` with:
 NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.your_mapbox_token_here
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-Mapbox: Sign up at mapbox.com → Account → Access tokens
-Supabase: New project at supabase.com → Settings → API
+```
+
+**Get your keys:**
+- Mapbox: Sign up at mapbox.com → Account → Access tokens
+- Supabase: New project at supabase.com → Settings → API
+
+### Supabase Storage Setup
+
+**⚠️ Important:** Image uploads require Supabase Storage to be configured.
+
+Follow the detailed guide: [STORAGE_SETUP.md](./STORAGE_SETUP.md)
+
+Quick steps:
+1. Create a public bucket named `travlr-images` in Supabase Storage
+2. Set up RLS policies to allow authenticated uploads
+3. Test at http://localhost:3000/test-images
+
+### Database Migrations
+
+**New Feature: User Preferences** 🎨
+
+Users can now save their map style preferences! To enable this:
+
+1. Go to Supabase Dashboard → SQL Editor
+2. Run the migration: `migrations/add_user_preferences.sql`
+3. Restart your dev server
+
+See [migrations/README.md](./migrations/README.md) for detailed instructions.
+
+**What this does:**
+- Remembers your map view choice (Street/Satellite/Outdoors/Dark)
+- Settings persist across sessions
+- Foundation for future preference features
 
 ⚡ What's Built So Far
 ✅ Pin dropping - Click map, add details
@@ -49,7 +80,8 @@ Supabase: New project at supabase.com → Settings → API
 ✅ Collections - Group your pins (public/private)
 ✅ User profiles - With profile pics
 ✅ Authentication - Sign up, sign in
-🚧 Coming Soon: Discovery, following
+✅ User preferences - Map style settings saved per user
+🚧 Coming Soon: Discovery, following, more preferences
 
 🛠️ Tech Stack
 Framework: Next.js 15 + React 19

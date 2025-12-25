@@ -54,7 +54,20 @@ class ProfileImageUploadService {
 
       if (error) {
         console.error('Upload error:', error)
-        return { success: false, error: error.message }
+        console.error('Error details:', JSON.stringify(error, null, 2))
+
+        // Better error messages for common issues
+        let errorMessage = error.message || 'Upload failed'
+
+        if (!error.message && Object.keys(error).length === 0) {
+          errorMessage = 'Storage bucket not found. Please set up Supabase Storage (see STORAGE_SETUP.md in project root)'
+        } else if (error.message?.includes('not found')) {
+          errorMessage = 'Storage bucket "travlr-images" not found. Please create it in Supabase dashboard (see STORAGE_SETUP.md)'
+        } else if (error.message?.includes('policy')) {
+          errorMessage = 'Permission denied. Please check storage RLS policies (see STORAGE_SETUP.md)'
+        }
+
+        return { success: false, error: errorMessage }
       }
 
       // Get public URL

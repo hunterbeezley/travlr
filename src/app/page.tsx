@@ -244,7 +244,7 @@ export default function HomePage() {
 
           <div className="navbar-user">
             <UserAvatar
-              profileImageUrl={profile?.profile_image_url}
+              profileImageUrl={profile?.profile_image_url || profile?.profile_image}
               email={user.email || ''}
               size="medium"
             />

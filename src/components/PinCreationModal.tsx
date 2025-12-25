@@ -318,7 +318,7 @@ useEffect(() => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -326,14 +326,16 @@ useEffect(() => {
       padding: '1rem'
     }}>
       <div style={{
-        backgroundColor: 'var(--card)',
+        backgroundColor: 'rgba(39, 39, 42, 0.85)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         borderRadius: 'var(--radius-lg)',
         width: '100%',
         maxWidth: '500px',
         maxHeight: '90vh',
         overflow: 'auto',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        border: '1px solid var(--border)'
+        border: '1px solid rgba(255, 255, 255, 0.15)'
       }}>
         {/* Header */}
         <div style={{

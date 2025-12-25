@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import UserAvatar from '@/components/UserAvatar'
 import ProfileCompletion from '@/components/ProfileCompletion'
 import Auth from '@/components/Auth'
+import ProfilePictureUpload from '@/components/ProfilePictureUpload'
 import { supabase } from '@/lib/supabase'
 import { DatabaseService } from '@/lib/database'
 
@@ -247,34 +248,28 @@ export default function ProfilePage() {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              marginBottom: '2rem',
+              gap: '1rem',
+              marginBottom: '3rem',
               justifyContent: 'center'
             }}>
-              <svg width="40" height="40" viewBox="0 0 400 300" style={{ flexShrink: 0 }}>
-                <circle 
-                  cx="200" 
-                  cy="150" 
-                  r="45" 
-                  fill="none" 
-                  stroke="#EA8B47" 
-                  strokeWidth="4"
-                />
-                <circle 
-                  cx="200" 
-                  cy="150" 
-                  r="15" 
-                  fill="#EA8B47"
-                />
+              <svg width="48" height="48" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+                {/* Geometric logo */}
+                <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
+                <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
+                <circle cx="24" cy="24" r="8" fill="var(--color-red)"/>
+                <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
+                <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
+                <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
+                <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
               </svg>
               <h1 style={{
-                fontSize: '2rem',
+                fontSize: '3rem',
                 fontWeight: '700',
-                background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                margin: 0
+                color: 'var(--color-white)',
+                margin: 0,
+                fontFamily: 'var(--font-display)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
               }}>
                 Travlr
               </h1>
@@ -303,30 +298,17 @@ export default function ProfilePage() {
       <nav className="navbar">
         <div className="navbar-content">
           {/* Logo */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <svg width="30" height="30" viewBox="0 0 400 300" style={{ flexShrink: 0 }}>
-              <circle 
-                cx="200" 
-                cy="150" 
-                r="45" 
-                fill="none" 
-                stroke="#EA8B47" 
-                strokeWidth="6"
-              />
-              <circle 
-                cx="200" 
-                cy="150" 
-                r="15" 
-                fill="#EA8B47"
-              />
+          <div className="navbar-brand" style={{ cursor: 'default' }}>
+            <svg width="32" height="32" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+              <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
+              <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
+              <circle cx="24" cy="24" r="6" fill="var(--color-red)"/>
+              <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
+              <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
+              <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
+              <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
             </svg>
-            <span style={{ color: '#EA8B47', fontWeight: '700', fontSize: '1.5rem' }}>
-              Travlr
-            </span>
+            Travlr
           </div>
           
           {/* Navigation Menu */}
@@ -348,7 +330,7 @@ export default function ProfilePage() {
 
           <div className="navbar-user">
             <UserAvatar
-              profileImageUrl={profile?.profile_image_url}
+              profileImageUrl={profile?.profile_image_url || profile?.profile_image}
               email={user.email || ''}
               size="medium"
             />
@@ -391,11 +373,57 @@ export default function ProfilePage() {
               alignItems: 'flex-start',
               gap: '2rem'
             }}>
-              {/* Avatar */}
-              <UserAvatar
-                profileImageUrl={profile?.profile_image_url}
-                email={user.email || ''}
-                size="large"
+              {/* Avatar with Upload */}
+              <ProfilePictureUpload
+                currentImageUrl={profile?.profile_image_url || profile?.profile_image}
+                onImageUploaded={async (url, path) => {
+                  // Update the profile in the database
+                  try {
+                    const { error } = await supabase
+                      .from('users')
+                      .update({
+                        profile_image: url,
+                        updated_at: new Date().toISOString()
+                      })
+                      .eq('id', user.id)
+
+                    if (error) {
+                      console.error('Error updating profile image:', error)
+                      console.error('Error details:', JSON.stringify(error, null, 2))
+                      alert(`Failed to update profile: ${error.message || 'Unknown error'}`)
+                      return
+                    }
+                    await refreshProfile()
+                  } catch (error) {
+                    console.error('Error updating profile image:', error)
+                    alert('Failed to update profile')
+                  }
+                }}
+                onImageDeleted={async () => {
+                  // Remove the profile image from the database
+                  try {
+                    const { error } = await supabase
+                      .from('users')
+                      .update({
+                        profile_image: null,
+                        updated_at: new Date().toISOString()
+                      })
+                      .eq('id', user.id)
+
+                    if (error) {
+                      console.error('Error deleting profile image:', error)
+                      console.error('Error details:', JSON.stringify(error, null, 2))
+                      alert(`Failed to delete profile: ${error.message || 'Unknown error'}`)
+                      return
+                    }
+                    await refreshProfile()
+                  } catch (error) {
+                    console.error('Error deleting profile image:', error)
+                    alert('Failed to delete profile')
+                  }
+                }}
+                userId={user.id}
+                userInitials={user.email?.split('@')[0].slice(0, 2).toUpperCase() || 'US'}
               />
 
               {/* Profile Info */}
@@ -1169,7 +1197,7 @@ export default function ProfilePage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
+          background: 'rgba(0, 0, 0, 0.6)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -1177,8 +1205,10 @@ export default function ProfilePage() {
           padding: '1rem'
         }}>
           <div style={{
-            background: 'var(--card)',
-            border: '1px solid var(--border)',
+            background: 'rgba(39, 39, 42, 0.85)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
             borderRadius: 'var(--radius-lg)',
             padding: '2rem',
             maxWidth: '500px',
