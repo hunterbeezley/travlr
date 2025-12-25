@@ -82,6 +82,42 @@ export interface PinImage {
   user_id: string
 }
 
+export interface PinCreator {
+  user_id: string
+  username: string | null
+  profile_image: string | null
+}
+
+export interface PinCollection {
+  collection_id: string
+  collection_title: string
+  is_public: boolean
+}
+
+export interface CompletePinData {
+  // Pin basics
+  id: string
+  title: string
+  description: string | null
+  category: string | null
+  latitude: number
+  longitude: number
+  created_at: string
+
+  // Creator info
+  creator_id: string
+  creator_username: string | null
+  creator_profile_image: string | null
+
+  // Collection info
+  collection_id: string
+  collection_title: string
+  collection_is_public: boolean
+
+  // Images array
+  images: PinImage[]
+}
+
 export class DatabaseService {
   /**
    * Create a new pin
@@ -639,6 +675,159 @@ static async deletePinImages(pinId: string, userId: string) {
     } catch (error) {
       console.error('Error checking username availability:', error)
       return false
+    }
+  }
+
+  /**
+   * Get pin creator information
+   */
+  static async getPinCreator(pinId: string): Promise<PinCreator | null> {
+    console.log('🔧 DatabaseService.getPinCreator called for pin:', pinId)
+
+    try {
+      // First get the pin to find the user_id
+      const { data: pinData, error: pinError } = await supabase
+        .from('pins')
+        .select('user_id')
+        .eq('id', pinId)
+        .single()
+
+      if (pinError || !pinData) {
+        console.error('❌ Error fetching pin:', pinError)
+        return null
+      }
+
+      // Then get the user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('username, profile_image')
+        .eq('id', pinData.user_id)
+        .single()
+
+      if (userError) {
+        console.error('❌ Error fetching user data:', userError)
+        return null
+      }
+
+      return {
+        user_id: pinData.user_id,
+        username: userData?.username || null,
+        profile_image: userData?.profile_image || null
+      }
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return null
+    }
+  }
+
+  /**
+   * Get pin collection information
+   */
+  static async getPinCollection(collectionId: string): Promise<PinCollection | null> {
+    console.log('🔧 DatabaseService.getPinCollection called for collection:', collectionId)
+
+    try {
+      const { data, error } = await supabase
+        .from('collections')
+        .select('id, title, is_public')
+        .eq('id', collectionId)
+        .single()
+
+      if (error) {
+        console.error('❌ Error fetching collection:', error)
+        return null
+      }
+
+      if (!data) {
+        console.log('❌ Collection not found')
+        return null
+      }
+
+      return {
+        collection_id: data.id,
+        collection_title: data.title,
+        is_public: data.is_public
+      }
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return null
+    }
+  }
+
+  /**
+   * Get complete pin data with creator, collection, and images
+   * Fetches all pin profile information using separate queries
+   */
+  static async getCompletePinData(pinId: string): Promise<CompletePinData | null> {
+    console.log('🔧 DatabaseService.getCompletePinData called for pin:', pinId)
+
+    try {
+      // Fetch basic pin data
+      const { data: pinData, error: pinError } = await supabase
+        .from('pins')
+        .select('*')
+        .eq('id', pinId)
+        .single()
+
+      if (pinError || !pinData) {
+        console.error('❌ Error fetching pin data:', pinError)
+        return null
+      }
+
+      // Fetch creator info
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('username, profile_image')
+        .eq('id', pinData.user_id)
+        .single()
+
+      if (userError) {
+        console.warn('⚠️ Error fetching user data:', userError)
+      }
+
+      // Fetch collection info
+      const { data: collectionData, error: collectionError } = await supabase
+        .from('collections')
+        .select('title, is_public')
+        .eq('id', pinData.collection_id)
+        .single()
+
+      if (collectionError) {
+        console.warn('⚠️ Error fetching collection data:', collectionError)
+      }
+
+      // Fetch pin images
+      const images = await this.getPinImages(pinId)
+
+      const completePinData: CompletePinData = {
+        // Pin basics
+        id: pinData.id,
+        title: pinData.title,
+        description: pinData.description,
+        category: pinData.category,
+        latitude: pinData.latitude,
+        longitude: pinData.longitude,
+        created_at: pinData.created_at,
+
+        // Creator info
+        creator_id: pinData.user_id,
+        creator_username: userData?.username || null,
+        creator_profile_image: userData?.profile_image || null,
+
+        // Collection info
+        collection_id: pinData.collection_id,
+        collection_title: collectionData?.title || 'Unnamed Collection',
+        collection_is_public: collectionData?.is_public || false,
+
+        // Images
+        images: images
+      }
+
+      console.log('✅ Complete pin data fetched successfully')
+      return completePinData
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return null
     }
   }
 

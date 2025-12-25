@@ -10,21 +10,31 @@ export default function Auth() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-      },
-    })
-    
-    if (error) {
-      alert(error.message)
-    } else {
-      setSubmitted(true)
+
+    try {
+      console.log('Attempting to send magic link to:', email)
+      console.log('Redirect URL:', `${window.location.origin}/`)
+
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      })
+
+      if (error) {
+        console.error('Supabase OTP error:', error)
+        alert(`Error: ${error.message}`)
+      } else {
+        console.log('Magic link sent successfully:', data)
+        setSubmitted(true)
+      }
+    } catch (err) {
+      console.error('Unexpected error during login:', err)
+      alert('An unexpected error occurred. Please check the console for details.')
+    } finally {
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   if (submitted) {

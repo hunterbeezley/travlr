@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import PinCreationModal from './PinCreationModal'
 import PinEditModal from './PinEditModal'
 import PinImageViewerModal from './PinImageViewerModal'
+import PinProfileModal from './PinProfileModal'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!
 
@@ -76,6 +77,9 @@ export default function Map({ onMapClick }: MapProps) {
     id: string
     title: string
   } | null>(null)
+
+  // Pin profile modal state
+  const [showPinProfile, setShowPinProfile] = useState(false)
 
   // Pin editing state
   const [showEditModal, setShowEditModal] = useState(false)
@@ -444,12 +448,12 @@ export default function Map({ onMapClick }: MapProps) {
       }
     }
 
-    // View pin images function (new)
+    // View pin images function (now opens pin profile)
     (window as any).viewPinImages = (pinId: string, pinTitle: string) => {
-      console.log('🖼️ Opening image viewer for pin:', pinId, pinTitle)
+      console.log('📍 Opening pin profile for:', pinId, pinTitle)
       setSelectedPinForImages({ id: pinId, title: pinTitle })
-      setShowImageViewer(true)
-      
+      setShowPinProfile(true)
+
       // Close any open popups
       const popups = document.getElementsByClassName('mapboxgl-popup')
       for (let i = 0; i < popups.length; i++) {
@@ -1208,6 +1212,23 @@ export default function Map({ onMapClick }: MapProps) {
           }}
           pinId={selectedPinForImages.id}
           pinTitle={selectedPinForImages.title}
+        />
+      )}
+
+      {/* Pin Profile Modal */}
+      {showPinProfile && selectedPinForImages && (
+        <PinProfileModal
+          isOpen={showPinProfile}
+          onClose={() => {
+            setShowPinProfile(false)
+            setSelectedPinForImages(null)
+          }}
+          pinId={selectedPinForImages.id}
+          onEditPin={(pin) => {
+            setSelectedPin(pin)
+            setShowEditModal(true)
+            setShowPinProfile(false)
+          }}
         />
       )}
     </div>
