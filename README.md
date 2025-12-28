@@ -11,9 +11,9 @@ Drop pins, share spots, build your perfect city guide.
 > **🚧 Currently Building**  
 > Pls Don't expect everything to work perfectly (yet).
 
-## 🎯 What do?
+## 🎯 Save, collect, share
 
-Drop pins on that random taco spot you found, organize them into collections like "Date Night Spots" or "Best Coffee in Portland," and share them with friends.
+Drop pins on that random taco spot you found, organize them into collections like "Date Night Spots" or "Best Coffee in Portland," and share them publically.
 
 ## 🚀 Get It Running
 
@@ -63,31 +63,6 @@ Quick steps:
 2. Set up RLS policies to allow authenticated uploads
 3. Test at http://localhost:3000/test-images
 
-### Database Migrations
-
-**New Feature: User Preferences** 🎨
-
-Users can now save their map style preferences! To enable this:
-
-1. Go to Supabase Dashboard → SQL Editor
-2. Run the migration: `migrations/add_user_preferences.sql`
-3. Restart your dev server
-
-See [migrations/README.md](./migrations/README.md) for detailed instructions.
-
-**What this does:**
-- Remembers your map view choice (Street/Satellite/Outdoors/Dark)
-- Settings persist across sessions
-- Foundation for future preference features
-
-⚡ What's Built So Far
-✅ Pin dropping - Click map, add details
-✅ Image uploads - Single or multiple pics per pin
-✅ Collections - Group your pins (public/private)
-✅ User profiles - With profile pics
-✅ Authentication - Sign up, sign in
-✅ User preferences - Map style settings saved per user
-🚧 Coming Soon: Discovery, following, more preferences
 
 🛠️ Tech Stack
 Framework: Next.js 15 + React 19
