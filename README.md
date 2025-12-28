@@ -85,13 +85,5 @@ src/
 └── lib/                   # Database services, utilities
 ```
 
-🤝 Contributing
-Add to the project:
 
-Fork it
-Make it better
-PR with good commit messages
-Don't break the build
 
-📄 License
-MIT - Use it, fork it
