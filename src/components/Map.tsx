@@ -12,6 +12,7 @@ import PinImageViewerModal from './PinImageViewerModal'
 import PinProfileModal from './PinProfileModal'
 import FollowButton from './FollowButton'
 import CollectionDetailsModal from './CollectionDetailsModal'
+import AddSearchLocationModal from './AddSearchLocationModal'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!
 
@@ -110,6 +111,11 @@ export default function Map({ onMapClick }: MapProps) {
   const [showCollectionDetails, setShowCollectionDetails] = useState(false)
   const [selectedCollectionForDetails, setSelectedCollectionForDetails] = useState<Collection | null>(null)
 
+  // Search location state
+  const [selectedSearchLocation, setSelectedSearchLocation] = useState<SearchResult | null>(null)
+  const [showAddLocationModal, setShowAddLocationModal] = useState(false)
+  const searchMarkerRef = useRef<mapboxgl.Marker | null>(null)
+
   const mapStyles = [
     { name: 'Streets', value: 'mapbox://styles/mapbox/streets-v12', icon: 'ST' },
     { name: 'Satellite', value: 'mapbox://styles/mapbox/satellite-v9', icon: 'SA' },
@@ -142,8 +148,21 @@ export default function Map({ onMapClick }: MapProps) {
 
     setIsSearching(true)
     try {
+      // Get current map center for proximity bias
+      const mapCenter = map.current?.getCenter()
+      const proximity = mapCenter ? `${mapCenter.lng},${mapCenter.lat}` : ''
+
+      // Include POI (businesses, landmarks) and addresses in search
+      // Types: poi = points of interest, address = street addresses, place = cities/neighborhoods
+      const types = 'poi,address,place'
+
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxgl.accessToken}&country=us&limit=5`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
+        `access_token=${mapboxgl.accessToken}&` +
+        `types=${types}&` +
+        `country=us&` +
+        `limit=10&` +
+        (proximity ? `proximity=${proximity}` : '')
       )
       const data = await response.json()
       setSearchResults(data.features || [])
@@ -156,12 +175,75 @@ export default function Map({ onMapClick }: MapProps) {
   }
 
   const selectSearchResult = (result: SearchResult) => {
-    if (map.current) {
-      map.current.flyTo({
-        center: result.center,
-        zoom: 14
-      })
+    if (!map.current) return
+
+    // Fly to location
+    map.current.flyTo({
+      center: result.center,
+      zoom: 14
+    })
+
+    // Remove existing search marker if any
+    if (searchMarkerRef.current) {
+      searchMarkerRef.current.remove()
     }
+
+    // Store the selected location
+    setSelectedSearchLocation(result)
+
+    // Create popup with "Add to Collection" button
+    const popupNode = document.createElement('div')
+    popupNode.style.padding = '0.75rem'
+    popupNode.style.minWidth = '200px'
+
+    const title = document.createElement('div')
+    title.textContent = result.place_name.split(',')[0]
+    title.style.fontWeight = '700'
+    title.style.marginBottom = '0.5rem'
+    title.style.fontSize = '0.875rem'
+    popupNode.appendChild(title)
+
+    const address = document.createElement('div')
+    address.textContent = result.place_name
+    address.style.fontSize = '0.75rem'
+    address.style.color = 'var(--muted-foreground)'
+    address.style.marginBottom = '0.75rem'
+    popupNode.appendChild(address)
+
+    const button = document.createElement('button')
+    button.textContent = 'ADD TO COLLECTION'
+    button.style.width = '100%'
+    button.style.padding = '0.5rem'
+    button.style.background = 'var(--accent)'
+    button.style.color = 'white'
+    button.style.border = '2px solid var(--accent)'
+    button.style.borderRadius = 'var(--radius)'
+    button.style.cursor = 'pointer'
+    button.style.fontFamily = 'var(--font-mono)'
+    button.style.fontWeight = '700'
+    button.style.fontSize = '0.75rem'
+    button.style.letterSpacing = '0.1em'
+    button.onclick = () => {
+      setShowAddLocationModal(true)
+    }
+    popupNode.appendChild(button)
+
+    const popup = new mapboxgl.Popup({
+      offset: 25,
+      closeButton: true,
+      closeOnClick: false
+    }).setDOMContent(popupNode)
+
+    // Create marker
+    const marker = new mapboxgl.Marker({ color: '#E63946' })
+      .setLngLat(result.center)
+      .setPopup(popup)
+      .addTo(map.current)
+
+    marker.togglePopup()
+    searchMarkerRef.current = marker
+
+    // Clear search
     setSearchQuery('')
     setSearchResults([])
     setShowSearch(false)
@@ -1803,44 +1885,77 @@ export default function Map({ onMapClick }: MapProps) {
               top: '100%',
               left: 0,
               right: 0,
-              background: 'rgba(39, 39, 42, 0.7)',
+              background: 'rgba(39, 39, 42, 0.95)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: 'var(--radius-lg)',
               marginTop: '0.5rem',
               boxShadow: 'var(--shadow-lg)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
               zIndex: 20,
-              maxHeight: '200px',
+              maxHeight: '400px',
               overflowY: 'auto'
             }}>
-              {searchResults.map((result) => (
-                <button
-                  key={result.id}
-                  onClick={() => selectSearchResult(result)}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: 'none',
-                    background: 'transparent',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    borderBottom: '1px solid var(--border)',
-                    transition: 'var(--transition)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'var(--muted)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent'
-                  }}
-                >
-                  <div style={{ fontWeight: '500' }}>{result.place_name}</div>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
-                    {result.place_type.join(', ')}
-                  </div>
-                </button>
-              ))}
+              {searchResults.map((result) => {
+                const isPOI = result.place_type.includes('poi')
+                const category = result.properties?.category || result.place_type[0]
+                const displayName = result.text || result.place_name.split(',')[0]
+                const address = result.place_name.split(',').slice(1).join(',').trim()
+
+                return (
+                  <button
+                    key={result.id}
+                    onClick={() => selectSearchResult(result)}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: 'none',
+                      background: 'transparent',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                      transition: 'var(--transition)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                    }}
+                  >
+                    <div style={{
+                      fontWeight: '600',
+                      marginBottom: '0.25rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      {isPOI && (
+                        <span style={{
+                          fontSize: '0.7rem',
+                          background: 'var(--accent)',
+                          color: 'white',
+                          padding: '0.125rem 0.375rem',
+                          borderRadius: 'var(--radius)',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: '700',
+                          textTransform: 'uppercase'
+                        }}>
+                          {category}
+                        </span>
+                      )}
+                      <span>{displayName}</span>
+                    </div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--muted-foreground)',
+                      lineHeight: '1.4'
+                    }}>
+                      {address || result.place_name}
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>
@@ -2019,6 +2134,30 @@ export default function Map({ onMapClick }: MapProps) {
             loadFriendsCollections()
           }}
           userId={user.id}
+        />
+      )}
+
+      {/* Add Search Location Modal */}
+      {showAddLocationModal && selectedSearchLocation && user && (
+        <AddSearchLocationModal
+          isOpen={showAddLocationModal}
+          onClose={() => {
+            setShowAddLocationModal(false)
+          }}
+          searchLocation={selectedSearchLocation}
+          collections={collections}
+          userId={user.id}
+          onSuccess={() => {
+            // Remove the search marker
+            if (searchMarkerRef.current) {
+              searchMarkerRef.current.remove()
+              searchMarkerRef.current = null
+            }
+            setSelectedSearchLocation(null)
+            // Reload pins and collections
+            loadPins()
+            loadCollections()
+          }}
         />
       )}
     </div>

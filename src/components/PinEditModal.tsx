@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { DatabaseService } from '@/lib/database'
 import { supabase } from '@/lib/supabase'
+import SingleImageUpload from './SingleImageUpload'
+import MultipleImageUpload from './MultipleImageUpload'
 
 interface PinEditModalProps {
   isOpen: boolean
@@ -42,9 +44,9 @@ const PIN_CATEGORIES = [
   { value: 'other', label: '📍 Other', icon: '📍' }
 ]
 
-export default function PinEditModal({ 
-  isOpen, 
-  onClose, 
+export default function PinEditModal({
+  isOpen,
+  onClose,
   pin,
   onPinUpdated,
   onPinDeleted
@@ -65,6 +67,16 @@ export default function PinEditModal({
     imageUrl: ''
   })
 
+  // Images state
+  const [pinImages, setPinImages] = useState<{
+    id: string
+    url: string
+    path: string
+    order: number
+    isUploading: boolean
+    isTemp: boolean
+  }[]>([])
+
   // Load collections for user
   useEffect(() => {
     if (isOpen && user) {
@@ -84,8 +96,26 @@ export default function PinEditModal({
       })
       setError(null)
       setShowDeleteConfirm(false)
+      loadPinImages()
     }
   }, [pin, isOpen])
+
+  const loadPinImages = async () => {
+    if (!pin) return
+    try {
+      const images = await DatabaseService.getPinImages(pin.id)
+      setPinImages(images.map(img => ({
+        id: img.id,
+        url: img.image_url,
+        path: img.image_path,
+        order: img.upload_order,
+        isUploading: false,
+        isTemp: false
+      })))
+    } catch (error) {
+      console.error('Error loading pin images:', error)
+    }
+  }
 
   const fetchCollections = async () => {
     if (!user) return
@@ -112,7 +142,7 @@ export default function PinEditModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!user || !pin) {
       setError('You must be logged in to edit pins')
       return
@@ -156,6 +186,11 @@ export default function PinEditModal({
       }
 
       // Update the pin details
+      // Prepare main image URL from multiple images
+      const validImages = pinImages.filter(img => !img.isUploading && !img.isTemp)
+      const mainImageUrl = validImages.length > 0 ? validImages[0].url : undefined
+
+      // Update the pin details
       const result = await DatabaseService.updatePin(
         pin.id,
         user.id,
@@ -163,11 +198,28 @@ export default function PinEditModal({
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
           category: formData.category,
-          image_url: formData.imageUrl.trim() || undefined
+          image_url: mainImageUrl
         }
       )
 
       if (result.success && result.data) {
+        // Update pin_images table
+        const imagesResult = await DatabaseService.updatePinImages(
+          pin.id,
+          user.id,
+          validImages.map(img => ({
+            image_url: img.url,
+            image_path: img.path,
+            upload_order: img.order
+          }))
+        )
+
+        if (imagesResult.success) {
+          console.log('✅ Pin images updated successfully')
+        } else {
+          console.error('⚠️ Failed to update pin images:', imagesResult.error)
+        }
+
         console.log('✅ Pin updated successfully:', result.data)
         onPinUpdated?.({ ...result.data, collection_id: formData.collectionId })
         onClose()
@@ -183,48 +235,48 @@ export default function PinEditModal({
   }
 
   const handleDelete = async () => {
-  if (!user || !pin) {
-    console.error('❌ Cannot delete: missing user or pin')
-    return
-  }
-
-  console.log('🗑️ Starting pin deletion process for pin:', pin.id)
-  setDeleteLoading(true)
-  setError(null)
-
-  try {
-    const result = await DatabaseService.deletePin(pin.id, user.id)
-    console.log('🔧 Delete result:', result)
-
-    if (result.success) {
-      console.log('✅ Pin deleted successfully from database')
-      
-      // Call the parent callback to update the UI
-      if (onPinDeleted) {
-        console.log('📤 Calling onPinDeleted callback with pin ID:', pin.id)
-        onPinDeleted(pin.id)
-      } else {
-        console.warn('⚠️ onPinDeleted callback not provided')
-      }
-      
-      // Close the modal
-      onClose()
-      
-      // Optional: Force a page reload as a fallback (remove this once issue is fixed)
-      // setTimeout(() => window.location.reload(), 500)
-      
-    } else {
-      console.error('❌ Pin deletion failed:', result.error)
-      setError(result.error || 'Failed to delete pin')
+    if (!user || !pin) {
+      console.error('❌ Cannot delete: missing user or pin')
+      return
     }
-  } catch (error) {
-    console.error('💥 Unexpected error deleting pin:', error)
-    setError('An unexpected error occurred while deleting the pin')
-  } finally {
-    setDeleteLoading(false)
-    setShowDeleteConfirm(false)
+
+    console.log('🗑️ Starting pin deletion process for pin:', pin.id)
+    setDeleteLoading(true)
+    setError(null)
+
+    try {
+      const result = await DatabaseService.deletePin(pin.id, user.id)
+      console.log('🔧 Delete result:', result)
+
+      if (result.success) {
+        console.log('✅ Pin deleted successfully from database')
+
+        // Call the parent callback to update the UI
+        if (onPinDeleted) {
+          console.log('📤 Calling onPinDeleted callback with pin ID:', pin.id)
+          onPinDeleted(pin.id)
+        } else {
+          console.warn('⚠️ onPinDeleted callback not provided')
+        }
+
+        // Close the modal
+        onClose()
+
+        // Optional: Force a page reload as a fallback (remove this once issue is fixed)
+        // setTimeout(() => window.location.reload(), 500)
+
+      } else {
+        console.error('❌ Pin deletion failed:', result.error)
+        setError(result.error || 'Failed to delete pin')
+      }
+    } catch (error) {
+      console.error('💥 Unexpected error deleting pin:', error)
+      setError('An unexpected error occurred while deleting the pin')
+    } finally {
+      setDeleteLoading(false)
+      setShowDeleteConfirm(false)
+    }
   }
-}
 
   if (!isOpen || !pin) return null
 
@@ -303,64 +355,64 @@ export default function PinEditModal({
       }}>
         {/* Header */}
         <div style={{
-  padding: '1.5rem',
-  paddingRight: '4rem', // Extra space for the floating close button
-  borderBottom: '1px solid var(--border)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  position: 'relative'
-}}>
-  <h2 style={{
-    margin: 0,
-    fontSize: '1.25rem',
-    fontWeight: '600',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem'
-  }}>
-    ✏️ Edit Pin
-  </h2>
-  
-  {/* Enhanced Close Button */}
-  <button
-    onClick={onClose}
-    style={{
-      position: 'absolute',
-      top: '1rem',
-      right: '1rem',
-      width: '36px',
-      height: '36px',
-      borderRadius: '50%',
-      backgroundColor: 'rgba(0, 0, 0, 0.05)',
-      color: 'var(--foreground)',
-      border: '1px solid var(--border)',
-      cursor: 'pointer',
-      fontSize: '16px',
-      fontWeight: 'bold',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      transition: 'all 0.2s ease',
-      zIndex: 1001
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.backgroundColor = 'rgba(220, 38, 38, 0.1)'
-      e.currentTarget.style.color = 'var(--destructive)'
-      e.currentTarget.style.borderColor = 'var(--destructive)'
-      e.currentTarget.style.transform = 'scale(1.05)'
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'
-      e.currentTarget.style.color = 'var(--foreground)'
-      e.currentTarget.style.borderColor = 'var(--border)'
-      e.currentTarget.style.transform = 'scale(1)'
-    }}
-    title="Close"
-  >
-    ✕
-  </button>
-</div>
+          padding: '1.5rem',
+          paddingRight: '4rem', // Extra space for the floating close button
+          borderBottom: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          position: 'relative'
+        }}>
+          <h2 style={{
+            margin: 0,
+            fontSize: '1.25rem',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            ✏️ Edit Pin
+          </h2>
+
+          {/* Enhanced Close Button */}
+          <button
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              color: 'var(--foreground)',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              zIndex: 1001
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(220, 38, 38, 0.1)'
+              e.currentTarget.style.color = 'var(--destructive)'
+              e.currentTarget.style.borderColor = 'var(--destructive)'
+              e.currentTarget.style.transform = 'scale(1.05)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'
+              e.currentTarget.style.color = 'var(--foreground)'
+              e.currentTarget.style.borderColor = 'var(--border)'
+              e.currentTarget.style.transform = 'scale(1)'
+            }}
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
 
 
         {/* Content */}
@@ -498,26 +550,21 @@ export default function PinEditModal({
 
           {/* Image URL */}
           <div style={{ marginBottom: '1.5rem' }}>
+
             <label style={{
               display: 'block',
               marginBottom: '0.5rem',
               fontWeight: '500',
               fontSize: '0.875rem'
             }}>
-              Image URL (optional)
+              Images (optional)
             </label>
-            <input
-              type="url"
-              value={formData.imageUrl}
-              onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-              placeholder="https://example.com/image.jpg"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                fontSize: '1rem'
-              }}
+            <MultipleImageUpload
+              currentImages={pinImages}
+              onImagesChanged={setPinImages}
+              userId={user?.id || ''}
+              disabled={loading}
+              maxImages={10}
             />
           </div>
 
