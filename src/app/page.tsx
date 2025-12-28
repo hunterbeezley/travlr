@@ -20,8 +20,13 @@ interface Pin {
 }
 
 const getDisplayName = (profile: any, user: any) => {
-  if (profile?.username) return `@${profile.username}`
   if (profile?.full_name) return profile.full_name
+  if (profile?.username) return `@${profile.username}`
+  // Generate anonymous name based on user ID
+  if (profile?.id) {
+    const shortId = profile.id.slice(0, 8)
+    return `anon${shortId}`
+  }
   return user?.email || 'User'
 }
 

@@ -11,6 +11,7 @@ import PinEditModal from './PinEditModal'
 import PinImageViewerModal from './PinImageViewerModal'
 import PinProfileModal from './PinProfileModal'
 import FollowButton from './FollowButton'
+import CollectionDetailsModal from './CollectionDetailsModal'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!
 
@@ -50,6 +51,7 @@ interface Collection {
   updated_at: string
   pin_count?: number
   first_pin_image?: string | null
+  user_id?: string
 }
 
 export default function Map({ onMapClick }: MapProps) {
@@ -103,6 +105,10 @@ export default function Map({ onMapClick }: MapProps) {
   const [discoverCollections, setDiscoverCollections] = useState<DiscoverCollection[]>([])
   const [loadingDiscoverCollections, setLoadingDiscoverCollections] = useState(false)
   const [discoverPins, setDiscoverPins] = useState<Pin[]>([])
+
+  // Collection details modal state
+  const [showCollectionDetails, setShowCollectionDetails] = useState(false)
+  const [selectedCollectionForDetails, setSelectedCollectionForDetails] = useState<Collection | null>(null)
 
   const mapStyles = [
     { name: 'Streets', value: 'mapbox://styles/mapbox/streets-v12', icon: 'ST' },
@@ -1094,7 +1100,7 @@ export default function Map({ onMapClick }: MapProps) {
                         position: 'absolute',
                         top: 0,
                         left: 0,
-                        right: '40px',
+                        right: '60px',
                         bottom: 0,
                         background: 'none',
                         border: 'none',
@@ -1168,6 +1174,46 @@ export default function Map({ onMapClick }: MapProps) {
                       </div>
                     </div>
 
+                    {/* Details Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedCollectionForDetails({ ...collection, user_id: user?.id })
+                        setShowCollectionDetails(true)
+                      }}
+                      style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        width: '24px',
+                        height: '24px',
+                        padding: 0,
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'transparent',
+                        color: 'var(--foreground)',
+                        borderRadius: 'var(--radius)',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'var(--transition)',
+                        flexShrink: 0
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--accent)'
+                        e.currentTarget.style.color = 'var(--accent)'
+                        e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)'
+                        e.currentTarget.style.color = 'var(--foreground)'
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                      }}
+                      title={`View details for ${collection.title}`}
+                    >
+                      ⓘ
+                    </button>
+
                     {/* Delete Button */}
                     <button
                       onClick={(e) => {
@@ -1177,10 +1223,10 @@ export default function Map({ onMapClick }: MapProps) {
                       style={{
                         position: 'relative',
                         zIndex: 1,
-                        width: '32px',
-                        height: '32px',
+                        width: '24px',
+                        height: '24px',
                         padding: 0,
-                        border: '2px solid var(--border)',
+                        border: '1px solid var(--border)',
                         backgroundColor: 'transparent',
                         color: 'var(--foreground)',
                         borderRadius: 'var(--radius)',
@@ -1279,23 +1325,38 @@ export default function Map({ onMapClick }: MapProps) {
 
                 {/* Friends Collection Items */}
                 {!loadingFriendsCollections && friendsCollections.map(collection => (
-                  <button
+                  <div
                     key={collection.id}
-                    onClick={() => handleCollectionSelect(collection.id, true)}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
                       border: '2px solid var(--border)',
                       backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
                       color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
-                      textAlign: 'left',
-                      cursor: 'pointer',
                       transition: 'var(--transition)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.75rem'
+                      gap: '0.75rem',
+                      position: 'relative'
                     }}
                   >
+                    {/* Clickable Area for Selection */}
+                    <button
+                      onClick={() => handleCollectionSelect(collection.id, true)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: '30px',
+                        bottom: 0,
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        zIndex: 0
+                      }}
+                      aria-label={`Select ${collection.title}`}
+                    />
+
                     {/* Thumbnail */}
                     {collection.first_pin_image ? (
                       <img
@@ -1305,7 +1366,10 @@ export default function Map({ onMapClick }: MapProps) {
                           width: '48px',
                           height: '48px',
                           borderRadius: 'var(--radius)',
-                          objectFit: 'cover'
+                          objectFit: 'cover',
+                          position: 'relative',
+                          zIndex: 1,
+                          pointerEvents: 'none'
                         }}
                       />
                     ) : (
@@ -1320,14 +1384,23 @@ export default function Map({ onMapClick }: MapProps) {
                         fontSize: '1rem',
                         fontFamily: 'var(--font-mono)',
                         fontWeight: '700',
-                        color: 'var(--color-red)'
+                        color: 'var(--color-red)',
+                        position: 'relative',
+                        zIndex: 1,
+                        pointerEvents: 'none'
                       }}>
                         [ ]
                       </div>
                     )}
 
                     {/* Collection Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      flex: 1,
+                      minWidth: 0,
+                      position: 'relative',
+                      zIndex: 1,
+                      pointerEvents: 'none'
+                    }}>
                       <div style={{
                         fontWeight: '500',
                         overflow: 'hidden',
@@ -1357,7 +1430,47 @@ export default function Map({ onMapClick }: MapProps) {
                         {collection.pin_count || 0} pins
                       </div>
                     </div>
-                  </button>
+
+                    {/* Details Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedCollectionForDetails(collection)
+                        setShowCollectionDetails(true)
+                      }}
+                      style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        width: '24px',
+                        height: '24px',
+                        padding: 0,
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'transparent',
+                        color: 'var(--foreground)',
+                        borderRadius: 'var(--radius)',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'var(--transition)',
+                        flexShrink: 0
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--accent)'
+                        e.currentTarget.style.color = 'var(--accent)'
+                        e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)'
+                        e.currentTarget.style.color = 'var(--foreground)'
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                      }}
+                      title={`View details for ${collection.title}`}
+                    >
+                      ⓘ
+                    </button>
+                  </div>
                 ))}
 
                 {/* Empty State */}
@@ -1529,8 +1642,53 @@ export default function Map({ onMapClick }: MapProps) {
                       </div>
                     </button>
 
-                    {/* Follow Button */}
-                    <div style={{ flexShrink: 0 }}>
+                    {/* Action Buttons */}
+                    <div style={{
+                      display: 'flex',
+                      gap: '0.5rem',
+                      flexShrink: 0
+                    }}>
+                      {/* Details Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedCollectionForDetails(collection)
+                          setShowCollectionDetails(true)
+                        }}
+                        style={{
+                          position: 'relative',
+                          zIndex: 1,
+                          width: '24px',
+                          height: '24px',
+                          padding: 0,
+                          border: '1px solid var(--border)',
+                          backgroundColor: 'transparent',
+                          color: 'var(--foreground)',
+                          borderRadius: 'var(--radius)',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'var(--transition)',
+                          flexShrink: 0
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--accent)'
+                          e.currentTarget.style.color = 'var(--accent)'
+                          e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--border)'
+                          e.currentTarget.style.color = 'var(--foreground)'
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                        }}
+                        title={`View details for ${collection.title}`}
+                      >
+                        ⓘ
+                      </button>
+
+                      {/* Follow Button */}
                       <FollowButton
                         userId={collection.user_id}
                         username={collection.username}
@@ -1845,6 +2003,22 @@ export default function Map({ onMapClick }: MapProps) {
             setShowEditModal(true)
             setShowPinProfile(false)
           }}
+        />
+      )}
+
+      {/* Collection Details Modal */}
+      {showCollectionDetails && selectedCollectionForDetails && user && (
+        <CollectionDetailsModal
+          collection={selectedCollectionForDetails}
+          onClose={() => {
+            setShowCollectionDetails(false)
+            setSelectedCollectionForDetails(null)
+          }}
+          onUpdate={() => {
+            loadCollections()
+            loadFriendsCollections()
+          }}
+          userId={user.id}
         />
       )}
     </div>

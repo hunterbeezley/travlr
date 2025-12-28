@@ -10,8 +10,7 @@ interface UserProfile {
   bio?: string | null
   location?: string | null
   website?: string | null
-  profile_image_url?: string | null
-  profile_image_path?: string | null
+  profile_image?: string | null
   preferences?: any // JSONB field for user preferences
   created_at: string
   updated_at?: string

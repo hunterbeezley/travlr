@@ -17,8 +17,7 @@ interface UserProfile {
   bio?: string | null
   location?: string | null
   website?: string | null
-  profile_image_url?: string | null
-  profile_image_path?: string | null
+  profile_image?: string | null
   created_at: string
   updated_at?: string
 }
@@ -47,10 +46,16 @@ interface Pin {
   collection_id: string
 }
 
-const getDisplayName = (profile: any, user: any) => {
-  if (profile?.username) return `@${profile.username}`
+// Helper function to get display name
+const getDisplayName = (profile: UserProfile | null): string => {
   if (profile?.full_name) return profile.full_name
-  return user?.email || 'User'
+  if (profile?.username) return profile.username
+  // Generate anonymous name based on user ID
+  if (profile?.id) {
+    const shortId = profile.id.slice(0, 8)
+    return `anon${shortId}`
+  }
+  return 'Anonymous User'
 }
 
 export default function ProfilePage() {
@@ -441,14 +446,14 @@ export default function ProfilePage() {
                       margin: 0,
                       marginBottom: '0.5rem'
                     }}>
-                      {profile?.full_name || 'Anonymous User'}
+                      {getDisplayName(profile)}
                     </h1>
                     <p style={{
                       fontSize: '1.125rem',
                       color: 'var(--muted-foreground)',
                       margin: 0
                     }}>
-                      {profile?.username ? `@${profile.username}` : 'No username set'}
+                      {profile?.username ? `@${profile.username}` : profile?.email || 'No username set'}
                     </p>
                   </div>
 
@@ -472,7 +477,7 @@ export default function ProfilePage() {
                       e.currentTarget.style.background = 'var(--accent)'
                     }}
                   >
-                    {isEditing ? '[CANCEL]' : 'EDIT PROFILE'}
+                    {isEditing ? 'CANCEL' : 'EDIT PROFILE'}
                   </button>
                 </div>
 
@@ -498,17 +503,15 @@ export default function ProfilePage() {
                       color: 'var(--muted-foreground)'
                     }}>
                       {profile?.location && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                          <span style={{ color: 'var(--color-red)', fontWeight: '700' }}>[LOC]</span>
-                          <span>{profile.location}</span>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                          📍 {profile.location}
                         </div>
                       )}
                       {profile?.website && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span>[WEB]</span>
-                          <a 
-                            href={profile.website} 
-                            target="_blank" 
+                        <div>
+                          🔗 <a
+                            href={profile.website}
+                            target="_blank"
                             rel="noopener noreferrer"
                             style={{
                               color: 'var(--accent)',
@@ -519,13 +522,11 @@ export default function ProfilePage() {
                           </a>
                         </div>
                       )}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span>[EMAIL]</span>
-                        <span>{user.email}</span>
+                      <div>
+                        ✉️ {user.email}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span>[DATE]</span>
-                        <span>Joined {new Date(profile?.created_at || '').toLocaleDateString()}</span>
+                      <div>
+                        📅 Joined {new Date(profile?.created_at || '').toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -586,7 +587,7 @@ export default function ProfilePage() {
                           fontWeight: '500',
                           marginBottom: '0.5rem'
                         }}>
-                          Full Name
+                          Full Name <span style={{ color: 'var(--muted-foreground)', fontWeight: '400' }}>(optional)</span>
                         </label>
                         <input
                           type="text"
@@ -596,6 +597,7 @@ export default function ProfilePage() {
                             full_name: e.target.value
                           }))}
                           maxLength={100}
+                          placeholder="Leave blank for anonymous username"
                           style={{
                             width: '100%',
                             padding: '0.75rem',
@@ -988,8 +990,8 @@ export default function ProfilePage() {
                             fontSize: '0.75rem',
                             color: 'var(--muted-foreground)'
                           }}>
-                            <span>[PIN] {collection.pin_count || 0} pins</span>
-                            <span>[DATE] {new Date(collection.created_at).toLocaleDateString()}</span>
+                            <span>📌 {collection.pin_count || 0} pins</span>
+                            <span>📅 {new Date(collection.created_at).toLocaleDateString()}</span>
                           </div>
                         </div>
                       </div>
@@ -1013,7 +1015,7 @@ export default function ProfilePage() {
                 gap: '0.5rem',
                 marginBottom: '1.5rem'
               }}>
-                <span style={{ fontSize: '1.5rem' }}>[PIN]</span>
+                <span style={{ fontSize: '1.5rem' }}>📌</span>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
                   My Pins
                 </h3>
@@ -1047,7 +1049,7 @@ export default function ProfilePage() {
                   padding: '3rem 1rem',
                   color: 'var(--muted-foreground)'
                 }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>[PIN]</div>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📌</div>
                   <h4 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
                     No Pins Yet
                   </h4>
@@ -1126,7 +1128,7 @@ export default function ProfilePage() {
                             fontSize: '1.5rem',
                             flexShrink: 0
                           }}>
-                            [PIN]
+                            📌
                           </div>
                         )}
                         
@@ -1163,9 +1165,9 @@ export default function ProfilePage() {
                             color: 'var(--muted-foreground)'
                           }}>
                             {pin.category && (
-                              <span>[TAG] {pin.category}</span>
+                              <span>🏷️ {pin.category}</span>
                             )}
-                            <span>[DATE] {new Date(pin.created_at).toLocaleDateString()}</span>
+                            <span>📅 {new Date(pin.created_at).toLocaleDateString()}</span>
                           </div>
                         </div>
                       </div>
