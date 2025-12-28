@@ -72,6 +72,7 @@ Styling: Pure CSS with custom properties
 TypeScript
 
 📁 Arch
+```
 src/
 ├── app/                    # Next.js app router stuff
 ├── components/             # React components
@@ -82,6 +83,7 @@ src/
 │   └── ...more            # SingleImageUpload, MultipleImageUpload, etc.
 ├── hooks/                 # Custom hooks
 └── lib/                   # Database services, utilities
+```
 
 🤝 Contributing
 Add to the project:
