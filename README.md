@@ -2,6 +2,12 @@
 
 Drop pins, share spots, build your perfect city guide.
 
+<p align="center">
+  <img src="public/screenshots/screenshot-1.png" width="32%" />
+  <img src="public/screenshots/screenshot-2.png" width="32%" />
+  <img src="public/screenshots/screenshot-3.png" width="32%" />
+</p>
+
 > **🚧 Currently Building**  
 > Pls Don't expect everything to work perfectly (yet).
 
