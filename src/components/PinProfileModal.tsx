@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { DatabaseService, CompletePinData, Pin } from '@/lib/database'
 import ImageSlideshow from './ImageSlideshow'
 import { useAuth } from '@/hooks/useAuth'
+import FollowButton from './FollowButton'
 
 interface PinProfileModalProps {
   isOpen: boolean
@@ -402,22 +403,34 @@ export default function PinProfileModal({
                     👤
                   </div>
                 )}
-                <div>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)',
-                    letterSpacing: '0.1em',
-                    marginBottom: '0.25rem'
-                  }}>
-                    CREATED BY
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flex: 1
+                }}>
+                  <div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--muted-foreground)',
+                      fontFamily: 'var(--font-mono)',
+                      letterSpacing: '0.1em',
+                      marginBottom: '0.25rem'
+                    }}>
+                      CREATED BY
+                    </div>
+                    <div style={{
+                      fontSize: '1rem',
+                      fontWeight: '600'
+                    }}>
+                      @{pinData.creator_username || 'anonymous'}
+                    </div>
                   </div>
-                  <div style={{
-                    fontSize: '1rem',
-                    fontWeight: '600'
-                  }}>
-                    @{pinData.creator_username || 'anonymous'}
-                  </div>
+                  <FollowButton
+                    userId={pinData.creator_id}
+                    username={pinData.creator_username}
+                    size="small"
+                  />
                 </div>
               </div>
 

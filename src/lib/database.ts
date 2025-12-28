@@ -118,6 +118,30 @@ export interface CompletePinData {
   images: PinImage[]
 }
 
+export interface FollowingUser {
+  user_id: string
+  username: string | null
+  profile_image: string | null
+  followed_at: string
+}
+
+export interface FriendsCollection {
+  id: string
+  title: string
+  description: string | null
+  is_public: boolean
+  created_at: string
+  updated_at: string
+  user_id: string
+  username: string
+  user_profile_image: string | null
+  pin_count: number
+  first_pin_image: string | null
+}
+
+// DiscoverCollection has the same structure as FriendsCollection
+export type DiscoverCollection = FriendsCollection
+
 export class DatabaseService {
   /**
    * Create a new pin
@@ -411,6 +435,52 @@ static async deletePin(pinId: string, userId: string) {
     } catch (error) {
       console.error('💥 DatabaseService error:', error)
       return { success: false, error: 'Failed to create collection' }
+    }
+  }
+
+  /**
+   * Delete a collection (and all its pins via CASCADE)
+   */
+  static async deleteCollection(collectionId: string, userId: string) {
+    console.log('🔧 DatabaseService.deleteCollection called with:', {
+      collectionId,
+      userId
+    })
+
+    try {
+      // First verify the collection belongs to the user
+      const { data: collection, error: fetchError } = await supabase
+        .from('collections')
+        .select('user_id')
+        .eq('id', collectionId)
+        .single()
+
+      if (fetchError) {
+        console.error('❌ Error fetching collection:', fetchError)
+        return { success: false, error: fetchError.message }
+      }
+
+      if (collection.user_id !== userId) {
+        console.error('❌ User does not own this collection')
+        return { success: false, error: 'Unauthorized' }
+      }
+
+      // Delete the collection (pins will be deleted via CASCADE)
+      const { error } = await supabase
+        .from('collections')
+        .delete()
+        .eq('id', collectionId)
+
+      if (error) {
+        console.error('❌ Database error deleting collection:', error)
+        return { success: false, error: error.message }
+      }
+
+      console.log('✅ Collection deleted successfully')
+      return { success: true }
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return { success: false, error: 'Failed to delete collection' }
     }
   }
 
@@ -828,6 +898,120 @@ static async deletePinImages(pinId: string, userId: string) {
     } catch (error) {
       console.error('💥 DatabaseService error:', error)
       return null
+    }
+  }
+
+  /**
+   * Follow a user
+   */
+  static async followUser(followingId: string): Promise<boolean> {
+    console.log('🔧 DatabaseService.followUser called for user:', followingId)
+
+    try {
+      const { data, error } = await supabase.rpc('follow_user', {
+        following_uuid: followingId
+      })
+
+      if (error) {
+        console.error('❌ Error following user:', error)
+        return false
+      }
+
+      console.log('✅ User followed successfully')
+      return data as boolean
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return false
+    }
+  }
+
+  /**
+   * Unfollow a user
+   */
+  static async unfollowUser(followingId: string): Promise<boolean> {
+    console.log('🔧 DatabaseService.unfollowUser called for user:', followingId)
+
+    try {
+      const { data, error } = await supabase.rpc('unfollow_user', {
+        following_uuid: followingId
+      })
+
+      if (error) {
+        console.error('❌ Error unfollowing user:', error)
+        return false
+      }
+
+      console.log('✅ User unfollowed successfully')
+      return data as boolean
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return false
+    }
+  }
+
+  /**
+   * Get list of users the current user follows
+   */
+  static async getFollowingUsers(): Promise<FollowingUser[]> {
+    console.log('🔧 DatabaseService.getFollowingUsers called')
+
+    try {
+      const { data, error } = await supabase.rpc('get_following_users')
+
+      if (error) {
+        console.error('❌ Error getting following users:', error)
+        return []
+      }
+
+      console.log('✅ Following users fetched:', data?.length || 0)
+      return data as FollowingUser[]
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get friends' public collections for Friends tab
+   */
+  static async getFriendsPublicCollections(): Promise<FriendsCollection[]> {
+    console.log('🔧 DatabaseService.getFriendsPublicCollections called')
+
+    try {
+      const { data, error } = await supabase.rpc('get_friends_public_collections')
+
+      if (error) {
+        console.error('❌ Error getting friends collections:', error)
+        return []
+      }
+
+      console.log('✅ Friends collections fetched:', data?.length || 0)
+      return data as FriendsCollection[]
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get recently created public collections from other users for Discover tab
+   */
+  static async getDiscoverCollections(limit: number = 50): Promise<DiscoverCollection[]> {
+    console.log('🔧 DatabaseService.getDiscoverCollections called')
+
+    try {
+      const { data, error } = await supabase.rpc('get_discover_collections', { limit_count: limit })
+
+      if (error) {
+        console.error('❌ Error getting discover collections:', error)
+        return []
+      }
+
+      console.log('✅ Discover collections fetched:', data?.length || 0)
+      return data as DiscoverCollection[]
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return []
     }
   }
 
