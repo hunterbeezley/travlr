@@ -1,5 +1,6 @@
 // src/lib/database.ts
 import { supabase } from './supabase'
+import { convertPriceLevel } from './placeHelpers'
 
 export interface UserStats {
   collections_count: number
@@ -21,6 +22,7 @@ export interface CollectionWithDetails {
   pin_count: number
   like_count: number
   first_pin_image: string | null
+  color: string
 }
 
 export interface CollectionWithStats {
@@ -33,6 +35,7 @@ export interface CollectionWithStats {
   pin_count: number
   like_count: number
   first_pin_image: string | null
+  color: string
 }
 
 export interface Pin {
@@ -46,6 +49,18 @@ export interface Pin {
   created_at: string
   user_id: string
   collection_id: string
+  // Google Places enriched data
+  place_id: string | null
+  place_name: string | null
+  place_types: string[] | null
+  business_status: string | null
+  rating: number | null
+  rating_count: number | null
+  phone_number: string | null
+  website: string | null
+  price_level: number | null
+  opening_hours: any | null
+  last_place_refresh: string | null
 }
 
 export interface CollectionWithPins {
@@ -60,6 +75,7 @@ export interface CollectionWithPins {
   username: string
   user_profile_image: string | null
   like_count: number
+  color: string
   pins: Pin[]
 }
 
@@ -92,6 +108,7 @@ export interface PinCollection {
   collection_id: string
   collection_title: string
   is_public: boolean
+  collection_color: string
 }
 
 export interface CompletePinData {
@@ -113,9 +130,23 @@ export interface CompletePinData {
   collection_id: string
   collection_title: string
   collection_is_public: boolean
+  collection_color: string
 
   // Images array
   images: PinImage[]
+
+  // Google Places enriched data
+  place_id?: string | null
+  place_name?: string | null
+  place_types?: string[] | null
+  business_status?: string | null
+  rating?: number | null
+  rating_count?: number | null
+  phone_number?: string | null
+  website?: string | null
+  price_level?: number | null
+  opening_hours?: any | null
+  last_place_refresh?: string | null
 }
 
 export interface FollowingUser {
@@ -137,6 +168,7 @@ export interface FriendsCollection {
   user_profile_image: string | null
   pin_count: number
   first_pin_image: string | null
+  color: string
 }
 
 // DiscoverCollection has the same structure as FriendsCollection
@@ -1012,6 +1044,72 @@ export class DatabaseService {
     } catch (error) {
       console.error('💥 DatabaseService error:', error)
       return []
+    }
+  }
+
+  /**
+   * Refresh place data for a pin from Google Places API
+   */
+  static async refreshPlaceData(pinId: string): Promise<{ success: boolean; error?: string }> {
+    console.log('🔧 DatabaseService.refreshPlaceData called for pin:', pinId)
+
+    try {
+      // First get the pin to verify it has a place_id
+      const { data: pin, error: fetchError } = await supabase
+        .from('pins')
+        .select('place_id, user_id')
+        .eq('id', pinId)
+        .single()
+
+      if (fetchError || !pin) {
+        console.error('❌ Error fetching pin:', fetchError)
+        return { success: false, error: 'Pin not found' }
+      }
+
+      if (!pin.place_id) {
+        console.log('⚠️ Pin has no place_id, skipping refresh')
+        return { success: false, error: 'Pin has no place_id (manual pin)' }
+      }
+
+      // Fetch fresh place details from Google Places API
+      const response = await fetch(`/api/google-places/details?place_id=${pin.place_id}`)
+      const data = await response.json()
+
+      if (data.error || !data.result) {
+        console.error('❌ Error fetching place details:', data.error)
+        return { success: false, error: data.error || 'Failed to fetch place details' }
+      }
+
+      const placeDetails = data.result
+
+      // Update pin with fresh data
+      const { error: updateError } = await supabase
+        .from('pins')
+        .update({
+          place_name: placeDetails.name || null,
+          place_types: placeDetails.types || null,
+          business_status: placeDetails.business_status || null,
+          rating: placeDetails.rating || null,
+          rating_count: placeDetails.user_ratings_total || null,
+          phone_number: placeDetails.formatted_phone_number || placeDetails.international_phone_number || null,
+          website: placeDetails.website || null,
+          price_level: convertPriceLevel(placeDetails.price_level),
+          opening_hours: placeDetails.opening_hours || null,
+          last_place_refresh: new Date().toISOString()
+        })
+        .eq('id', pinId)
+
+      if (updateError) {
+        console.error('❌ Error updating pin with fresh data:', updateError)
+        return { success: false, error: updateError.message }
+      }
+
+      console.log('✅ Place data refreshed successfully')
+      return { success: true }
+
+    } catch (error) {
+      console.error('💥 DatabaseService.refreshPlaceData error:', error)
+      return { success: false, error: 'Failed to refresh place data' }
     }
   }
 

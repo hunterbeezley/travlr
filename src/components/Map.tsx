@@ -1,7 +1,6 @@
 'use client'
-import { useRef, useEffect, useState } from 'react'
-import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import { useRef, useEffect, useState, useCallback } from 'react'
+import { Wrapper } from '@googlemaps/react-wrapper'
 import { useAuth } from '@/hooks/useAuth'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { supabase } from '@/lib/supabase'
@@ -14,10 +13,32 @@ import FollowButton from './FollowButton'
 import CollectionDetailsModal from './CollectionDetailsModal'
 import AddSearchLocationModal from './AddSearchLocationModal'
 
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!
 
 interface MapProps {
   onMapClick?: (lng: number, lat: number) => void
+}
+
+interface GooglePlacesPrediction {
+  place_id: string
+  description: string
+  types: string[]
+}
+
+interface GooglePlacesGeometry {
+  location: {
+    lat: number
+    lng: number
+  }
+}
+
+interface GooglePlaceDetails {
+  name?: string
+  formatted_address?: string
+  rating?: number
+  user_ratings_total?: number
+  business_status?: string
+  geometry?: GooglePlacesGeometry
 }
 
 interface SearchResult {
@@ -28,6 +49,7 @@ interface SearchResult {
   properties: {
     category?: string
   }
+  placeDetails?: GooglePlaceDetails
 }
 
 interface Pin {
@@ -53,23 +75,125 @@ interface Collection {
   pin_count?: number
   first_pin_image?: string | null
   user_id?: string
+  color: string
 }
 
-export default function Map({ onMapClick }: MapProps) {
+// Styles to hide default Google POI markers (for all map types)
+const HIDE_POI_STYLES: google.maps.MapTypeStyle[] = [
+  {
+    featureType: 'poi',
+    elementType: 'labels',
+    stylers: [{ visibility: 'off' }]
+  },
+  {
+    featureType: 'poi.business',
+    stylers: [{ visibility: 'off' }]
+  },
+  {
+    featureType: 'transit',
+    elementType: 'labels.icon',
+    stylers: [{ visibility: 'off' }]
+  }
+]
+
+// Dark mode styles for Google Maps
+const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
+  {
+    featureType: 'administrative.locality',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#d59563' }]
+  },
+  {
+    featureType: 'poi.park',
+    elementType: 'geometry',
+    stylers: [{ color: '#263c3f' }]
+  },
+  {
+    featureType: 'poi.park',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#6b9a76' }]
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry',
+    stylers: [{ color: '#38414e' }]
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#212a37' }]
+  },
+  {
+    featureType: 'road',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#9ca5b3' }]
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry',
+    stylers: [{ color: '#746855' }]
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#1f2835' }]
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#f3d19c' }]
+  },
+  {
+    featureType: 'transit',
+    elementType: 'geometry',
+    stylers: [{ color: '#2f3948' }]
+  },
+  {
+    featureType: 'transit.station',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#d59563' }]
+  },
+  {
+    featureType: 'water',
+    elementType: 'geometry',
+    stylers: [{ color: '#17263c' }]
+  },
+  {
+    featureType: 'water',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#515c6d' }]
+  },
+  {
+    featureType: 'water',
+    elementType: 'labels.text.stroke',
+    stylers: [{ color: '#17263c' }]
+  }
+]
+
+function MapComponent({ onMapClick }: MapProps) {
   const { user } = useAuth()
   const { preferences, updatePreference } = useUserPreferences()
   const mapContainer = useRef<HTMLDivElement>(null)
-  const map = useRef<mapboxgl.Map | null>(null)
+  const map = useRef<google.maps.Map | null>(null)
+  const markersRef = useRef<google.maps.Marker[]>([])
+  const activeInfoWindowRef = useRef<google.maps.InfoWindow | null>(null)
+  const searchMarkerRef = useRef<google.maps.Marker | null>(null)
+
   const [lng, setLng] = useState(-122.6765)
   const [lat, setLat] = useState(45.5152)
   const [zoom, setZoom] = useState(11)
-  const [mapStyle, setMapStyle] = useState(preferences.map_style || 'mapbox://styles/mapbox/streets-v12')
+  const [mapStyle, setMapStyle] = useState(preferences.map_style || 'roadmap')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
-  const [isStyleLoaded, setIsStyleLoaded] = useState(false)
-  
+  const [hasSearched, setHasSearched] = useState(false)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [isMapLoaded, setIsMapLoaded] = useState(false)
+
   // Pin creation state
   const [showPinModal, setShowPinModal] = useState(false)
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null)
@@ -94,7 +218,7 @@ export default function Map({ onMapClick }: MapProps) {
   const [collections, setCollections] = useState<Collection[]>([])
   const [loadingCollections, setLoadingCollections] = useState(false)
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
-  const [allPins, setAllPins] = useState<Pin[]>([]) // Cache all pins
+  const [allPins, setAllPins] = useState<Pin[]>([])
 
   // Friends/Follow state
   const [activeTab, setActiveTab] = useState<'my-collections' | 'friends' | 'discover'>('my-collections')
@@ -114,13 +238,12 @@ export default function Map({ onMapClick }: MapProps) {
   // Search location state
   const [selectedSearchLocation, setSelectedSearchLocation] = useState<SearchResult | null>(null)
   const [showAddLocationModal, setShowAddLocationModal] = useState(false)
-  const searchMarkerRef = useRef<mapboxgl.Marker | null>(null)
 
   const mapStyles = [
-    { name: 'Streets', value: 'mapbox://styles/mapbox/streets-v12', icon: 'ST' },
-    { name: 'Satellite', value: 'mapbox://styles/mapbox/satellite-v9', icon: 'SA' },
-    { name: 'Outdoors', value: 'mapbox://styles/mapbox/outdoors-v12', icon: 'OU' },
-    { name: 'Dark', value: 'mapbox://styles/mapbox/dark-v11', icon: 'DK' },
+    { name: 'Streets', value: 'roadmap', icon: 'ST' },
+    { name: 'Satellite', value: 'satellite', icon: 'SA' },
+    { name: 'Terrain', value: 'terrain', icon: 'TE' },
+    { name: 'Dark', value: 'dark', icon: 'DK' },
   ]
 
   const getCategoryIcon = (category: string | null) => {
@@ -139,114 +262,240 @@ export default function Map({ onMapClick }: MapProps) {
     return icons[category || 'other'] || 'OT'
   }
 
-  // Search functionality
-  const handleSearch = async (query: string) => {
+  // Create custom marker icon SVG
+  const createMarkerIcon = (category: string | null, color: string = '#E63946') => {
+    const icon = getCategoryIcon(category)
+    const svg = `
+      <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="8" fill="${color}" stroke="#ffffff" stroke-width="2"/>
+        <text x="16" y="20" font-size="12" fill="#ffffff" text-anchor="middle" font-family="monospace" font-weight="bold">${icon}</text>
+      </svg>
+    `
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+      scaledSize: new google.maps.Size(32, 32),
+      anchor: new google.maps.Point(16, 16)
+    }
+  }
+
+  // Search functionality - Google Places Autocomplete with debouncing
+  const handleSearch = (query: string) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
     if (!query.trim()) {
       setSearchResults([])
+      setIsSearching(false)
+      setHasSearched(false)
       return
     }
 
     setIsSearching(true)
-    try {
-      // Get current map center for proximity bias
-      const mapCenter = map.current?.getCenter()
-      const proximity = mapCenter ? `${mapCenter.lng},${mapCenter.lat}` : ''
+    setHasSearched(false)
 
-      // Include POI (businesses, landmarks) and addresses in search
-      // Types: poi = points of interest, address = street addresses, place = cities/neighborhoods
-      const types = 'poi,address,place'
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const mapCenter = map.current?.getCenter()
+        const location = mapCenter ? `${mapCenter.lat()},${mapCenter.lng()}` : ''
 
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
-        `access_token=${mapboxgl.accessToken}&` +
-        `types=${types}&` +
-        `country=us&` +
-        `limit=10&` +
-        (proximity ? `proximity=${proximity}` : '')
-      )
-      const data = await response.json()
-      setSearchResults(data.features || [])
-    } catch (error) {
-      console.error('Search error:', error)
-      setSearchResults([])
-    } finally {
-      setIsSearching(false)
-    }
+        const params = new URLSearchParams({
+          input: query,
+          ...(location && { location }),
+          radius: '50000'
+        })
+
+        const response = await fetch(`/api/google-places/autocomplete?${params.toString()}`)
+        const data = await response.json()
+
+        if (data.error) {
+          console.error('Google Places API error:', data.error)
+          setSearchResults([])
+          return
+        }
+
+        const transformedResults: SearchResult[] = (data.predictions || [])
+          .slice(0, 5)
+          .map((pred: GooglePlacesPrediction) => ({
+            id: pred.place_id,
+            place_name: pred.description,
+            center: [0, 0] as [number, number],
+            place_type: pred.types || ['establishment'],
+            properties: {
+              category: pred.types?.[0] || 'establishment'
+            }
+          }))
+
+        setSearchResults(transformedResults)
+        setHasSearched(true)
+      } catch (error) {
+        console.error('Search error:', error)
+        setSearchResults([])
+        setHasSearched(true)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
   }
 
-  const selectSearchResult = (result: SearchResult) => {
+  const selectSearchResult = async (result: SearchResult) => {
     if (!map.current) return
 
-    // Fly to location
-    map.current.flyTo({
-      center: result.center,
-      zoom: 14
-    })
+    try {
+      const response = await fetch(`/api/google-places/details?place_id=${result.id}`)
 
-    // Remove existing search marker if any
-    if (searchMarkerRef.current) {
-      searchMarkerRef.current.remove()
+      if (!response.ok) {
+        console.error('Failed to fetch place details: HTTP', response.status)
+        alert('Failed to load place details. Please try again.')
+        return
+      }
+
+      const data = await response.json()
+
+      if (data.error || !data.result) {
+        console.error('Failed to fetch place details:', data.error)
+        alert('Failed to load place details. Please try again.')
+        return
+      }
+
+      const placeDetails = data.result
+      const location = placeDetails.geometry?.location
+
+      if (!location) {
+        console.error('No location found in place details')
+        return
+      }
+
+      result.center = [location.lng, location.lat]
+
+      // Fly to location using panTo and setZoom
+      map.current.panTo({ lat: location.lat, lng: location.lng })
+      map.current.setZoom(14)
+
+      // Remove existing search marker if any
+      if (searchMarkerRef.current) {
+        searchMarkerRef.current.setMap(null)
+      }
+
+      // Store the selected location
+      setSelectedSearchLocation({
+        ...result,
+        placeDetails
+      })
+
+      // Create InfoWindow content with liquid glass styling
+      const infoWindowContent = document.createElement('div')
+      infoWindowContent.style.padding = '12px'
+      infoWindowContent.style.minWidth = '200px'
+      infoWindowContent.style.fontFamily = "'Share Tech Mono', monospace"
+      infoWindowContent.style.color = '#F4F4F5'
+
+      const title = document.createElement('div')
+      title.textContent = placeDetails.name || result.place_name.split(',')[0]
+      title.style.fontWeight = '700'
+      title.style.marginBottom = '8px'
+      title.style.fontSize = '14px'
+      title.style.color = '#F4F4F5'
+      title.style.textTransform = 'uppercase'
+      title.style.letterSpacing = '0.05em'
+      infoWindowContent.appendChild(title)
+
+      if (placeDetails.rating) {
+        const ratingDiv = document.createElement('div')
+        ratingDiv.style.fontSize = '12px'
+        ratingDiv.style.color = '#f59e0b'
+        ratingDiv.style.marginBottom = '8px'
+        ratingDiv.style.fontWeight = '600'
+        ratingDiv.textContent = `★ ${placeDetails.rating} (${placeDetails.user_ratings_total || 0} reviews)`
+        infoWindowContent.appendChild(ratingDiv)
+      }
+
+      if (placeDetails.business_status) {
+        const statusDiv = document.createElement('div')
+        statusDiv.style.fontSize = '10px'
+        statusDiv.style.marginBottom = '8px'
+        statusDiv.style.fontWeight = '700'
+        statusDiv.style.textTransform = 'uppercase'
+        statusDiv.style.letterSpacing = '0.1em'
+
+        if (placeDetails.business_status === 'OPERATIONAL') {
+          statusDiv.style.color = '#22c55e'
+          statusDiv.textContent = '● OPEN'
+        } else if (placeDetails.business_status === 'CLOSED_TEMPORARILY') {
+          statusDiv.style.color = '#f59e0b'
+          statusDiv.textContent = '● TEMPORARILY CLOSED'
+        } else if (placeDetails.business_status === 'CLOSED_PERMANENTLY') {
+          statusDiv.style.color = '#E63946'
+          statusDiv.textContent = '● PERMANENTLY CLOSED'
+        }
+        infoWindowContent.appendChild(statusDiv)
+      }
+
+      const address = document.createElement('div')
+      address.textContent = placeDetails.formatted_address || result.place_name
+      address.style.fontSize = '11px'
+      address.style.color = '#A1A1AA'
+      address.style.marginBottom = '12px'
+      address.style.lineHeight = '1.5'
+      address.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)'
+      address.style.paddingTop = '8px'
+      infoWindowContent.appendChild(address)
+
+      const button = document.createElement('button')
+      button.textContent = 'ADD TO COLLECTION'
+      button.style.width = '100%'
+      button.style.padding = '10px'
+      button.style.background = '#E63946'
+      button.style.color = 'white'
+      button.style.border = '1px solid #E63946'
+      button.style.borderRadius = '4px'
+      button.style.cursor = 'pointer'
+      button.style.fontFamily = "'Share Tech Mono', monospace"
+      button.style.fontWeight = '700'
+      button.style.fontSize = '11px'
+      button.style.letterSpacing = '0.1em'
+      button.style.transition = 'all 0.15s ease'
+      button.onmouseenter = () => {
+        button.style.background = '#D62839'
+      }
+      button.onmouseleave = () => {
+        button.style.background = '#E63946'
+      }
+      button.onclick = () => {
+        setShowAddLocationModal(true)
+      }
+      infoWindowContent.appendChild(button)
+
+      const infoWindow = new google.maps.InfoWindow({
+        content: infoWindowContent
+      })
+
+      // Create marker
+      const marker = new google.maps.Marker({
+        position: { lat: location.lat, lng: location.lng },
+        map: map.current,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: '#E63946',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2
+        }
+      })
+
+      infoWindow.open(map.current, marker)
+      searchMarkerRef.current = marker
+
+      // Clear search
+      setSearchQuery('')
+      setSearchResults([])
+      setShowSearch(false)
+
+    } catch (error) {
+      console.error('Error selecting search result:', error)
+      alert('An error occurred while loading the place. Please try again.')
     }
-
-    // Store the selected location
-    setSelectedSearchLocation(result)
-
-    // Create popup with "Add to Collection" button
-    const popupNode = document.createElement('div')
-    popupNode.style.padding = '0.75rem'
-    popupNode.style.minWidth = '200px'
-
-    const title = document.createElement('div')
-    title.textContent = result.place_name.split(',')[0]
-    title.style.fontWeight = '700'
-    title.style.marginBottom = '0.5rem'
-    title.style.fontSize = '0.875rem'
-    popupNode.appendChild(title)
-
-    const address = document.createElement('div')
-    address.textContent = result.place_name
-    address.style.fontSize = '0.75rem'
-    address.style.color = 'var(--muted-foreground)'
-    address.style.marginBottom = '0.75rem'
-    popupNode.appendChild(address)
-
-    const button = document.createElement('button')
-    button.textContent = 'ADD TO COLLECTION'
-    button.style.width = '100%'
-    button.style.padding = '0.5rem'
-    button.style.background = 'var(--accent)'
-    button.style.color = 'white'
-    button.style.border = '2px solid var(--accent)'
-    button.style.borderRadius = 'var(--radius)'
-    button.style.cursor = 'pointer'
-    button.style.fontFamily = 'var(--font-mono)'
-    button.style.fontWeight = '700'
-    button.style.fontSize = '0.75rem'
-    button.style.letterSpacing = '0.1em'
-    button.onclick = () => {
-      setShowAddLocationModal(true)
-    }
-    popupNode.appendChild(button)
-
-    const popup = new mapboxgl.Popup({
-      offset: 25,
-      closeButton: true,
-      closeOnClick: false
-    }).setDOMContent(popupNode)
-
-    // Create marker
-    const marker = new mapboxgl.Marker({ color: '#E63946' })
-      .setLngLat(result.center)
-      .setPopup(popup)
-      .addTo(map.current)
-
-    marker.togglePopup()
-    searchMarkerRef.current = marker
-
-    // Clear search
-    setSearchQuery('')
-    setSearchResults([])
-    setShowSearch(false)
   }
 
   // Load pins from database
@@ -259,7 +508,6 @@ export default function Map({ onMapClick }: MapProps) {
 
     setLoadingPins(true)
     try {
-      // Load all pins for client-side filtering
       const { data, error } = await supabase
         .from('pins')
         .select('*')
@@ -339,7 +587,7 @@ export default function Map({ onMapClick }: MapProps) {
     }
   }
 
-  // Load discover collections (recent public collections from other users)
+  // Load discover collections
   const loadDiscoverCollections = async () => {
     if (!user) return
 
@@ -380,7 +628,7 @@ export default function Map({ onMapClick }: MapProps) {
   // Filter pins by collection
   const filterPinsByCollection = (collectionId: string | null) => {
     if (collectionId === null) {
-      setPins(allPins) // Show all pins
+      setPins(allPins)
     } else {
       setPins(allPins.filter(pin => pin.collection_id === collectionId))
     }
@@ -391,24 +639,20 @@ export default function Map({ onMapClick }: MapProps) {
     if (!map.current || pinsToFit.length === 0) return
 
     if (pinsToFit.length === 1) {
-      // Single pin - fly to it
       const pin = pinsToFit[0]
-      map.current.flyTo({
-        center: [pin.longitude, pin.latitude],
-        zoom: 14,
-        duration: 1000
-      })
+      map.current.panTo({ lat: pin.latitude, lng: pin.longitude })
+      map.current.setZoom(14)
     } else {
-      // Multiple pins - calculate bounds
-      const bounds = new mapboxgl.LngLatBounds()
+      const bounds = new google.maps.LatLngBounds()
       pinsToFit.forEach(pin => {
-        bounds.extend([pin.longitude, pin.latitude])
+        bounds.extend({ lat: pin.latitude, lng: pin.longitude })
       })
 
       map.current.fitBounds(bounds, {
-        padding: { top: 80, bottom: 80, left: 350, right: 80 },
-        duration: 1000,
-        maxZoom: 15
+        top: 80,
+        bottom: 80,
+        left: 350,
+        right: 80
       })
     }
   }
@@ -422,13 +666,10 @@ export default function Map({ onMapClick }: MapProps) {
     setSelectedCollectionId(collectionId)
 
     if (isFriendCollection && collectionId) {
-      // Load pins for friend's collection
       loadFriendCollectionPins(collectionId)
     } else if (isDiscoverCollection && collectionId) {
-      // Load pins for discover collection
       loadDiscoverCollectionPins(collectionId)
     } else {
-      // Existing logic for user's own collections
       const filteredPins = collectionId === null
         ? allPins
         : allPins.filter(pin => pin.collection_id === collectionId)
@@ -442,7 +683,6 @@ export default function Map({ onMapClick }: MapProps) {
   const handleDeleteCollection = async (collectionId: string, collectionTitle: string) => {
     if (!user) return
 
-    // Confirm deletion
     const confirmed = window.confirm(
       `Delete collection "${collectionTitle}"?\n\nThis will permanently delete the collection and all its pins. This action cannot be undone.`
     )
@@ -453,13 +693,11 @@ export default function Map({ onMapClick }: MapProps) {
       const result = await DatabaseService.deleteCollection(collectionId, user.id)
 
       if (result.success) {
-        // If this was the selected collection, clear selection
         if (selectedCollectionId === collectionId) {
           setSelectedCollectionId(null)
           setPins(allPins)
         }
 
-        // Reload collections and pins
         loadCollections()
         loadPins()
 
@@ -473,246 +711,250 @@ export default function Map({ onMapClick }: MapProps) {
     }
   }
 
-  // Store marker references to clean them up properly
-  const markersRef = useRef<mapboxgl.Marker[]>([])
-
-  // Enhanced addPinsToMap function with better debugging
-  const addPinsToMap = () => {
-    if (!map.current) {
-      console.warn('⚠️ Cannot add pins: map not initialized')
-      return
-    }
-
-    if (!isStyleLoaded) {
-      console.warn('⚠️ Cannot add pins: map style not loaded yet')
+  // Add pins to map as individual markers
+  const addPinsToMap = useCallback(() => {
+    if (!map.current || !isMapLoaded) {
+      console.warn('⚠️ Cannot add pins: map not initialized or loaded')
       return
     }
 
     console.log('🔧 Adding pins to map:', pins.length, 'pins')
-    console.log('📍 Pin IDs:', pins.map(p => p.id))
 
-    // Remove existing pin source and layers if they exist
-    if (map.current.getSource('pins')) {
-      console.log('🗑️ Removing existing pin layers and source')
-      try {
-        if (map.current.getLayer('pins-layer')) {
-          map.current.removeLayer('pins-layer')
-          console.log('✅ Removed pins-layer')
-        }
-        if (map.current.getLayer('pins-icons')) {
-          map.current.removeLayer('pins-icons')
-          console.log('✅ Removed pins-icons')
-        }
-        map.current.removeSource('pins')
-        console.log('✅ Removed pins source')
-      } catch (error) {
-        console.error('❌ Error removing existing layers:', error)
-      }
-    }
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.setMap(null))
+    markersRef.current = []
 
     if (pins.length === 0) {
       console.log('⚠️ No pins to display')
       return
     }
 
-    // Create GeoJSON data from pins
-    const geojsonData = {
-      type: 'FeatureCollection' as const,
-      features: pins.map(pin => ({
-        type: 'Feature' as const,
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [pin.longitude, pin.latitude]
-        },
-        properties: {
-          id: pin.id,
-          title: pin.title,
-          description: pin.description || '',
-          category: pin.category || 'other',
-          image_url: pin.image_url || '',
-          created_at: pin.created_at,
-          user_id: pin.user_id,
-          icon: getCategoryIcon(pin.category)
-        }
-      }))
-    }
-
-    console.log('📊 GeoJSON features:', geojsonData.features.length)
-
-    // Add source
-    map.current.addSource('pins', {
-      type: 'geojson',
-      data: geojsonData
+    // Create a map of collection ID to color for quick lookup
+    const collectionColorMap: Record<string, string> = {}
+    collections.forEach(collection => {
+      collectionColorMap[collection.id] = collection.color || '#E63946'
     })
 
-    console.log('✅ Added pins source to map')
+    // Create markers for each pin
+    pins.forEach(pin => {
+      // Get the collection color for this pin, default to red if not found
+      const pinColor = collectionColorMap[pin.collection_id] || '#E63946'
 
-    // Add circle pins layer
-    map.current.addLayer({
-      id: 'pins-layer',
-      type: 'circle',
-      source: 'pins',
-      paint: {
-        'circle-radius': 8,
-        'circle-color': '#dc2626',
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff'
-      }
-    })
-
-    console.log('✅ Added pins-layer (circles)')
-
-    // Add category icons layer
-    map.current.addLayer({
-      id: 'pins-icons',
-      type: 'symbol',
-      source: 'pins',
-      layout: {
-        'text-field': ['get', 'icon'],
-        'text-size': 12,
-        'text-allow-overlap': true,
-        'text-ignore-placement': true
-      },
-      paint: {
-        'text-color': '#ffffff'
-      }
-    })
-
-    console.log('✅ Added pins-icons layer (text)')
-
-    // Add click handlers for popups
-    const clickHandler = (e: any) => {
-      if (!e.features || !e.features[0]) return
-      
-      const feature = e.features[0]
-      const coordinates = (feature.geometry as any).coordinates.slice()
-      const props = feature.properties
-
-      console.log('🖱️ Pin clicked:', props.title)
-
-      // Ensure popup appears correctly
-      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360
-      }
-
-      // Check if this pin belongs to the current user
-      const isOwnPin = user && props.user_id === user.id
-
-      const editButton = isOwnPin ?
-        `<button onclick="editPin('${props.id}')" style="background: var(--color-red); color: white; border: 2px solid var(--color-red); padding: 6px 12px; cursor: pointer; font-size: 10px; margin-top: 8px; font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.1em;">EDIT</button>` : ''
-
-      const viewImagesButton = `<button onclick="viewPinImages('${props.id}', '${props.title.replace(/'/g, "\\'")}')" style="background: transparent; color: var(--color-white); border: 2px solid var(--color-white); padding: 6px 12px; cursor: pointer; font-size: 10px; margin-top: 8px; margin-right: 8px; font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.1em;">VIEW</button>`
-
-      const popupContent = `
-        <div style="min-width: 200px; max-width: 280px; font-family: var(--font-mono);">
-          <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">${props.title}</h3>
-          <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--muted-foreground);">${props.description}</p>
-          <div style="font-size: 10px; color: var(--color-red); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">[${props.category || 'other'}]</div>
-          ${props.image_url ?
-            `<img src="${props.image_url}" style="width: 100%; height: 120px; object-fit: cover; margin: 8px 0; border: 2px solid var(--border);" alt="${props.title}" />` : ''}
-          <div style="font-size: 10px; color: var(--muted-foreground); border-top: 2px solid var(--border); padding-top: 8px; margin-top: 8px; font-weight: 600; letter-spacing: 0.05em;">
-            ${new Date(props.created_at).toLocaleDateString()}
-          </div>
-          ${viewImagesButton}
-          ${editButton}
-        </div>
-      `
-
-      new mapboxgl.Popup({
-        closeButton: true,
-        closeOnClick: false, // Disable close on click so we can handle it manually
-        maxWidth: '300px'
+      const marker = new google.maps.Marker({
+        position: { lat: pin.latitude, lng: pin.longitude },
+        map: map.current!,
+        icon: createMarkerIcon(pin.category, pinColor),
+        title: pin.title
       })
-        .setLngLat(coordinates)
-        .setHTML(popupContent)
-        .addTo(map.current!)
-    }
 
-    // Add click handlers to both layers
-    map.current.on('click', 'pins-layer', clickHandler)
-    map.current.on('click', 'pins-icons', clickHandler)
+      // Create click handler for marker
+      marker.addListener('click', () => {
+        console.log('🖱️ Pin clicked:', pin.title)
 
-    // Add hover effects
-    const mouseEnterHandler = () => {
-      if (map.current) {
-        map.current.getCanvas().style.cursor = 'pointer'
-        map.current.setPaintProperty('pins-layer', 'circle-radius', 10)
-      }
-    }
+        // Close any open InfoWindow
+        if (activeInfoWindowRef.current) {
+          activeInfoWindowRef.current.close()
+        }
 
-    const mouseLeaveHandler = () => {
-      if (map.current) {
-        map.current.getCanvas().style.cursor = ''
-        map.current.setPaintProperty('pins-layer', 'circle-radius', 8)
-      }
-    }
+        // Check if this pin belongs to the current user
+        const isOwnPin = user && pin.user_id === user.id
 
-    map.current.on('mouseenter', 'pins-layer', mouseEnterHandler)
-    map.current.on('mouseleave', 'pins-layer', mouseLeaveHandler)
-    map.current.on('mouseenter', 'pins-icons', mouseEnterHandler)
-    map.current.on('mouseleave', 'pins-icons', mouseLeaveHandler)
+        const infoWindowContent = document.createElement('div')
+        infoWindowContent.style.minWidth = '200px'
+        infoWindowContent.style.maxWidth = '280px'
+        infoWindowContent.style.fontFamily = "'Share Tech Mono', monospace"
+        infoWindowContent.style.padding = '12px'
+        infoWindowContent.style.color = '#F4F4F5'
+
+        const title = document.createElement('h3')
+        title.textContent = pin.title
+        title.style.margin = '0 0 8px 0'
+        title.style.fontSize = '14px'
+        title.style.fontWeight = '700'
+        title.style.textTransform = 'uppercase'
+        title.style.letterSpacing = '0.1em'
+        title.style.color = '#F4F4F5'
+        infoWindowContent.appendChild(title)
+
+        if (pin.description) {
+          const description = document.createElement('p')
+          description.textContent = pin.description
+          description.style.margin = '0 0 8px 0'
+          description.style.fontSize = '12px'
+          description.style.color = '#A1A1AA'
+          description.style.lineHeight = '1.5'
+          infoWindowContent.appendChild(description)
+        }
+
+        const category = document.createElement('div')
+        category.textContent = `[${pin.category || 'other'}]`
+        category.style.fontSize = '10px'
+        category.style.color = '#E63946'
+        category.style.fontWeight = '700'
+        category.style.letterSpacing = '0.1em'
+        category.style.textTransform = 'uppercase'
+        infoWindowContent.appendChild(category)
+
+        if (pin.image_url) {
+          const image = document.createElement('img')
+          image.src = pin.image_url
+          image.alt = pin.title
+          image.style.width = '100%'
+          image.style.height = '120px'
+          image.style.objectFit = 'cover'
+          image.style.margin = '8px 0'
+          image.style.border = '1px solid rgba(255, 255, 255, 0.15)'
+          image.style.borderRadius = '4px'
+          infoWindowContent.appendChild(image)
+        }
+
+        const date = document.createElement('div')
+        date.textContent = new Date(pin.created_at).toLocaleDateString()
+        date.style.fontSize = '10px'
+        date.style.color = '#A1A1AA'
+        date.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)'
+        date.style.paddingTop = '8px'
+        date.style.marginTop = '8px'
+        date.style.fontWeight = '600'
+        date.style.letterSpacing = '0.05em'
+        infoWindowContent.appendChild(date)
+
+        const buttonContainer = document.createElement('div')
+        buttonContainer.style.marginTop = '12px'
+        buttonContainer.style.display = 'flex'
+        buttonContainer.style.gap = '8px'
+
+        const viewButton = document.createElement('button')
+        viewButton.textContent = 'VIEW'
+        viewButton.style.background = 'transparent'
+        viewButton.style.color = '#F4F4F5'
+        viewButton.style.border = '1px solid rgba(255, 255, 255, 0.3)'
+        viewButton.style.padding = '8px 12px'
+        viewButton.style.cursor = 'pointer'
+        viewButton.style.fontSize = '10px'
+        viewButton.style.fontFamily = "'Share Tech Mono', monospace"
+        viewButton.style.fontWeight = '700'
+        viewButton.style.letterSpacing = '0.1em'
+        viewButton.style.flex = '1'
+        viewButton.style.borderRadius = '4px'
+        viewButton.style.transition = 'all 0.15s ease'
+        viewButton.onmouseenter = () => {
+          viewButton.style.background = 'rgba(255, 255, 255, 0.1)'
+          viewButton.style.borderColor = '#F4F4F5'
+        }
+        viewButton.onmouseleave = () => {
+          viewButton.style.background = 'transparent'
+          viewButton.style.borderColor = 'rgba(255, 255, 255, 0.3)'
+        }
+        viewButton.onclick = () => {
+          setSelectedPinForImages({ id: pin.id, title: pin.title })
+          setShowPinProfile(true)
+          if (activeInfoWindowRef.current) {
+            activeInfoWindowRef.current.close()
+          }
+        }
+        buttonContainer.appendChild(viewButton)
+
+        if (isOwnPin) {
+          const editButton = document.createElement('button')
+          editButton.textContent = 'EDIT'
+          editButton.style.background = '#E63946'
+          editButton.style.color = 'white'
+          editButton.style.border = '1px solid #E63946'
+          editButton.style.padding = '8px 12px'
+          editButton.style.cursor = 'pointer'
+          editButton.style.fontSize = '10px'
+          editButton.style.fontFamily = "'Share Tech Mono', monospace"
+          editButton.style.fontWeight = '700'
+          editButton.style.letterSpacing = '0.1em'
+          editButton.style.flex = '1'
+          editButton.style.borderRadius = '4px'
+          editButton.style.transition = 'all 0.15s ease'
+          editButton.onmouseenter = () => {
+            editButton.style.background = '#D62839'
+          }
+          editButton.onmouseleave = () => {
+            editButton.style.background = '#E63946'
+          }
+          editButton.onclick = () => {
+            setSelectedPin(pin)
+            setShowEditModal(true)
+            if (activeInfoWindowRef.current) {
+              activeInfoWindowRef.current.close()
+            }
+          }
+          buttonContainer.appendChild(editButton)
+        }
+
+        infoWindowContent.appendChild(buttonContainer)
+
+        const infoWindow = new google.maps.InfoWindow({
+          content: infoWindowContent
+        })
+
+        infoWindow.open(map.current!, marker)
+        activeInfoWindowRef.current = infoWindow
+      })
+
+      markersRef.current.push(marker)
+    })
 
     console.log('🎯 Pin display setup complete')
-  }
+  }, [pins, isMapLoaded, user, collections])
 
-  // Global function for edit button clicks (called from popup HTML)
+  // Cleanup search timeout on unmount
   useEffect(() => {
-    // Edit pin function (existing)
-    (window as any).editPin = (pinId: string) => {
-      const pin = pins.find(p => p.id === pinId)
-      if (pin && user && pin.user_id === user.id) {
-        setSelectedPin(pin)
-        setShowEditModal(true)
-        
-        // Close any open popups
-        const popups = document.getElementsByClassName('mapboxgl-popup')
-        for (let i = 0; i < popups.length; i++) {
-          const popup = popups[i] as HTMLElement
-          popup.remove()
-        }
-      }
-    }
-
-    // View pin images function (now opens pin profile)
-    (window as any).viewPinImages = (pinId: string, pinTitle: string) => {
-      console.log('📍 Opening pin profile for:', pinId, pinTitle)
-      setSelectedPinForImages({ id: pinId, title: pinTitle })
-      setShowPinProfile(true)
-
-      // Close any open popups
-      const popups = document.getElementsByClassName('mapboxgl-popup')
-      for (let i = 0; i < popups.length; i++) {
-        const popup = popups[i] as HTMLElement
-        popup.remove()
-      }
-    }
-
     return () => {
-      delete (window as any).editPin
-      delete (window as any).viewPinImages
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
     }
-  }, [pins, user])
+  }, [])
 
   // Load saved map style from preferences
   useEffect(() => {
     if (preferences.map_style && preferences.map_style !== mapStyle) {
       console.log('📍 Loading saved map style:', preferences.map_style)
       setMapStyle(preferences.map_style)
+
+      // Apply the style to the map if it's already initialized
+      if (map.current) {
+        if (preferences.map_style === 'dark') {
+          map.current.setMapTypeId(google.maps.MapTypeId.ROADMAP)
+          const styledMapType = new google.maps.StyledMapType([...HIDE_POI_STYLES, ...DARK_MAP_STYLES], { name: 'Dark' })
+          map.current.mapTypes.set('dark_mode', styledMapType)
+          map.current.setMapTypeId('dark_mode')
+        } else {
+          map.current.setMapTypeId(preferences.map_style as google.maps.MapTypeId)
+          map.current.setOptions({ styles: HIDE_POI_STYLES })
+        }
+      }
     }
-  }, [preferences.map_style])
+  }, [preferences.map_style, mapStyle])
 
   // Handler to change map style and save preference
   const handleMapStyleChange = (newStyle: string) => {
     console.log('🎨 Changing map style to:', newStyle)
     setMapStyle(newStyle)
 
-    // Save to user preferences (only if logged in)
     if (user) {
       updatePreference('map_style', newStyle)
     }
+
+    if (map.current) {
+      if (newStyle === 'dark') {
+        map.current.setMapTypeId(google.maps.MapTypeId.ROADMAP)
+        const styledMapType = new google.maps.StyledMapType([...HIDE_POI_STYLES, ...DARK_MAP_STYLES], { name: 'Dark' })
+        map.current.mapTypes.set('dark_mode', styledMapType)
+        map.current.setMapTypeId('dark_mode')
+      } else {
+        map.current.setMapTypeId(newStyle as google.maps.MapTypeId)
+        map.current.setOptions({ styles: HIDE_POI_STYLES })
+      }
+    }
   }
 
-  // Load pins when user changes or component mounts
+  // Load pins when user changes
   useEffect(() => {
     if (user) {
       loadPins()
@@ -727,204 +969,137 @@ export default function Map({ onMapClick }: MapProps) {
     filterPinsByCollection(selectedCollectionId)
   }, [allPins, selectedCollectionId])
 
-  // Enhanced useEffect to handle all pin changes (add, update, delete)
+  // Update markers when pins change
   useEffect(() => {
-    console.log('🔄 useEffect triggered - pins changed, length:', pins.length)
-    if (map.current && isStyleLoaded) {
-      // Always call addPinsToMap - it handles empty pins array correctly
+    if (map.current && isMapLoaded) {
       addPinsToMap()
     }
-  }, [pins, isStyleLoaded]) // This dependency ensures map updates whenever pins array changes or style loads
+  }, [pins, isMapLoaded, addPinsToMap])
 
-  // Initialize map only once
+  // Initialize map
   useEffect(() => {
     if (!mapContainer.current || map.current) return
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: mapStyle,
-      center: [lng, lat],
-      zoom: zoom,
-      pitch: 0,
-      bearing: 0,
-      antialias: true,
-      dragPan: true,
-      scrollZoom: true,
-      doubleClickZoom: false, // Disable double-click zoom to prevent conflicts with pin creation
-      touchZoomRotate: true
+    const mapInstance = new google.maps.Map(mapContainer.current, {
+      center: { lat, lng },
+      zoom,
+      mapTypeId: mapStyle === 'dark' ? google.maps.MapTypeId.ROADMAP : mapStyle as google.maps.MapTypeId,
+      disableDoubleClickZoom: true,
+      zoomControl: true,
+      fullscreenControl: true,
+      mapTypeControl: false,
+      streetViewControl: false,
+      clickableIcons: false, // Disable clicking on default POI markers
+      styles: mapStyle === 'dark' ? [] : HIDE_POI_STYLES // Hide POIs for non-dark modes
     })
 
-    // Add navigation control
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
+    map.current = mapInstance
 
-    // Add fullscreen control
-    map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right')
+    // Add dark mode if needed (with POI hiding merged in)
+    if (mapStyle === 'dark') {
+      const styledMapType = new google.maps.StyledMapType([...HIDE_POI_STYLES, ...DARK_MAP_STYLES], { name: 'Dark' })
+      mapInstance.mapTypes.set('dark_mode', styledMapType)
+      mapInstance.setMapTypeId('dark_mode')
+    }
 
-    // Add geolocate control
-    map.current.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true
-        },
-        trackUserLocation: true,
-        showUserHeading: true
-      }),
-      'top-right'
-    )
+    // Add custom geolocate control
+    const geolocateButton = document.createElement('button')
+    geolocateButton.textContent = '⊙'
+    geolocateButton.style.backgroundColor = 'white'
+    geolocateButton.style.border = '2px solid white'
+    geolocateButton.style.borderRadius = '2px'
+    geolocateButton.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)'
+    geolocateButton.style.cursor = 'pointer'
+    geolocateButton.style.width = '40px'
+    geolocateButton.style.height = '40px'
+    geolocateButton.style.margin = '10px'
+    geolocateButton.style.fontSize = '18px'
+    geolocateButton.title = 'Go to your location'
 
-    map.current.on('move', () => {
-      if (!map.current) return
-      setLng(Number(map.current.getCenter().lng.toFixed(4)))
-      setLat(Number(map.current.getCenter().lat.toFixed(4)))
-      setZoom(Number(map.current.getZoom().toFixed(2)))
+    geolocateButton.addEventListener('click', () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            }
+            mapInstance.setCenter(pos)
+            mapInstance.setZoom(15)
+          },
+          () => {
+            alert('Error: The Geolocation service failed.')
+          }
+        )
+      } else {
+        alert('Error: Your browser doesn\'t support geolocation.')
+      }
     })
 
-    // Wait for style to load before allowing pin operations
-    map.current.on('load', () => {
-      console.log('✅ Map style loaded')
-      setIsStyleLoaded(true)
+    mapInstance.controls[google.maps.ControlPosition.RIGHT_TOP].push(geolocateButton)
+
+    // Add event listeners for position tracking
+    mapInstance.addListener('center_changed', () => {
+      const center = mapInstance.getCenter()
+      if (center) {
+        setLng(Number(center.lng().toFixed(4)))
+        setLat(Number(center.lat().toFixed(4)))
+      }
     })
 
-    return () => {
-      if (map.current) {
-        map.current.remove()
-        map.current = null
+    mapInstance.addListener('zoom_changed', () => {
+      setZoom(Number(mapInstance.getZoom()?.toFixed(2) || 11))
+    })
+
+    // Handle map clicks to close InfoWindows
+    mapInstance.addListener('click', () => {
+      if (activeInfoWindowRef.current) {
+        activeInfoWindowRef.current.close()
       }
-    }
-  }, [])
+    })
 
-  // Handle click events for popup closing and pin viewing
-  useEffect(() => {
-    if (!map.current) return
-
-    const handleClick = (e: mapboxgl.MapMouseEvent) => {
-      // Check if we clicked on a pin layer - if so, don't close popups
-      // First check if the layers exist to avoid errors
-      const layersToCheck = []
-      if (map.current!.getLayer('pins-layer')) {
-        layersToCheck.push('pins-layer')
-      }
-      if (map.current!.getLayer('pins-icons')) {
-        layersToCheck.push('pins-icons')
-      }
-
-      if (layersToCheck.length > 0) {
-        const features = map.current!.queryRenderedFeatures(e.point, {
-          layers: layersToCheck
-        })
-
-        if (features.length > 0) {
-          console.log('🎯 Clicked on existing pin, keeping popup open')
-          return // Don't close popups if we clicked on a pin
-        }
-      }
-
-      // Close any open popups when clicking elsewhere on the map
-      console.log('🗺️ Clicked on map, closing any open popups')
-      const popups = document.getElementsByClassName('mapboxgl-popup')
-      for (let i = popups.length - 1; i >= 0; i--) {
-        const popup = popups[i] as HTMLElement
-        popup.remove()
-      }
-    }
-
-    map.current.on('click', handleClick)
-
-    return () => {
-      if (map.current) {
-        map.current.off('click', handleClick)
-      }
-    }
-  }, [user])
-
-  // Handle double-click events for pin creation
-  useEffect(() => {
-    if (!map.current) return
-
-    const handleDoubleClick = (e: mapboxgl.MapMouseEvent) => {
-      // Check if we double-clicked on a pin layer - if so, don't create a new pin
-      const layersToCheck = []
-      if (map.current!.getLayer('pins-layer')) {
-        layersToCheck.push('pins-layer')
-      }
-      if (map.current!.getLayer('pins-icons')) {
-        layersToCheck.push('pins-icons')
-      }
-
-      if (layersToCheck.length > 0) {
-        const features = map.current!.queryRenderedFeatures(e.point, {
-          layers: layersToCheck
-        })
-
-        if (features.length > 0) {
-          console.log('🎯 Double-clicked on existing pin, not creating new pin')
-          return // Don't create a new pin if we double-clicked on an existing one
-        }
-      }
-
-      // Only create pins for logged-in users
+    // Handle double-click for pin creation
+    mapInstance.addListener('dblclick', (e: google.maps.MapMouseEvent) => {
       if (!user) {
         alert('Please log in to create pins')
         return
       }
 
-      console.log('📍 Double-clicked! Creating new pin at:', e.lngLat.lat, e.lngLat.lng)
+      if (e.latLng) {
+        console.log('📍 Double-clicked! Creating new pin at:', e.latLng.lat(), e.latLng.lng())
 
-      // Close any open popups first
-      const popups = document.getElementsByClassName('mapboxgl-popup')
-      for (let i = popups.length - 1; i >= 0; i--) {
-        const popup = popups[i] as HTMLElement
-        popup.remove()
+        if (activeInfoWindowRef.current) {
+          activeInfoWindowRef.current.close()
+        }
+
+        setSelectedLocation({
+          lat: e.latLng.lat(),
+          lng: e.latLng.lng()
+        })
+        setShowPinModal(true)
+
+        onMapClick?.(e.latLng.lng(), e.latLng.lat())
       }
+    })
 
-      // Set selected location and show modal
-      setSelectedLocation({
-        lat: e.lngLat.lat,
-        lng: e.lngLat.lng
-      })
-      setShowPinModal(true)
-
-      // Call original onMapClick if provided
-      onMapClick?.(e.lngLat.lng, e.lngLat.lat)
-    }
-
-    map.current.on('dblclick', handleDoubleClick)
+    setIsMapLoaded(true)
+    console.log('✅ Google Map initialized')
 
     return () => {
-      if (map.current) {
-        map.current.off('dblclick', handleDoubleClick)
-      }
+      // Cleanup markers
+      markersRef.current.forEach(marker => marker.setMap(null))
+      markersRef.current = []
     }
-  }, [onMapClick, user])
-
-  // Update map style when changed
-  useEffect(() => {
-    if (map.current) {
-      console.log('🎨 Changing map style to:', mapStyle)
-      setIsStyleLoaded(false) // Style is no longer loaded
-      map.current.setStyle(mapStyle)
-
-      // Wait for the new style to load
-      const handleStyleLoad = () => {
-        console.log('✅ New map style loaded')
-        setIsStyleLoaded(true)
-      }
-
-      map.current.once('style.load', handleStyleLoad)
-    }
-  }, [mapStyle])
+  }, [])
 
   // Handle pin creation success
   const handlePinCreated = (pin: Pin) => {
-    // Add to allPins cache
     setAllPins(prev => [pin, ...prev])
 
-    // If no filter OR pin matches current filter, add to visible pins
     if (selectedCollectionId === null || pin.collection_id === selectedCollectionId) {
       setPins(prev => [pin, ...prev])
     }
 
-    // Refresh collections to update pin counts
     loadCollections()
 
     setShowPinModal(false)
@@ -933,7 +1108,6 @@ export default function Map({ onMapClick }: MapProps) {
 
   // Handle pin update success
   const handlePinUpdated = (updatedPin: Pin) => {
-    // Update in both caches
     setAllPins(prev => prev.map(pin =>
       pin.id === updatedPin.id ? updatedPin : pin
     ))
@@ -944,31 +1118,21 @@ export default function Map({ onMapClick }: MapProps) {
     setSelectedPin(null)
   }
 
-  // Enhanced handlePinDeleted with modal auto-close
+  // Handle pin deletion
   const handlePinDeleted = (pinId: string) => {
     console.log('🗑️ Map: handlePinDeleted called for pin:', pinId)
-    console.log('📊 Current pins before deletion:', pins.length)
 
-    // Remove from both caches
     setAllPins(prev => prev.filter(pin => pin.id !== pinId))
-    setPins(prev => {
-      const newPins = prev.filter(pin => pin.id !== pinId)
-      console.log('📊 Pins after filtering:', newPins.length)
-      return newPins
-    })
+    setPins(prev => prev.filter(pin => pin.id !== pinId))
 
-    // Refresh collections to update pin counts
     loadCollections()
 
-    // Auto-close any modals that are showing the deleted pin
     if (selectedPin?.id === pinId) {
-      console.log('🔄 Closing edit modal for deleted pin')
       setShowEditModal(false)
       setSelectedPin(null)
     }
 
     if (selectedPinForImages?.id === pinId) {
-      console.log('🔄 Closing image viewer modal for deleted pin')
       setShowImageViewer(false)
       setSelectedPinForImages(null)
     }
@@ -1364,600 +1528,504 @@ export default function Map({ onMapClick }: MapProps) {
             </>
           ) : activeTab === 'friends' ? (
             <>
-              {/* Friends Tab Header */}
+              {/* Friends Tab Content */}
               <div style={{
                 fontSize: '0.875rem',
                 fontWeight: '700',
                 marginBottom: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
                 fontFamily: 'var(--font-mono)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em'
               }}>
-                Friends
-                <span style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  color: 'var(--color-red)',
-                  backgroundColor: 'var(--muted)',
-                  padding: '0.125rem 0.5rem',
-                  marginLeft: 'auto',
-                  fontFamily: 'var(--font-mono)'
-                }}>
-                  {friendsCollections.length}
-                </span>
+                Friends Collections
               </div>
 
-              {/* Friends Collection List */}
-              <div style={{
-                overflowY: 'auto',
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem'
-              }}>
-                {/* Loading State */}
-                {loadingFriendsCollections && (
-                  <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
-                    Loading friends' collections...
-                  </div>
-                )}
+              {/* Loading State */}
+              {loadingFriendsCollections && (
+                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
+                  Loading friends collections...
+                </div>
+              )}
 
-                {/* Friends Collection Items */}
-                {!loadingFriendsCollections && friendsCollections.map(collection => (
-                  <div
-                    key={collection.id}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid var(--border)',
-                      backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
-                      color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
-                      transition: 'var(--transition)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      position: 'relative'
-                    }}
-                  >
-                    {/* Clickable Area for Selection */}
-                    <button
-                      onClick={() => handleCollectionSelect(collection.id, true)}
+              {/* Friends Collection Items */}
+              {!loadingFriendsCollections && friendsCollections.map(collection => (
+                <div
+                  key={collection.id}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid var(--border)',
+                    backgroundColor: 'transparent',
+                    color: 'var(--foreground)',
+                    transition: 'var(--transition)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    position: 'relative',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => handleCollectionSelect(collection.id, true)}
+                >
+                  {/* Thumbnail */}
+                  {collection.first_pin_image ? (
+                    <img
+                      src={collection.first_pin_image}
+                      alt=""
                       style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: '30px',
-                        bottom: 0,
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        zIndex: 0
-                      }}
-                      aria-label={`Select ${collection.title}`}
-                    />
-
-                    {/* Thumbnail */}
-                    {collection.first_pin_image ? (
-                      <img
-                        src={collection.first_pin_image}
-                        alt=""
-                        style={{
-                          width: '48px',
-                          height: '48px',
-                          borderRadius: 'var(--radius)',
-                          objectFit: 'cover',
-                          position: 'relative',
-                          zIndex: 1,
-                          pointerEvents: 'none'
-                        }}
-                      />
-                    ) : (
-                      <div style={{
                         width: '48px',
                         height: '48px',
-                        border: '2px solid var(--border)',
-                        backgroundColor: 'var(--muted)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1rem',
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: '700',
-                        color: 'var(--color-red)',
-                        position: 'relative',
-                        zIndex: 1,
-                        pointerEvents: 'none'
-                      }}>
-                        [ ]
-                      </div>
-                    )}
-
-                    {/* Collection Info */}
-                    <div style={{
-                      flex: 1,
-                      minWidth: 0,
-                      position: 'relative',
-                      zIndex: 1,
-                      pointerEvents: 'none'
-                    }}>
-                      <div style={{
-                        fontWeight: '500',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        marginBottom: '0.25rem'
-                      }}>
-                        {collection.title}
-                      </div>
-
-                      {/* Username under collection */}
-                      <div style={{
-                        fontSize: '0.625rem',
-                        opacity: 0.7,
-                        fontFamily: 'var(--font-mono)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        marginBottom: '0.25rem'
-                      }}>
-                        @{collection.username || 'anonymous'}
-                      </div>
-
-                      <div style={{
-                        fontSize: '0.75rem',
-                        opacity: 0.8
-                      }}>
-                        {collection.pin_count || 0} pins
-                      </div>
-                    </div>
-
-                    {/* Details Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedCollectionForDetails(collection)
-                        setShowCollectionDetails(true)
-                      }}
-                      style={{
-                        position: 'relative',
-                        zIndex: 1,
-                        width: '24px',
-                        height: '24px',
-                        padding: 0,
-                        border: '1px solid var(--border)',
-                        backgroundColor: 'transparent',
-                        color: 'var(--foreground)',
                         borderRadius: 'var(--radius)',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'var(--transition)',
-                        flexShrink: 0
+                        objectFit: 'cover'
                       }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--accent)'
-                        e.currentTarget.style.color = 'var(--accent)'
-                        e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--border)'
-                        e.currentTarget.style.color = 'var(--foreground)'
-                        e.currentTarget.style.backgroundColor = 'transparent'
-                      }}
-                      title={`View details for ${collection.title}`}
-                    >
-                      ⓘ
-                    </button>
-                  </div>
-                ))}
-
-                {/* Empty State */}
-                {!loadingFriendsCollections && friendsCollections.length === 0 && (
-                  <div style={{
-                    padding: '2rem 1rem',
-                    textAlign: 'center',
-                    color: 'var(--muted-foreground)',
-                    fontSize: '0.75rem',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
+                    />
+                  ) : (
                     <div style={{
-                      marginBottom: '0.5rem',
-                      fontSize: '1.5rem',
-                      fontWeight: '700',
-                      color: 'var(--color-red)'
-                    }}>[ ]</div>
-                    <div>No friends yet</div>
-                    <div style={{ fontSize: '0.65rem', marginTop: '0.5rem', opacity: 0.7 }}>
-                      Follow users to see their public collections
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : activeTab === 'discover' ? (
-            <>
-              {/* Discover Tab Header */}
-              <div style={{
-                fontSize: '0.875rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em'
-              }}>
-                Discover
-                <span style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  color: 'var(--color-red)',
-                  backgroundColor: 'var(--muted)',
-                  padding: '0.125rem 0.5rem',
-                  marginLeft: 'auto',
-                  fontFamily: 'var(--font-mono)'
-                }}>
-                  {discoverCollections.length}
-                </span>
-              </div>
-
-              {/* Discover Collection List */}
-              <div style={{
-                overflowY: 'auto',
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem'
-              }}>
-                {/* Loading State */}
-                {loadingDiscoverCollections && (
-                  <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
-                    Loading discover collections...
-                  </div>
-                )}
-
-                {/* Discover Collection Items */}
-                {!loadingDiscoverCollections && discoverCollections.map(collection => (
-                  <div
-                    key={collection.id}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
+                      width: '48px',
+                      height: '48px',
                       border: '2px solid var(--border)',
-                      backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
-                      color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
-                      transition: 'var(--transition)',
+                      backgroundColor: 'var(--muted)',
                       display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '0.75rem'
-                    }}
-                  >
-                    {/* Thumbnail - Clickable */}
-                    <button
-                      onClick={() => handleCollectionSelect(collection.id, false, true)}
-                      style={{
-                        padding: 0,
-                        border: 'none',
-                        background: 'none',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {collection.first_pin_image ? (
-                        <img
-                          src={collection.first_pin_image}
-                          alt=""
-                          style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: 'var(--radius)',
-                            objectFit: 'cover',
-                            display: 'block'
-                          }}
-                        />
-                      ) : (
-                        <div style={{
-                          width: '48px',
-                          height: '48px',
-                          border: '2px solid var(--border)',
-                          backgroundColor: 'var(--muted)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '1rem',
-                          fontFamily: 'var(--font-mono)',
-                          fontWeight: '700',
-                          color: 'var(--color-red)'
-                        }}>
-                          [ ]
-                        </div>
-                      )}
-                    </button>
-
-                    {/* Collection Info - Clickable */}
-                    <button
-                      onClick={() => handleCollectionSelect(collection.id, false, true)}
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        padding: 0,
-                        border: 'none',
-                        background: 'none',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        color: 'inherit'
-                      }}
-                    >
-                      <div style={{
-                        fontWeight: '500',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        marginBottom: '0.25rem'
-                      }}>
-                        {collection.title}
-                      </div>
-
-                      {/* Username under collection */}
-                      <div style={{
-                        fontSize: '0.625rem',
-                        opacity: 0.7,
-                        fontFamily: 'var(--font-mono)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        marginBottom: '0.25rem'
-                      }}>
-                        @{collection.username || 'anonymous'}
-                      </div>
-
-                      <div style={{
-                        fontSize: '0.75rem',
-                        opacity: 0.8
-                      }}>
-                        {collection.pin_count || 0} pins
-                      </div>
-                    </button>
-
-                    {/* Action Buttons */}
-                    <div style={{
-                      display: 'flex',
-                      gap: '0.5rem',
-                      flexShrink: 0
-                    }}>
-                      {/* Details Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedCollectionForDetails(collection)
-                          setShowCollectionDetails(true)
-                        }}
-                        style={{
-                          position: 'relative',
-                          zIndex: 1,
-                          width: '24px',
-                          height: '24px',
-                          padding: 0,
-                          border: '1px solid var(--border)',
-                          backgroundColor: 'transparent',
-                          color: 'var(--foreground)',
-                          borderRadius: 'var(--radius)',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'var(--transition)',
-                          flexShrink: 0
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--accent)'
-                          e.currentTarget.style.color = 'var(--accent)'
-                          e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--border)'
-                          e.currentTarget.style.color = 'var(--foreground)'
-                          e.currentTarget.style.backgroundColor = 'transparent'
-                        }}
-                        title={`View details for ${collection.title}`}
-                      >
-                        ⓘ
-                      </button>
-
-                      {/* Follow Button */}
-                      <FollowButton
-                        userId={collection.user_id}
-                        username={collection.username}
-                        size="small"
-                        onFollowChange={() => {
-                          // Reload friends collections when follow state changes
-                          loadFriendsCollections()
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-
-                {/* Empty State */}
-                {!loadingDiscoverCollections && discoverCollections.length === 0 && (
-                  <div style={{
-                    padding: '2rem 1rem',
-                    textAlign: 'center',
-                    color: 'var(--muted-foreground)',
-                    fontSize: '0.75rem',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
-                    <div style={{
-                      marginBottom: '0.5rem',
-                      fontSize: '1.5rem',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1rem',
+                      fontFamily: 'var(--font-mono)',
                       fontWeight: '700',
                       color: 'var(--color-red)'
-                    }}>[ ]</div>
-                    <div>No collections to discover</div>
-                    <div style={{ fontSize: '0.65rem', marginTop: '0.5rem', opacity: 0.7 }}>
-                      Check back later for new content
+                    }}>
+                      [ ]
                     </div>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : null}
-        </div>
-      )}
+                  )}
 
-      {/* Search Bar */}
-      <div style={{ 
-        position: 'absolute', 
-        top: '0.75rem', 
-        left: '50%', 
-        transform: 'translateX(-50%)',
-        zIndex: 10,
-        width: '100%',
-        maxWidth: '400px',
-        padding: '0 1rem'
-      }}>
-        <div style={{ position: 'relative' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            background: 'rgba(39, 39, 42, 0.7)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '0.5rem',
-            boxShadow: 'var(--shadow-lg)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)'
-          }}>
-            <button
-              onClick={() => setShowSearch(!showSearch)}
-              style={{
-                background: 'var(--color-red)',
-                border: '2px solid var(--color-red)',
-                color: 'white',
-                cursor: 'pointer',
-                padding: '0.5rem 0.75rem',
-                transition: 'var(--transition)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'var(--font-mono)',
-                fontWeight: '700',
-                fontSize: '0.75rem',
-                letterSpacing: '0.1em'
-              }}
-            >
-              {showSearch ? '×' : 'SEARCH'}
-            </button>
-            
-            {showSearch && (
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  handleSearch(e.target.value)
-                }}
-                placeholder="Search for places..."
-                style={{
-                  flex: 1,
-                  border: 'none',
-                  background: 'transparent',
-                  outline: 'none',
-                  fontSize: '0.875rem',
-                  padding: '0.5rem'
-                }}
-              />
-            )}
-          </div>
-
-          {/* Search Results */}
-          {showSearch && searchResults.length > 0 && (
-            <div style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              right: 0,
-              background: 'rgba(39, 39, 42, 0.95)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: 'var(--radius-lg)',
-              marginTop: '0.5rem',
-              boxShadow: 'var(--shadow-lg)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              zIndex: 20,
-              maxHeight: '400px',
-              overflowY: 'auto'
-            }}>
-              {searchResults.map((result) => {
-                const isPOI = result.place_type.includes('poi')
-                const category = result.properties?.category || result.place_type[0]
-                const displayName = result.text || result.place_name.split(',')[0]
-                const address = result.place_name.split(',').slice(1).join(',').trim()
-
-                return (
-                  <button
-                    key={result.id}
-                    onClick={() => selectSearchResult(result)}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: 'none',
-                      background: 'transparent',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                      transition: 'var(--transition)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent'
-                    }}
-                  >
+                  {/* Collection Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                      fontWeight: '600',
-                      marginBottom: '0.25rem',
+                      fontWeight: '500',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {collection.title}
+                    </div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      opacity: 0.8,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem'
                     }}>
-                      {isPOI && (
-                        <span style={{
-                          fontSize: '0.7rem',
-                          background: 'var(--accent)',
-                          color: 'white',
-                          padding: '0.125rem 0.375rem',
-                          borderRadius: 'var(--radius)',
-                          fontFamily: 'var(--font-mono)',
-                          fontWeight: '700',
-                          textTransform: 'uppercase'
-                        }}>
-                          {category}
-                        </span>
-                      )}
-                      <span>{displayName}</span>
+                      <span>{collection.pin_count || 0} pins</span>
+                      <span>by @{collection.username}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Empty State */}
+              {!loadingFriendsCollections && friendsCollections.length === 0 && (
+                <div style={{
+                  padding: '2rem 1rem',
+                  textAlign: 'center',
+                  color: 'var(--muted-foreground)',
+                  fontSize: '0.75rem',
+                  fontFamily: 'var(--font-mono)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  <div style={{
+                    marginBottom: '0.5rem',
+                    fontSize: '1.5rem',
+                    fontWeight: '700',
+                    color: 'var(--color-red)'
+                  }}>[ ]</div>
+                  <div>No friends collections</div>
+                  <div style={{ fontSize: '0.65rem', marginTop: '0.5rem', opacity: 0.7 }}>
+                    Follow users to see their collections
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Discover Tab Content */}
+              <div style={{
+                fontSize: '0.875rem',
+                fontWeight: '700',
+                marginBottom: '1rem',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
+              }}>
+                Discover Collections
+              </div>
+
+              {/* Loading State */}
+              {loadingDiscoverCollections && (
+                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
+                  Loading discover collections...
+                </div>
+              )}
+
+              {/* Discover Collection Items */}
+              {!loadingDiscoverCollections && discoverCollections.map(collection => (
+                <div
+                  key={collection.id}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid var(--border)',
+                    backgroundColor: 'transparent',
+                    color: 'var(--foreground)',
+                    transition: 'var(--transition)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    position: 'relative',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => handleCollectionSelect(collection.id, false, true)}
+                >
+                  {/* Thumbnail */}
+                  {collection.first_pin_image ? (
+                    <img
+                      src={collection.first_pin_image}
+                      alt=""
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: 'var(--radius)',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      border: '2px solid var(--border)',
+                      backgroundColor: 'var(--muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1rem',
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: '700',
+                      color: 'var(--color-red)'
+                    }}>
+                      [ ]
+                    </div>
+                  )}
+
+                  {/* Collection Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontWeight: '500',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {collection.title}
+                    </div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      opacity: 0.8,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span>{collection.pin_count || 0} pins</span>
+                      <span>by @{collection.username}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Empty State */}
+              {!loadingDiscoverCollections && discoverCollections.length === 0 && (
+                <div style={{
+                  padding: '2rem 1rem',
+                  textAlign: 'center',
+                  color: 'var(--muted-foreground)',
+                  fontSize: '0.75rem',
+                  fontFamily: 'var(--font-mono)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  <div style={{
+                    marginBottom: '0.5rem',
+                    fontSize: '1.5rem',
+                    fontWeight: '700',
+                    color: 'var(--color-red)'
+                  }}>[ ]</div>
+                  <div>No discover collections</div>
+                  <div style={{ fontSize: '0.65rem', marginTop: '0.5rem', opacity: 0.7 }}>
+                    Check back later for new collections
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Search Bar - Always Visible */}
+      <div style={{
+        position: 'absolute',
+        top: '0.75rem',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 10,
+        width: '100%',
+        maxWidth: '500px',
+        padding: '0 1rem'
+      }}>
+        <div style={{ position: 'relative' }}>
+          {/* Main Search Input */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: 'rgba(39, 39, 42, 0.85)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '0.75rem 1rem',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            gap: '0.75rem'
+          }}>
+            {/* Search Icon */}
+            <div style={{
+              color: 'var(--color-red)',
+              fontSize: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              flexShrink: 0
+            }}>
+              🔍
+            </div>
+
+            {/* Search Input */}
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                handleSearch(e.target.value)
+              }}
+              onFocus={() => setShowSearch(true)}
+              placeholder="Search for places..."
+              style={{
+                flex: 1,
+                border: 'none',
+                background: 'transparent',
+                outline: 'none',
+                fontSize: '0.875rem',
+                padding: '0.25rem',
+                color: 'var(--foreground)',
+                fontFamily: 'var(--font-mono)',
+                letterSpacing: '0.02em'
+              }}
+            />
+
+            {/* Loading Indicator */}
+            {isSearching && (
+              <div style={{
+                width: '16px',
+                height: '16px',
+                border: '2px solid var(--color-red)',
+                borderTopColor: 'transparent',
+                borderRadius: '50%',
+                animation: 'spin 0.6s linear infinite',
+                flexShrink: 0
+              }} />
+            )}
+
+            {/* Clear Button */}
+            {searchQuery && !isSearching && (
+              <button
+                onClick={() => {
+                  setSearchQuery('')
+                  setSearchResults([])
+                  setShowSearch(false)
+                  setHasSearched(false)
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--muted-foreground)',
+                  cursor: 'pointer',
+                  fontSize: '1.25rem',
+                  padding: 0,
+                  lineHeight: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'color 0.15s ease',
+                  flexShrink: 0
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--color-red)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--muted-foreground)'
+                }}
+                title="Clear search"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          {/* Search Results Dropdown */}
+          {showSearch && (searchResults.length > 0 || (hasSearched && searchQuery)) && (
+            <div style={{
+              position: 'absolute',
+              top: 'calc(100% + 0.5rem)',
+              left: 0,
+              right: 0,
+              background: 'rgba(39, 39, 42, 0.95)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              zIndex: 20,
+              maxHeight: '400px',
+              overflowY: 'auto',
+              animation: 'slideDown 0.2s ease'
+            }}>
+              {/* Results Header */}
+              {searchResults.length > 0 && (
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  fontSize: '0.75rem',
+                  fontFamily: 'var(--font-mono)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: 'var(--muted-foreground)',
+                  fontWeight: '700'
+                }}>
+                  {searchResults.length} Result{searchResults.length !== 1 ? 's' : ''}
+                </div>
+              )}
+
+              {/* No Results Message */}
+              {searchResults.length === 0 && hasSearched && searchQuery && (
+                <div style={{
+                  padding: '2rem 1.5rem',
+                  textAlign: 'center'
+                }}>
+                  <div style={{
+                    fontSize: '2rem',
+                    marginBottom: '0.75rem'
+                  }}>
+                    🔍
+                  </div>
+                  <div style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '0.875rem',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: '0.5rem',
+                    color: 'var(--foreground)'
+                  }}>
+                    No Results Found
+                  </div>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--muted-foreground)',
+                    lineHeight: '1.5'
+                  }}>
+                    Try searching with different keywords or check your spelling
+                  </div>
+                </div>
+              )}
+
+              {/* Results List */}
+              {searchResults.map((result, index) => (
+                <button
+                  key={result.id}
+                  onClick={() => selectSearchResult(result)}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    border: 'none',
+                    background: 'transparent',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    borderBottom: index < searchResults.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(230, 57, 70, 0.1)'
+                    e.currentTarget.style.paddingLeft = '1.25rem'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent'
+                    e.currentTarget.style.paddingLeft = '1rem'
+                  }}
+                >
+                  {/* Location Icon */}
+                  <div style={{
+                    fontSize: '1.25rem',
+                    flexShrink: 0
+                  }}>
+                    📍
+                  </div>
+
+                  {/* Place Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontWeight: '600',
+                      marginBottom: '0.25rem',
+                      color: 'var(--foreground)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.875rem',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {result.place_name.split(',')[0]}
                     </div>
                     <div style={{
                       fontSize: '0.75rem',
                       color: 'var(--muted-foreground)',
-                      lineHeight: '1.4'
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }}>
-                      {address || result.place_name}
+                      {result.place_name.split(',').slice(1).join(',')}
                     </div>
-                  </button>
-                )
-              })}
+                  </div>
+
+                  {/* Arrow Icon */}
+                  <div style={{
+                    color: 'var(--color-red)',
+                    fontSize: '0.875rem',
+                    flexShrink: 0,
+                    opacity: 0.5
+                  }}>
+                    →
+                  </div>
+                </button>
+              ))}
             </div>
           )}
+
+          <style jsx>{`
+            @keyframes slideDown {
+              from {
+                opacity: 0;
+                transform: translateY(-10px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `}</style>
         </div>
       </div>
 
@@ -2057,15 +2125,15 @@ export default function Map({ onMapClick }: MapProps) {
       )}
 
       {/* Map Container */}
-      <div 
-        ref={mapContainer} 
-        style={{ 
-          width: '100%', 
-          height: '100%' 
-        }} 
+      <div
+        ref={mapContainer}
+        style={{
+          width: '100%',
+          height: '100%'
+        }}
       />
 
-      {/* Pin Creation Modal */}
+      {/* Modals */}
       {selectedLocation && (
         <PinCreationModal
           isOpen={showPinModal}
@@ -2079,7 +2147,6 @@ export default function Map({ onMapClick }: MapProps) {
         />
       )}
 
-      {/* Pin Edit Modal */}
       <PinEditModal
         isOpen={showEditModal}
         onClose={() => {
@@ -2091,7 +2158,6 @@ export default function Map({ onMapClick }: MapProps) {
         onPinDeleted={handlePinDeleted}
       />
 
-      {/* Pin Image Viewer Modal */}
       {showImageViewer && selectedPinForImages && (
         <PinImageViewerModal
           isOpen={showImageViewer}
@@ -2104,7 +2170,6 @@ export default function Map({ onMapClick }: MapProps) {
         />
       )}
 
-      {/* Pin Profile Modal */}
       {showPinProfile && selectedPinForImages && (
         <PinProfileModal
           isOpen={showPinProfile}
@@ -2121,7 +2186,6 @@ export default function Map({ onMapClick }: MapProps) {
         />
       )}
 
-      {/* Collection Details Modal */}
       {showCollectionDetails && selectedCollectionForDetails && user && (
         <CollectionDetailsModal
           collection={selectedCollectionForDetails}
@@ -2137,7 +2201,6 @@ export default function Map({ onMapClick }: MapProps) {
         />
       )}
 
-      {/* Add Search Location Modal */}
       {showAddLocationModal && selectedSearchLocation && user && (
         <AddSearchLocationModal
           isOpen={showAddLocationModal}
@@ -2148,18 +2211,25 @@ export default function Map({ onMapClick }: MapProps) {
           collections={collections}
           userId={user.id}
           onSuccess={() => {
-            // Remove the search marker
             if (searchMarkerRef.current) {
-              searchMarkerRef.current.remove()
+              searchMarkerRef.current.setMap(null)
               searchMarkerRef.current = null
             }
             setSelectedSearchLocation(null)
-            // Reload pins and collections
             loadPins()
             loadCollections()
           }}
         />
       )}
     </div>
+  )
+}
+
+// Main export with Wrapper
+export default function Map(props: MapProps) {
+  return (
+    <Wrapper apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
+      <MapComponent {...props} />
+    </Wrapper>
   )
 }

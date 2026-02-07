@@ -4,6 +4,7 @@ import { DatabaseService, CompletePinData, Pin } from '@/lib/database'
 import ImageSlideshow from './ImageSlideshow'
 import { useAuth } from '@/hooks/useAuth'
 import FollowButton from './FollowButton'
+import { getBusinessStatusDisplay, formatPriceLevel, formatRating, formatPhoneForLink, isPlaceDataStale } from '@/lib/placeHelpers'
 
 interface PinProfileModalProps {
   isOpen: boolean
@@ -90,6 +91,12 @@ export default function PinProfileModal({
 
         // Fetch address (parallel, non-blocking)
         fetchAddress(data.latitude, data.longitude)
+
+        // Auto-refresh place data if stale (>30 days old)
+        if ((data as any).place_id && isPlaceDataStale((data as any).last_place_refresh, 30)) {
+          console.log('📅 Place data is stale, refreshing in background...')
+          refreshPlaceDataInBackground(pinId)
+        }
       } catch (err) {
         console.error('💥 Error loading pin profile:', err)
         setError('Failed to load pin details')
@@ -101,17 +108,36 @@ export default function PinProfileModal({
     loadPinProfile()
   }, [isOpen, pinId])
 
-  // Fetch reverse geocoded address from Mapbox
+  // Refresh place data in background
+  const refreshPlaceDataInBackground = async (pinId: string) => {
+    try {
+      const result = await DatabaseService.refreshPlaceData(pinId)
+      if (result.success) {
+        console.log('✅ Place data refreshed successfully')
+        // Optionally reload pin data to show updated info
+        const refreshedData = await DatabaseService.getCompletePinData(pinId)
+        if (refreshedData) {
+          setPinData(refreshedData)
+        }
+      } else {
+        console.warn('⚠️ Failed to refresh place data:', result.error)
+      }
+    } catch (error) {
+      console.error('💥 Error refreshing place data:', error)
+    }
+  }
+
+  // Fetch reverse geocoded address from Google Geocoding API
   const fetchAddress = async (latitude: number, longitude: number) => {
     setAddressLoading(true)
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}&types=address,poi,place`
+        `/api/google-places/geocode?latlng=${latitude},${longitude}`
       )
       const data = await response.json()
 
-      if (data.features && data.features.length > 0) {
-        setAddress(data.features[0].place_name)
+      if (data.results && data.results.length > 0) {
+        setAddress(data.results[0].formatted_address)
       } else {
         setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
       }
@@ -184,7 +210,19 @@ export default function PinProfileModal({
       created_at: pinData.created_at,
       user_id: pinData.creator_id,
       collection_id: pinData.collection_id,
-      image_url: pinData.images[0]?.image_url || null
+      image_url: pinData.images[0]?.image_url || null,
+      // Include Google Places data
+      place_id: (pinData as any).place_id || null,
+      place_name: (pinData as any).place_name || null,
+      place_types: (pinData as any).place_types || null,
+      business_status: (pinData as any).business_status || null,
+      rating: (pinData as any).rating || null,
+      rating_count: (pinData as any).rating_count || null,
+      phone_number: (pinData as any).phone_number || null,
+      website: (pinData as any).website || null,
+      price_level: (pinData as any).price_level !== undefined ? (pinData as any).price_level : null,
+      opening_hours: (pinData as any).opening_hours || null,
+      last_place_refresh: (pinData as any).last_place_refresh || null
     }
 
     onEditPin(pin)
@@ -539,6 +577,183 @@ export default function PinProfileModal({
                     whiteSpace: 'pre-wrap'
                   }}>
                     {pinData.description}
+                  </div>
+                </div>
+              )}
+
+              {/* Google Places Enriched Data Cards */}
+              {(pinData as any).business_status && (
+                <div style={{
+                  padding: '1rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)'
+                }}>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--muted-foreground)',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '0.1em',
+                    marginBottom: '0.5rem'
+                  }}>
+                    🏪 BUSINESS STATUS
+                  </div>
+                  <div style={{
+                    fontSize: '0.875rem',
+                    fontWeight: '700',
+                    color: getBusinessStatusDisplay((pinData as any).business_status).color,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    ● {getBusinessStatusDisplay((pinData as any).business_status).text}
+                  </div>
+                </div>
+              )}
+
+              {/* Rating Card */}
+              {(pinData as any).rating && (
+                <div style={{
+                  padding: '1rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)'
+                }}>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--muted-foreground)',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '0.1em',
+                    marginBottom: '0.5rem'
+                  }}>
+                    ⭐ RATING
+                  </div>
+                  <div style={{
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    color: '#f59e0b',
+                    marginBottom: '0.25rem'
+                  }}>
+                    {formatRating((pinData as any).rating)}
+                  </div>
+                  {(pinData as any).rating_count && (
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--muted-foreground)'
+                    }}>
+                      Based on {(pinData as any).rating_count.toLocaleString()} reviews
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Contact Information Card */}
+              {((pinData as any).phone_number || (pinData as any).website) && (
+                <div style={{
+                  padding: '1rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)'
+                }}>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--muted-foreground)',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '0.1em',
+                    marginBottom: '0.75rem'
+                  }}>
+                    📞 CONTACT
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem'
+                  }}>
+                    {(pinData as any).phone_number && (
+                      <a
+                        href={`tel:${formatPhoneForLink((pinData as any).phone_number)}`}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.75rem',
+                          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                          border: '2px solid #22c55e',
+                          borderRadius: 'var(--radius)',
+                          color: '#22c55e',
+                          textDecoration: 'none',
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          transition: 'var(--transition)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(34, 197, 94, 0.2)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(34, 197, 94, 0.1)'
+                        }}
+                      >
+                        📱 {(pinData as any).phone_number}
+                      </a>
+                    )}
+                    {(pinData as any).website && (
+                      <a
+                        href={(pinData as any).website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.75rem',
+                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                          border: '2px solid #3b82f6',
+                          borderRadius: 'var(--radius)',
+                          color: '#3b82f6',
+                          textDecoration: 'none',
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          transition: 'var(--transition)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)'
+                        }}
+                      >
+                        🌐 Visit Website
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Price Level Card */}
+              {(pinData as any).price_level !== null && (pinData as any).price_level !== undefined && (
+                <div style={{
+                  padding: '1rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)'
+                }}>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--muted-foreground)',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '0.1em',
+                    marginBottom: '0.5rem'
+                  }}>
+                    💵 PRICE LEVEL
+                  </div>
+                  <div style={{
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    color: '#22c55e'
+                  }}>
+                    {formatPriceLevel((pinData as any).price_level)}
                   </div>
                 </div>
               )}

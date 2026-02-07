@@ -23,9 +23,23 @@ interface UseUserPreferencesReturn {
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
-  map_style: 'mapbox://styles/mapbox/streets-v12',
+  map_style: 'roadmap',
   default_map_zoom: 11,
   default_map_center: { lat: 45.5152, lng: -122.6765 }
+}
+
+// Map old Mapbox styles to new Google Maps styles
+const MAP_STYLE_MIGRATION: Record<string, string> = {
+  'mapbox://styles/mapbox/streets-v12': 'roadmap',
+  'mapbox://styles/mapbox/satellite-v9': 'satellite',
+  'mapbox://styles/mapbox/outdoors-v12': 'terrain',
+  'mapbox://styles/mapbox/dark-v11': 'dark'
+}
+
+// Migrate old Mapbox style to Google Maps style
+function migrateMapStyle(oldStyle?: string): string {
+  if (!oldStyle) return DEFAULT_PREFERENCES.map_style!
+  return MAP_STYLE_MIGRATION[oldStyle] || oldStyle
 }
 
 export function useUserPreferences(): UseUserPreferencesReturn {
@@ -62,6 +76,12 @@ export function useUserPreferences(): UseUserPreferencesReturn {
 
       // Merge loaded preferences with defaults
       const loadedPrefs = data?.preferences || {}
+
+      // Migrate map style if needed
+      if (loadedPrefs.map_style) {
+        loadedPrefs.map_style = migrateMapStyle(loadedPrefs.map_style)
+      }
+
       setPreferences({ ...DEFAULT_PREFERENCES, ...loadedPrefs })
     } catch (error) {
       console.error('Error loading preferences:', error)

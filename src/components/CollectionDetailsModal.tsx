@@ -12,6 +12,7 @@ interface Collection {
   pin_count?: number
   first_pin_image?: string | null
   user_id?: string
+  color: string
 }
 
 interface CollectionDetailsModalProps {
@@ -38,7 +39,8 @@ export default function CollectionDetailsModal({
   const [editForm, setEditForm] = useState({
     title: collection.title,
     description: collection.description || '',
-    is_public: collection.is_public
+    is_public: collection.is_public,
+    color: collection.color || '#E63946'
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -93,6 +95,7 @@ export default function CollectionDetailsModal({
           title: editForm.title.trim(),
           description: editForm.description.trim() || null,
           is_public: editForm.is_public,
+          color: editForm.color,
           updated_at: new Date().toISOString()
         })
         .eq('id', collection.id)
@@ -114,7 +117,8 @@ export default function CollectionDetailsModal({
     setEditForm({
       title: collection.title,
       description: collection.description || '',
-      is_public: collection.is_public
+      is_public: collection.is_public,
+      color: collection.color || '#E63946'
     })
     setError('')
     setIsEditing(false)
@@ -172,6 +176,7 @@ export default function CollectionDetailsModal({
                 border: '2px solid var(--border)',
                 borderRadius: 'var(--radius)',
                 background: 'var(--background)',
+                color: 'var(--foreground)',
                 fontFamily: 'var(--font-mono)',
                 textTransform: 'uppercase'
               }}
@@ -218,32 +223,74 @@ export default function CollectionDetailsModal({
             <label style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.75rem',
+              justifyContent: 'space-between',
               cursor: 'pointer',
               padding: '0.75rem',
               border: '2px solid var(--border)',
               borderRadius: 'var(--radius)',
-              background: 'var(--muted)'
+              background: editForm.is_public ? 'rgba(34, 197, 94, 0.1)' : 'var(--muted)'
             }}>
-              <input
-                type="checkbox"
-                checked={editForm.is_public}
-                onChange={(e) => setEditForm(prev => ({ ...prev, is_public: e.target.checked }))}
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  cursor: 'pointer'
-                }}
-              />
-              <span style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.875rem',
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em'
-              }}>
-                {editForm.is_public ? '🌍 PUBLIC COLLECTION' : '🔒 PRIVATE COLLECTION'}
-              </span>
+              <div>
+                <div style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.875rem',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: 'var(--foreground)'
+                }}>
+                  {editForm.is_public ? '🌍 PUBLIC COLLECTION' : '🔒 PRIVATE COLLECTION'}
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.65rem',
+                  marginTop: '0.25rem',
+                  color: 'var(--muted-foreground)',
+                  textTransform: 'none',
+                  letterSpacing: '0.02em'
+                }}>
+                  {editForm.is_public ? 'Visible to everyone' : 'Only visible to you'}
+                </div>
+              </div>
+
+              {/* Toggle Switch */}
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="checkbox"
+                  checked={editForm.is_public}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, is_public: e.target.checked }))}
+                  style={{
+                    position: 'absolute',
+                    opacity: 0,
+                    width: '100%',
+                    height: '100%',
+                    cursor: 'pointer',
+                    zIndex: 1
+                  }}
+                />
+                <div style={{
+                  width: '48px',
+                  height: '24px',
+                  borderRadius: '12px',
+                  background: editForm.is_public ? '#22c55e' : 'var(--muted)',
+                  border: '2px solid',
+                  borderColor: editForm.is_public ? '#22c55e' : 'var(--border)',
+                  transition: 'all 0.2s ease',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    background: 'white',
+                    position: 'absolute',
+                    top: '2px',
+                    left: editForm.is_public ? '26px' : '2px',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                  }} />
+                </div>
+              </div>
             </label>
           ) : (
             <div style={{
@@ -264,6 +311,122 @@ export default function CollectionDetailsModal({
             </div>
           )}
         </div>
+
+        {/* Color Picker - Only show when editing */}
+        {isOwner && isEditing && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '0.75rem',
+              fontWeight: '700',
+              marginBottom: '0.5rem',
+              fontFamily: 'var(--font-mono)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              color: 'var(--muted-foreground)'
+            }}>
+              PIN COLOR
+            </label>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem'
+            }}>
+              {/* Preset Colors */}
+              <div style={{
+                display: 'flex',
+                gap: '0.5rem',
+                flexWrap: 'wrap'
+              }}>
+                {['#E63946', '#F77F00', '#FCBF49', '#06D6A0', '#118AB2', '#073B4C', '#8B5CF6', '#EC4899'].map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setEditForm(prev => ({ ...prev, color }))}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: 'var(--radius)',
+                      background: color,
+                      border: '3px solid',
+                      borderColor: editForm.color === color ? 'white' : 'var(--border)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: editForm.color === color ? '0 0 0 2px ' + color : 'none'
+                    }}
+                    title={color}
+                  />
+                ))}
+              </div>
+
+              {/* Custom Color Input */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem'
+              }}>
+                <input
+                  type="color"
+                  value={editForm.color}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, color: e.target.value }))}
+                  style={{
+                    width: '60px',
+                    height: '40px',
+                    borderRadius: 'var(--radius)',
+                    border: '2px solid var(--border)',
+                    cursor: 'pointer',
+                    background: 'transparent'
+                  }}
+                />
+                <input
+                  type="text"
+                  value={editForm.color}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (/^#[0-9A-Fa-f]{0,6}$/.test(value)) {
+                      setEditForm(prev => ({ ...prev, color: value }))
+                    }
+                  }}
+                  placeholder="#E63946"
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem 0.75rem',
+                    border: '2px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    background: 'var(--background)',
+                    color: 'var(--foreground)',
+                    fontSize: '0.875rem',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase'
+                  }}
+                  maxLength={7}
+                />
+              </div>
+
+              {/* Preview */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 0.75rem',
+                background: 'var(--muted)',
+                borderRadius: 'var(--radius)',
+                fontSize: '0.75rem',
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--muted-foreground)'
+              }}>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: editForm.color,
+                  border: '2px solid var(--border)'
+                }} />
+                <span>Preview: Pins will appear in this color on the map</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Description */}
         <div style={{ marginBottom: '1.5rem' }}>
@@ -290,6 +453,7 @@ export default function CollectionDetailsModal({
                 border: '2px solid var(--border)',
                 borderRadius: 'var(--radius)',
                 background: 'var(--background)',
+                color: 'var(--foreground)',
                 fontSize: '0.875rem',
                 resize: 'vertical',
                 minHeight: '100px',

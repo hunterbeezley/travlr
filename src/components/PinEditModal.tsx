@@ -477,7 +477,8 @@ export default function PinEditModal({
                 border: '1px solid var(--border)',
                 borderRadius: 'var(--radius)',
                 fontSize: '1rem',
-                backgroundColor: 'var(--card)'
+                backgroundColor: 'var(--card)',
+                color: 'var(--foreground)'
               }}
             >
               {PIN_CATEGORIES.map(category => (
@@ -509,7 +510,8 @@ export default function PinEditModal({
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius)',
                   fontSize: '1rem',
-                  backgroundColor: 'var(--card)'
+                  backgroundColor: 'var(--card)',
+                  color: 'var(--foreground)'
                 }}
               >
                 <option value="">Select a collection...</option>

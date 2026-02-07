@@ -180,13 +180,14 @@ export default function PinCreationModal({
   const fetchAddress = async () => {
     try {
       setLoadingAddress(true)
+      // Use Google Geocoding API for reverse geocoding
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}&types=address,poi,place`
+        `/api/google-places/geocode?latlng=${latitude},${longitude}`
       )
       const data = await response.json()
 
-      if (data.features && data.features.length > 0) {
-        setAddress(data.features[0].place_name)
+      if (data.results && data.results.length > 0) {
+        setAddress(data.results[0].formatted_address)
       } else {
         setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
       }
@@ -435,7 +436,8 @@ export default function PinCreationModal({
                 border: '1px solid var(--border)',
                 borderRadius: 'var(--radius)',
                 fontSize: '1rem',
-                backgroundColor: 'var(--card)'
+                backgroundColor: 'var(--card)',
+                color: 'var(--foreground)'
               }}
             >
               {PIN_CATEGORIES.map(category => (
@@ -468,7 +470,8 @@ export default function PinCreationModal({
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius)',
                   fontSize: '1rem',
-                  backgroundColor: 'var(--card)'
+                  backgroundColor: 'var(--card)',
+                  color: 'var(--foreground)'
                 }}
               >
                 <option value="">Select a collection...</option>

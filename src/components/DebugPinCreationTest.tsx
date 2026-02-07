@@ -259,7 +259,7 @@ export default function DebugPinCreationTest() {
           <select
             value={formData.category}
             onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-            style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem' }}
+            style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem', color: 'var(--foreground)' }}
           >
             <option value="restaurant">🍽️ Restaurant</option>
             <option value="cafe">☕ Café</option>
@@ -274,7 +274,7 @@ export default function DebugPinCreationTest() {
           <select
             value={formData.collectionId}
             onChange={(e) => setFormData(prev => ({ ...prev, collectionId: e.target.value }))}
-            style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem' }}
+            style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem', color: 'var(--foreground)' }}
           >
             <option value="">Select a collection...</option>
             {collections.map(collection => (

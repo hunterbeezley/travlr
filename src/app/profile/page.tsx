@@ -110,43 +110,145 @@ export default function ProfilePage() {
     }
   }, [user, profile, loading])
 
-  // Fetch collections and pins when user loads
+  // Fetch collections and pins in parallel when user loads
   useEffect(() => {
     if (user && !loading) {
-      fetchCollections()
-      fetchPins()
+      fetchUserData()
     }
   }, [user, loading])
 
-  const fetchCollections = async () => {
+  // Periodic session refresh to prevent expiration (every 5 minutes)
+  useEffect(() => {
+    if (!user) return
+
+    const refreshInterval = setInterval(async () => {
+      console.log('Refreshing session to prevent expiration...')
+      const { error } = await supabase.auth.refreshSession()
+
+      if (error) {
+        console.error('Session refresh failed:', error)
+      } else {
+        console.log('Session refreshed successfully')
+      }
+    }, 5 * 60 * 1000) // 5 minutes
+
+    return () => clearInterval(refreshInterval)
+  }, [user])
+
+  // Fetch all data in parallel for better performance
+  const fetchUserData = async () => {
     if (!user) return
 
     setLoadingCollections(true)
+    setLoadingPins(true)
+
     try {
-      // Get collections with pin count
-      const { data, error } = await supabase
-        .rpc('get_user_collections_with_stats', { user_uuid: user.id })
+      // Fetch collections and pins in parallel
+      const [collectionsResult, pinsResult] = await Promise.all([
+        fetchCollections(),
+        fetchPins()
+      ])
 
-      if (error) {
-        console.error('Error fetching collections:', error)
-        return
-      }
-
-      setCollections(data || [])
+      setCollections(collectionsResult || [])
+      setPins(pinsResult || [])
     } catch (error) {
-      console.error('Error fetching collections:', error)
+      console.error('Error fetching user data:', error)
     } finally {
       setLoadingCollections(false)
+      setLoadingPins(false)
     }
   }
 
-  const fetchPins = async () => {
-    if (!user) return
+  const fetchCollections = async (retryCount = 0): Promise<Collection[]> => {
+    if (!user) return []
 
-    setLoadingPins(true)
+    try {
+      // Check if session is still valid, refresh if needed
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+      if (sessionError || !session) {
+        console.error('Session invalid, attempting refresh...')
+        const { error: refreshError } = await supabase.auth.refreshSession()
+
+        if (refreshError) {
+          console.error('Session refresh failed:', {
+            message: refreshError.message,
+            status: refreshError.status
+          })
+          // Session expired, user needs to log in again
+          if (retryCount === 0) {
+            return fetchCollections(1) // Retry once after refresh
+          }
+          return []
+        }
+      }
+
+      // Try using the optimized RPC function first
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_user_collections_with_stats', { user_uuid: user.id })
+
+      if (rpcError) {
+        console.error('RPC error loading collections:', {
+          message: rpcError.message,
+          code: rpcError.code,
+          details: rpcError.details,
+          hint: rpcError.hint
+        })
+      }
+
+      if (!rpcError && rpcData) {
+        return rpcData
+      }
+
+      // Fallback to manual query if RPC doesn't exist
+      console.warn('RPC function not found, using fallback query')
+      const { data, error } = await supabase
+        .from('collections')
+        .select(`
+          id,
+          title,
+          description,
+          is_public,
+          created_at,
+          updated_at,
+          pins:pins(count)
+        `)
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+
+      if (error) {
+        console.error('Error loading collections:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        })
+        return []
+      }
+
+      // Transform the data to match expected format
+      return (data || []).map(collection => ({
+        ...collection,
+        pin_count: Array.isArray(collection.pins) ? collection.pins.length : 0,
+        first_pin_image: null
+      }))
+    } catch (error: any) {
+      console.error('Error loading collections:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        stack: error?.stack
+      })
+      return []
+    }
+  }
+
+  const fetchPins = async (): Promise<Pin[]> => {
+    if (!user) return []
+
     try {
       const pinsData = await DatabaseService.getUserPins(user.id)
-      setPins(pinsData || [])
+      return pinsData || []
     } catch (error) {
       console.error('Error fetching pins:', error)
     } finally {

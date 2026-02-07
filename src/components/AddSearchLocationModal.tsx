@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { extractPlaceData, mapGoogleTypeToCategory } from '@/lib/placeHelpers'
 
 interface SearchResult {
   id: string
@@ -10,6 +11,7 @@ interface SearchResult {
   properties: {
     category?: string
   }
+  placeDetails?: any // Google Places Details API response
 }
 
 interface Collection {
@@ -73,6 +75,13 @@ export default function AddSearchLocationModal({
 
       // Create new collection if needed
       if (isCreatingNew) {
+        console.log('Creating new collection:', {
+          title: newCollectionTitle.trim(),
+          description: newCollectionDescription.trim() || null,
+          is_public: isPublic,
+          user_id: userId
+        })
+
         const { data: newCollection, error: collectionError } = await supabase
           .from('collections')
           .insert({
@@ -84,31 +93,90 @@ export default function AddSearchLocationModal({
           .select()
           .single()
 
-        if (collectionError) throw collectionError
+        if (collectionError) {
+          console.error('Collection creation error:', {
+            message: collectionError.message,
+            code: collectionError.code,
+            details: collectionError.details
+          })
+          throw collectionError
+        }
+
+        console.log('New collection created:', newCollection)
         collectionId = newCollection.id
       }
 
-      // Create the pin
+      console.log('Saving pin with collectionId:', collectionId)
+
+      // Validate collectionId
+      if (!collectionId) {
+        throw new Error('No collection selected or created')
+      }
+
+      // Extract place data if available from Google Places Details
+      const placeData = searchLocation.placeDetails
+        ? extractPlaceData(searchLocation.placeDetails)
+        : null
+
+      // Map Google place types to app category
+      const appCategory = placeData
+        ? mapGoogleTypeToCategory(placeData.place_types)
+        : category
+
+      // Create the pin with enriched place data
+      const pinInsertData: any = {
+        title: placeData?.place_name || placeName,
+        description: searchLocation.placeDetails?.formatted_address || searchLocation.place_name,
+        latitude: searchLocation.center[1],
+        longitude: searchLocation.center[0],
+        category: appCategory,
+        collection_id: collectionId,
+        user_id: userId
+      }
+
+      // Add Google Places enriched data if available
+      if (placeData) {
+        pinInsertData.place_id = placeData.place_id
+        pinInsertData.place_name = placeData.place_name
+        pinInsertData.place_types = placeData.place_types
+        pinInsertData.business_status = placeData.business_status
+        pinInsertData.rating = placeData.rating
+        pinInsertData.rating_count = placeData.rating_count
+        pinInsertData.phone_number = placeData.phone_number
+        pinInsertData.website = placeData.website
+        pinInsertData.price_level = placeData.price_level
+        pinInsertData.opening_hours = placeData.opening_hours
+        pinInsertData.last_place_refresh = new Date().toISOString()
+      }
+
+      console.log('Inserting pin with data:', pinInsertData)
+
       const { error: pinError } = await supabase
         .from('pins')
-        .insert({
-          title: placeName,
-          description: searchLocation.place_name,
-          latitude: searchLocation.center[1],
-          longitude: searchLocation.center[0],
-          category: category,
-          collection_id: collectionId,
-          user_id: userId
-        })
+        .insert(pinInsertData)
 
-      if (pinError) throw pinError
+      if (pinError) {
+        console.error('Pin insert error:', {
+          message: pinError.message,
+          code: pinError.code,
+          details: pinError.details,
+          hint: pinError.hint
+        })
+        throw pinError
+      }
 
       // Success!
       onSuccess()
       onClose()
     } catch (err: any) {
-      console.error('Error saving location:', err)
-      setError(err.message || 'Failed to save location')
+      console.error('Error saving location:', {
+        message: err?.message,
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint,
+        fullError: err
+      })
+      setError(err?.message || err?.details || err?.hint || 'Failed to save location')
     } finally {
       setLoading(false)
     }
@@ -221,7 +289,8 @@ export default function AddSearchLocationModal({
                   borderRadius: 'var(--radius)',
                   background: 'var(--background)',
                   fontSize: '0.875rem',
-                  fontFamily: 'inherit'
+                  fontFamily: 'inherit',
+                  color: 'var(--foreground)'
                 }}
               >
                 <option value="">Choose a collection...</option>
@@ -281,6 +350,7 @@ export default function AddSearchLocationModal({
                   border: '2px solid var(--border)',
                   borderRadius: 'var(--radius)',
                   background: 'var(--background)',
+                  color: 'var(--foreground)',
                   fontSize: '0.875rem',
                   fontFamily: 'inherit'
                 }}
@@ -311,6 +381,7 @@ export default function AddSearchLocationModal({
                   border: '2px solid var(--border)',
                   borderRadius: 'var(--radius)',
                   background: 'var(--background)',
+                  color: 'var(--foreground)',
                   fontSize: '0.875rem',
                   resize: 'vertical',
                   minHeight: '80px',
@@ -324,32 +395,74 @@ export default function AddSearchLocationModal({
               <label style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.75rem',
+                justifyContent: 'space-between',
                 cursor: 'pointer',
                 padding: '0.75rem',
                 border: '2px solid var(--border)',
                 borderRadius: 'var(--radius)',
-                background: 'var(--muted)'
+                background: isPublic ? 'rgba(34, 197, 94, 0.1)' : 'var(--muted)'
               }}>
-                <input
-                  type="checkbox"
-                  checked={isPublic}
-                  onChange={(e) => setIsPublic(e.target.checked)}
-                  style={{
-                    width: '20px',
-                    height: '20px',
-                    cursor: 'pointer'
-                  }}
-                />
-                <span style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.875rem',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em'
-                }}>
-                  {isPublic ? '🌍 PUBLIC COLLECTION' : '🔒 PRIVATE COLLECTION'}
-                </span>
+                <div>
+                  <div style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.875rem',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    color: 'var(--foreground)'
+                  }}>
+                    {isPublic ? '🌍 PUBLIC COLLECTION' : '🔒 PRIVATE COLLECTION'}
+                  </div>
+                  <div style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.65rem',
+                    marginTop: '0.25rem',
+                    color: 'var(--muted-foreground)',
+                    textTransform: 'none',
+                    letterSpacing: '0.02em'
+                  }}>
+                    {isPublic ? 'Visible to everyone' : 'Only visible to you'}
+                  </div>
+                </div>
+
+                {/* Toggle Switch */}
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="checkbox"
+                    checked={isPublic}
+                    onChange={(e) => setIsPublic(e.target.checked)}
+                    style={{
+                      position: 'absolute',
+                      opacity: 0,
+                      width: '100%',
+                      height: '100%',
+                      cursor: 'pointer',
+                      zIndex: 1
+                    }}
+                  />
+                  <div style={{
+                    width: '48px',
+                    height: '24px',
+                    borderRadius: '12px',
+                    background: isPublic ? '#22c55e' : 'var(--muted)',
+                    border: '2px solid',
+                    borderColor: isPublic ? '#22c55e' : 'var(--border)',
+                    transition: 'all 0.2s ease',
+                    position: 'relative'
+                  }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      borderRadius: '50%',
+                      background: 'white',
+                      position: 'absolute',
+                      top: '2px',
+                      left: isPublic ? '26px' : '2px',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                    }} />
+                  </div>
+                </div>
               </label>
             </div>
 

@@ -28,13 +28,26 @@ export function useAuth(): AuthData {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchUserProfile = async (currentUser: User): Promise<UserProfile | null> => {
+  // Cache profile data to avoid unnecessary refetches
+  const profileCache = useState<Map<string, { profile: UserProfile, timestamp: number }>>(new Map())[0]
+  const CACHE_DURATION = 60000 // 1 minute cache
+
+  const fetchUserProfile = async (currentUser: User, forceRefresh = false): Promise<UserProfile | null> => {
     try {
+      // Check cache first
+      if (!forceRefresh) {
+        const cached = profileCache.get(currentUser.id)
+        if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+          console.log('Using cached profile')
+          return cached.profile
+        }
+      }
+
       console.log('Fetching profile for user:', currentUser.id)
 
       const { data: profileData, error: profileError } = await supabase
         .from('users')
-        .select('*')
+        .select('id, email, username, full_name, bio, location, website, profile_image, preferences, created_at, updated_at')
         .eq('id', currentUser.id)
         .single()
 
@@ -53,7 +66,12 @@ export function useAuth(): AuthData {
       }
 
       console.log('Profile fetched successfully')
-      return profileData as UserProfile
+      const profile = profileData as UserProfile
+
+      // Update cache
+      profileCache.set(currentUser.id, { profile, timestamp: Date.now() })
+
+      return profile
     } catch (error) {
       console.error('Error in fetchUserProfile:', error)
       return null
@@ -62,7 +80,7 @@ export function useAuth(): AuthData {
 
   const refreshProfile = async () => {
     if (user) {
-      const profileData = await fetchUserProfile(user)
+      const profileData = await fetchUserProfile(user, true) // Force refresh
       setProfile(profileData)
     }
   }
@@ -143,9 +161,29 @@ export function useAuth(): AuthData {
       }
     )
 
+    // Periodic session refresh to prevent expiration (every 5 minutes)
+    // Supabase sessions expire after 1 hour by default
+    const refreshInterval = setInterval(async () => {
+      if (!mounted) return
+
+      console.log('Auto-refreshing session to prevent expiration...')
+      const { data, error } = await supabase.auth.refreshSession()
+
+      if (error) {
+        console.error('Auto session refresh failed:', error)
+      } else {
+        console.log('Session auto-refreshed successfully')
+        // Update user if session was refreshed
+        if (mounted && data.session) {
+          setUser(data.session.user)
+        }
+      }
+    }, 5 * 60 * 1000) // 5 minutes
+
     return () => {
       mounted = false
       clearTimeout(timeout)
+      clearInterval(refreshInterval)
       subscription?.unsubscribe()
     }
   }, [])

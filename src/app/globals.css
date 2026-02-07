@@ -136,6 +136,22 @@ body {
   position: relative;
 }
 
+/* Ensure text in modals and cards is readable */
+.form-container div:not([style*="color:"]),
+.form-container span:not([style*="color:"]),
+.form-container p:not([style*="color:"]),
+.glass-modal div:not([style*="color:"]),
+.glass-modal span:not([style*="color:"]),
+.glass-modal p:not([style*="color:"]),
+.glass-subtle div:not([style*="color:"]),
+.glass-subtle span:not([style*="color:"]),
+.glass-subtle p:not([style*="color:"]),
+.profile-container div:not([style*="color:"]),
+.profile-container span:not([style*="color:"]),
+.profile-container p:not([style*="color:"]) {
+  color: inherit;
+}
+
 /* Dot matrix background pattern */
 body::before {
   content: '';
@@ -177,6 +193,16 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
+  color: var(--foreground);
+}
+
+/* Ensure text elements inherit proper colors */
+p {
+  color: var(--foreground);
+}
+
+label {
+  color: var(--foreground);
 }
 
 h1 {
@@ -233,6 +259,11 @@ h3 {
 }
 
 @keyframes spinSquare {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
@@ -438,6 +469,7 @@ h3 {
   background: var(--card);
   border: 1px solid var(--border);
   position: relative;
+  color: var(--foreground);
 }
 
 .form-container::before {
@@ -509,6 +541,38 @@ h3 {
   text-transform: uppercase;
   font-size: 0.75rem;
   letter-spacing: 0.05em;
+}
+
+/* Select/Dropdown Styling */
+select {
+  width: 100%;
+  padding: var(--space-md);
+  border: 2px solid var(--border);
+  background: var(--background);
+  color: var(--foreground) !important;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--color-red-muted);
+  box-shadow: 0 0 0 3px var(--color-red-subtle);
+}
+
+select option {
+  background: var(--background);
+  color: var(--foreground) !important;
+  padding: var(--space-sm);
+}
+
+/* Ensure all select elements have readable text */
+select,
+select option {
+  -webkit-text-fill-color: var(--foreground) !important;
+  -moz-text-fill-color: var(--foreground) !important;
 }
 
 /* Map Components */
@@ -605,19 +669,61 @@ h3 {
   }
 }
 
-/* Mapbox Popup Customization */
-.mapboxgl-popup-content {
-  background: var(--card) !important;
-  color: var(--foreground) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 0 0 1px var(--color-red-subtle) !important;
-  border-radius: 0 !important;
-  font-family: var(--font-mono) !important;
-  padding: var(--space-md) !important;
+/* Google Maps InfoWindow Customization - Liquid Glass Effect */
+.gm-style .gm-style-iw-c {
+  background: rgba(39, 39, 42, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  padding: 0 !important;
 }
 
-.mapboxgl-popup-tip {
-  border-top-color: var(--card) !important;
+.gm-style .gm-style-iw-d {
+  overflow: auto !important;
+  max-height: 400px !important;
+}
+
+.gm-style .gm-style-iw-t::after {
+  background: rgba(39, 39, 42, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: -2px 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Close button styling */
+.gm-style .gm-ui-hover-effect {
+  opacity: 1 !important;
+  background: rgba(230, 57, 70, 0.15) !important;
+  border-radius: 50% !important;
+  width: 28px !important;
+  height: 28px !important;
+  top: 8px !important;
+  right: 8px !important;
+}
+
+.gm-style .gm-ui-hover-effect:hover {
+  background: rgba(230, 57, 70, 0.3) !important;
+}
+
+.gm-style .gm-ui-hover-effect > span {
+  background-color: #F4F4F5 !important;
+  width: 14px !important;
+  height: 14px !important;
+  margin: 7px !important;
+}
+
+/* Light mode override */
+@media (prefers-color-scheme: light) {
+  .gm-style .gm-style-iw-c {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .gm-style .gm-style-iw-t::after {
+    background: rgba(255, 255, 255, 0.85) !important;
+  }
 }
 
 /* Profile Components */
@@ -625,6 +731,7 @@ h3 {
   max-width: 1000px;
   margin: 0 auto;
   padding: var(--space-2xl) var(--space-lg);
+  color: var(--foreground);
 }
 
 .profile-header {
@@ -633,6 +740,7 @@ h3 {
   padding: var(--space-2xl);
   margin-bottom: var(--space-xl);
   position: relative;
+  color: var(--foreground);
 }
 
 .profile-header::before {
@@ -670,6 +778,7 @@ h3 {
   text-align: center;
   transition: var(--transition);
   position: relative;
+  color: var(--foreground);
 }
 
 .stat-card:hover {
@@ -711,6 +820,7 @@ h3 {
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: var(--foreground) !important;
 }
 
 .glass-modal {
@@ -718,6 +828,7 @@ h3 {
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: var(--foreground) !important;
 }
 
 .glass-overlay {
@@ -725,6 +836,7 @@ h3 {
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: var(--foreground) !important;
 }
 
 /* Light mode glassmorphism overrides */
@@ -767,10 +879,58 @@ h3 {
   color: var(--color-red);
 }
 
+.text-muted {
+  color: var(--muted-foreground) !important;
+}
+
+.text-foreground {
+  color: var(--foreground) !important;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
 .border-red {
   border-color: var(--color-red) !important;
 }
 
 .bg-red {
   background: var(--color-red) !important;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.gap-sm {
+  gap: var(--space-sm);
+}
+
+/* Animations */
+.slide-up {
+  animation: slideUpSharp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUpSharp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
