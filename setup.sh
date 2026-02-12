@@ -86,14 +86,19 @@ else
 fi
 echo ""
 
-# Step 3: Navigate to project directory
-print_step "Step 3/5: Navigating to project directory..."
+# Step 3: Verify we're in the project directory
+print_step "Step 3/5: Verifying project directory..."
 sleep 1
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$SCRIPT_DIR/travlr"
-
-print_success "Now in travlr project directory"
+if [ -f "package.json" ]; then
+    print_success "Found package.json - in correct directory"
+else
+    print_error "package.json not found!"
+    echo ""
+    echo "Make sure you run this script from the travlr project directory."
+    echo "Example: cd ~/Desktop/travlr && bash setup.sh"
+    exit 1
+fi
 echo ""
 
 # Step 4: Install project dependencies
@@ -101,13 +106,8 @@ print_step "Step 4/5: Installing project dependencies..."
 echo "This may take a few minutes. Please wait..."
 sleep 1
 
-if [ -f "package.json" ]; then
-    npm install
-    print_success "All dependencies installed successfully"
-else
-    print_error "package.json not found! Are you in the right directory?"
-    exit 1
-fi
+npm install
+print_success "All dependencies installed successfully"
 echo ""
 
 # Step 5: Check environment variables
@@ -122,16 +122,35 @@ if [ -f ".env.local" ]; then
     echo "  - Google Maps API key"
     echo ""
 else
-    print_error "Missing .env.local file!"
+    print_warning "Missing .env.local file!"
     echo ""
-    echo "You need to create a .env.local file with the following:"
+    echo "Creating a template .env.local file for you..."
+    cat > .env.local << 'EOF'
+# Travlr Environment Variables
+# Fill in your actual values below
+
+# Supabase Configuration
+# Get these from: https://supabase.com/dashboard/project/YOUR_PROJECT/settings/api
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Google Maps API Configuration (Client-side)
+# Get this from: https://console.cloud.google.com/apis/credentials
+# Enable: Maps JavaScript API, Places API, Geocoding API
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+
+# Google Places API Configuration (Server-side only)
+# Using same key as Maps API (can be separated for stricter security)
+GOOGLE_PLACES_API_KEY=your_google_maps_api_key_here
+EOF
+
+    print_success "Template .env.local created!"
     echo ""
-    echo "NEXT_PUBLIC_SUPABASE_URL=your_supabase_url"
-    echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key"
-    echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key"
-    echo "GOOGLE_PLACES_API_KEY=your_google_maps_key"
+    print_error "IMPORTANT: You must edit .env.local and add your actual API keys before running the app!"
     echo ""
-    exit 1
+    echo "Contact the developer for the correct values to use."
+    echo ""
+    exit 0
 fi
 
 # All done!
@@ -143,10 +162,9 @@ echo ""
 echo "Your Travlr app is ready to run!"
 echo ""
 echo "To start the app:"
-echo -e "  1. Open Terminal"
-echo -e "  2. Run: ${BLUE}cd $SCRIPT_DIR/travlr${NC}"
-echo -e "  3. Run: ${BLUE}npm run dev${NC}"
-echo -e "  4. Open your browser to: ${BLUE}http://localhost:3000${NC}"
+echo -e "  1. Make sure you're in the project directory"
+echo -e "  2. Run: ${BLUE}npm run dev${NC}"
+echo -e "  3. Open your browser to: ${BLUE}http://localhost:3000${NC}"
 echo ""
 echo "To stop the app: Press Ctrl+C in the terminal"
 echo ""
