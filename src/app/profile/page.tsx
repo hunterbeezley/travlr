@@ -251,6 +251,7 @@ export default function ProfilePage() {
       return pinsData || []
     } catch (error) {
       console.error('Error fetching pins:', error)
+      return []
     } finally {
       setLoadingPins(false)
     }
@@ -437,12 +438,12 @@ export default function ProfilePage() {
 
           <div className="navbar-user">
             <UserAvatar
-              profileImageUrl={profile?.profile_image_url || profile?.profile_image}
+              profileImageUrl={profile?.profile_image}
               email={user.email || ''}
               size="medium"
             />
             <span className="user-email">
-              {getDisplayName(profile, user)}
+              {getDisplayName(profile)}
             </span>
             <button
               onClick={handleSignOut}
@@ -482,8 +483,8 @@ export default function ProfilePage() {
             }}>
               {/* Avatar with Upload */}
               <ProfilePictureUpload
-                currentImageUrl={profile?.profile_image_url || profile?.profile_image}
-                onImageUploaded={async (url, path) => {
+                currentImageUrl={profile?.profile_image}
+                onImageUploaded={async (url) => {
                   // Update the profile in the database
                   try {
                     const { error } = await supabase
