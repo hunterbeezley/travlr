@@ -1676,7 +1676,7 @@ function MapComponent({ onMapClick }: MapProps) {
                 </div>
               )}
             </>
-          ) : activeTab === 'discover' ? (
+          ) : (
             <>
               {/* Discover Tab Content */}
               <div style={{
