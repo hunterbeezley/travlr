@@ -1186,12 +1186,12 @@ select option {
     display: none !important;
   }
 
-  /* Reposition map style selector to avoid overlap with search */
+  /* Reposition map layers button to top-left on mobile */
   .map-style-selector {
-    top: auto !important;
-    bottom: 5rem !important;
-    right: 1rem !important;
-    left: auto !important;
+    top: 0.75rem !important;
+    left: 1rem !important;
+    right: auto !important;
+    bottom: auto !important;
   }
 }
 
