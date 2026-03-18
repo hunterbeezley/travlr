@@ -195,7 +195,7 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
 ]
 
 function MapComponent({ onMapClick }: MapProps) {
-  const { user, loading: authLoading } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
   const { preferences, updatePreference } = useUserPreferences()
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<google.maps.Map | null>(null)
