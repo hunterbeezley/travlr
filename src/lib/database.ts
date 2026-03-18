@@ -174,6 +174,19 @@ export interface FriendsCollection {
 // DiscoverCollection has the same structure as FriendsCollection
 export type DiscoverCollection = FriendsCollection
 
+export interface Notification {
+  id: string
+  type: 'new_follower' | 'friend_collection'
+  title: string
+  message: string
+  actor_id: string | null
+  actor_username: string | null
+  actor_profile_image: string | null
+  related_id: string | null
+  is_read: boolean
+  created_at: string
+}
+
 export class DatabaseService {
   /**
    * Create a new pin
@@ -831,7 +844,7 @@ export class DatabaseService {
     try {
       const { data, error } = await supabase
         .from('collections')
-        .select('id, title, is_public')
+        .select('id, title, is_public, color')
         .eq('id', collectionId)
         .single()
 
@@ -848,7 +861,8 @@ export class DatabaseService {
       return {
         collection_id: data.id,
         collection_title: data.title,
-        is_public: data.is_public
+        is_public: data.is_public,
+        collection_color: data.color
       }
     } catch (error) {
       console.error('💥 DatabaseService error:', error)
@@ -890,7 +904,7 @@ export class DatabaseService {
       // Fetch collection info
       const { data: collectionData, error: collectionError } = await supabase
         .from('collections')
-        .select('title, is_public')
+        .select('title, is_public, color')
         .eq('id', pinData.collection_id)
         .single()
 
@@ -920,6 +934,7 @@ export class DatabaseService {
         collection_id: pinData.collection_id,
         collection_title: collectionData?.title || 'Unnamed Collection',
         collection_is_public: collectionData?.is_public || false,
+        collection_color: collectionData?.color || '#3b82f6',
 
         // Images
         images: images
@@ -1214,6 +1229,98 @@ export class DatabaseService {
     } catch (error) {
       console.error('💥 DatabaseService.updatePinImages error:', error)
       return { success: false, error: 'Failed to update pin images' }
+    }
+  }
+
+  /**
+   * Get user notifications
+   */
+  static async getUserNotifications(limit: number = 50): Promise<Notification[]> {
+    try {
+      const { data, error } = await supabase.rpc('get_user_notifications', {
+        limit_count: limit
+      })
+
+      if (error) {
+        console.error('Error fetching notifications:', error)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('Error in getUserNotifications:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get unread notification count
+   */
+  static async getUnreadNotificationCount(): Promise<number> {
+    try {
+      const { data, error } = await supabase.rpc('get_unread_notification_count')
+
+      if (error) {
+        console.error('Error fetching unread count:', error)
+        return 0
+      }
+
+      return data || 0
+    } catch (error) {
+      console.error('Error in getUnreadNotificationCount:', error)
+      return 0
+    }
+  }
+
+  /**
+   * Mark notification as read
+   */
+  static async markNotificationRead(notificationId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId)
+
+      if (error) {
+        console.error('Error marking notification as read:', error)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error in markNotificationRead:', error)
+      return false
+    }
+  }
+
+  /**
+   * Mark all notifications as read for current user
+   */
+  static async markAllNotificationsRead(): Promise<boolean> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        console.error('No authenticated user')
+        return false
+      }
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false)
+
+      if (error) {
+        console.error('Error marking all notifications as read:', error)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error in markAllNotificationsRead:', error)
+      return false
     }
   }
 
