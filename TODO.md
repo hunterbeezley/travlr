@@ -1,74 +1,56 @@
-# Rally App - Task Board
+# Travlr - Task Board
 
-**Last Updated:** March 13, 2026
+**Last Updated:** March 17, 2026
 
 > **All tasks are now tracked as GitHub Issues!**
 >
 > Use GitHub Issues with labels for task management:
-> - View by priority: Filter by `priority:critical`, `priority:high`, etc.
-> - View by type: Filter by `security`, `enhancement`, `bug`, etc.
-> - Interactive kanban: Move issues between columns
+> - View by priority: Filter by labels (enhancement, bug, security)
+> - Interactive workflow: Track progress with issues
 > - Link to code, PRs, and commits
 
 ## 🔗 Quick Links
 
-- **All Issues:** https://github.com/hunterbeezley/rally-app/issues
-- **Critical Issues:** https://github.com/hunterbeezley/rally-app/issues?q=is:issue+is:open+label:priority:critical
-- **High Priority:** https://github.com/hunterbeezley/rally-app/issues?q=is:issue+is:open+label:priority:high
-- **Security Issues:** https://github.com/hunterbeezley/rally-app/issues?q=is:issue+is:open+label:security
+- **All Issues:** https://github.com/hunterbeezley/travlr/issues
+- **Open Enhancements:** https://github.com/hunterbeezley/travlr/issues?q=is:issue+is:open+label:enhancement
+- **Open Bugs:** https://github.com/hunterbeezley/travlr/issues?q=is:issue+is:open+label:bug
+- **Security Issues:** https://github.com/hunterbeezley/travlr/issues?q=is:issue+is:open+label:security
 
 ## 📊 Current Issues Summary
 
-### 🔴 Critical Priority (2 issues)
+### 🔴 Critical Priority - Social Competition (3 issues)
 
-| # | Issue | Est. |
-|---|-------|------|
-| [#1](https://github.com/hunterbeezley/rally-app/issues/1) | Add server-side route protection | 4h |
-| [#2](https://github.com/hunterbeezley/rally-app/issues/2) | Implement server-side validation | 8h |
+| # | Issue | Priority |
+|---|-------|----------|
+| [#30](https://github.com/hunterbeezley/travlr/issues/30) | Add comments and voting system to collections | ⭐ CRITICAL |
+| [#29](https://github.com/hunterbeezley/travlr/issues/29) | Add city-based discovery feed to explore popular collections | ⭐ CRITICAL |
+| [#21](https://github.com/hunterbeezley/travlr/issues/21) | Create Terms of Service and Privacy Policy | 🚫 LAUNCH BLOCKER |
 
-**Total:** 12 hours
+**Why Critical:** Without these, Travlr cannot compete with Pinbox as a social platform
 
-### 🟡 High Priority (4 issues)
+### 🟡 High Priority - User Experience (4 issues)
 
-| # | Issue | Est. |
-|---|-------|------|
-| [#3](https://github.com/hunterbeezley/rally-app/issues/3) | Fix email address exposure to non-hosts | 2h |
-| [#4](https://github.com/hunterbeezley/rally-app/issues/4) | Activate storage policies for file uploads | 1h |
-| [#5](https://github.com/hunterbeezley/rally-app/issues/5) | Add server-side file validation | 3h |
-| [#6](https://github.com/hunterbeezley/rally-app/issues/6) | Implement rate limiting | 4h |
+| # | Issue | Priority |
+|---|-------|----------|
+| [#31](https://github.com/hunterbeezley/travlr/issues/31) | Enhance UX and visual design for collections and pins pages | 🎨 UX |
+| [#26](https://github.com/hunterbeezley/travlr/issues/26) | Mobile responsiveness and touch optimization | 📱 MOBILE |
+| [#28](https://github.com/hunterbeezley/travlr/issues/28) | Add social feed for discovery and friend activity | 🌍 DISCOVERY |
+| [#27](https://github.com/hunterbeezley/travlr/issues/27) | Add POI discovery and improve pin visibility/differentiation | 🗺️ DISCOVERY |
 
-**Total:** 10 hours
+### 🟢 Medium Priority - Polish & Compliance (4 issues)
 
-### 🟢 Medium Priority (6 issues)
+| # | Issue | Priority |
+|---|-------|----------|
+| [#25](https://github.com/hunterbeezley/travlr/issues/25) | Improve map view toggle UX with modal selector | 🗺️ UX |
+| [#24](https://github.com/hunterbeezley/travlr/issues/24) | Accessibility: Improve WCAG compliance | ♿ A11Y |
+| [#23](https://github.com/hunterbeezley/travlr/issues/23) | Compliance: Execute Data Processing Agreement with Supabase | 📄 LEGAL |
+| [#18](https://github.com/hunterbeezley/travlr/issues/18) | Code Style: Replace var with const/let and reduce 'any' usage | 🧹 CODE QUALITY |
 
-| # | Issue | Est. |
-|---|-------|------|
-| [#7](https://github.com/hunterbeezley/rally-app/issues/7) | Add security headers (CSP, X-Frame-Options, etc.) | 2h |
-| [#8](https://github.com/hunterbeezley/rally-app/issues/8) | Strengthen password requirements | 1h |
-| [#9](https://github.com/hunterbeezley/rally-app/issues/9) | Implement link validation in comments | 2h |
-| [#10](https://github.com/hunterbeezley/rally-app/issues/10) | Remove console.log statements from production code | 1h |
-| [#11](https://github.com/hunterbeezley/rally-app/issues/11) | Address TODO/FIXME/HACK comments in code | Varies |
-| [#12](https://github.com/hunterbeezley/rally-app/issues/12) | Add clickjacking protection (X-Frame-Options) | 30m |
+### 🔵 Low Priority - Nice to Have (1 issue)
 
-**Total:** ~7 hours
-
-### 🔵 Low Priority (11 issues)
-
-| # | Issue | Est. |
-|---|-------|------|
-| [#13](https://github.com/hunterbeezley/rally-app/issues/13) | Add email notifications for events | 8h |
-| [#14](https://github.com/hunterbeezley/rally-app/issues/14) | Implement browser push notifications | 6h |
-| [#15](https://github.com/hunterbeezley/rally-app/issues/15) | Add user notification preferences | 4h |
-| [#16](https://github.com/hunterbeezley/rally-app/issues/16) | Add comment reactions/likes | 3h |
-| [#17](https://github.com/hunterbeezley/rally-app/issues/17) | Add comment threading/replies | 8h |
-| [#18](https://github.com/hunterbeezley/rally-app/issues/18) | Implement comment sorting options | 2h |
-| [#19](https://github.com/hunterbeezley/rally-app/issues/19) | Create privacy policy | 4h |
-| [#20](https://github.com/hunterbeezley/rally-app/issues/20) | Create terms of service | 4h |
-| [#21](https://github.com/hunterbeezley/rally-app/issues/21) | Add CAPTCHA to prevent spam | 2h |
-| [#22](https://github.com/hunterbeezley/rally-app/issues/22) | Set up error monitoring (Sentry) | 2h |
-| [#23](https://github.com/hunterbeezley/rally-app/issues/23) | Add analytics tracking | 2h |
-
-**Total:** ~45 hours
+| # | Issue | Priority |
+|---|-------|----------|
+| [#17](https://github.com/hunterbeezley/travlr/issues/17) | Accessibility: Missing alt attributes and button types | ♿ A11Y |
 
 ---
 
@@ -169,7 +151,8 @@ gh issue list --search "security"
 
 ---
 
-**Repository:** https://github.com/hunterbeezley/rally-app
-**Issues:** https://github.com/hunterbeezley/rally-app/issues
+**Repository:** https://github.com/hunterbeezley/travlr
+**Issues:** https://github.com/hunterbeezley/travlr/issues
+**Competitive Analysis:** See [COMPETITIVE_ANALYSIS.md](./COMPETITIVE_ANALYSIS.md) for feature comparison with Pinbox
 
 This file is now a reference/snapshot. GitHub Issues are the source of truth.

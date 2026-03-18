@@ -2,9 +2,10 @@
 
 ## 📋 Project Context
 
-**Project Name:** Rally - Event Management App
-**Tech Stack:** Next.js 15, TypeScript, Tailwind CSS, Supabase
-**Architecture:** Server-side rendering, PostgreSQL with RLS, Supabase Auth
+**Project Name:** Travlr - Social Pin & Collection Platform
+**Tech Stack:** Next.js 15, TypeScript, Google Maps API, Supabase
+**Architecture:** Server-side rendering, PostgreSQL with RLS, Supabase Auth + Storage
+**Goal:** Compete with Pinbox as a more social alternative for discovering and sharing places
 
 ## 🎯 Core Principles
 
@@ -54,32 +55,70 @@
 2. Say: "I notice we've done [X] multiple times. Would you like me to create a workflow/script for this?"
 3. Wait for approval or objection
 4. Only create if approved
+5. **Create GitHub issue for the workflow itself**
 
 **Examples:**
-- Repeated database migrations → Migration script
-- Similar component patterns → Component generator
-- Manual deployment steps → Deployment workflow
+- Repeated database migrations → Migration script (create issue first)
+- Similar component patterns → Component generator (create issue first)
+- Manual deployment steps → Deployment workflow (create issue first)
 
-### 4. Task Management
+### 4. GitHub Issue Management
 
-**All TODOs go in `TODO.md`:**
-- No TODO comments in code (extract to TODO.md)
-- No scattered action items across files
-- Single source of truth for what needs doing
-- Kanban board format with priorities
+**CRITICAL RULE: All work must have a GitHub issue**
 
-**Task Priority Levels:**
-- 🔴 **Critical** - Blocks production, security issues, data loss
-- 🟡 **High** - Important features, significant bugs, performance
-- 🟢 **Medium** - Nice-to-have features, minor bugs, refactoring
-- 🔵 **Low** - Polish, documentation, future considerations
-- ✅ **Done** - Historical reference, completed work
+**Before starting ANY work:**
+1. Check if a GitHub issue exists for this work
+2. If no issue exists, create one immediately
+3. Reference the issue number in commits and PRs
+4. Update the issue when work is completed
+5. Close the issue when work is merged
 
-**When Adding Tasks:**
-1. Add to appropriate priority column in TODO.md
-2. Include brief description and context
-3. Reference related files/issues if applicable
-4. Update when status changes
+**Issue Creation Guidelines:**
+```bash
+# Create issue for new work
+gh issue create --title "Add feature X" --body "Description..." --label "enhancement"
+
+# View existing issues
+gh issue list
+
+# Check specific issue
+gh issue view 30
+```
+
+**Issue Lifecycle:**
+- 📝 **Open** - Work not started
+- 🏗️ **In Progress** - Actively being worked on (comment on issue)
+- ✅ **Closed** - Work completed and merged
+
+**Commit Format:**
+```bash
+# Reference issue in commits
+git commit -m "Add voting system to collections
+
+Implements upvote/downvote functionality for collections.
+Adds vote count display and user vote state tracking.
+
+Closes #30"
+
+# For partial work
+git commit -m "Add collection_votes table schema
+
+Part of #30"
+```
+
+**When Work is Complete:**
+1. Commit with "Closes #XX" or "Fixes #XX" in commit message
+2. Create PR referencing issue
+3. Close issue manually if not auto-closed: `gh issue close 30`
+
+**No TODO Comments in Code:**
+- ❌ Don't write `// TODO: Add feature` in code
+- ✅ Instead: Create GitHub issue, reference in comment if needed
+- Example: `// See issue #30 for voting system implementation`
+
+**Exception:**
+- Quick refactors within current work can have inline TODOs
+- But these must be addressed before PR or converted to issues
 
 ## 💻 Code Style Guidelines
 
@@ -175,7 +214,7 @@ git commit -m "WIP"
 - Use imperative mood: "Add feature" not "Added feature"
 - Be specific: What changed and why
 - No AI attribution
-- Reference issues: "Fixes #123" if applicable
+- **ALWAYS reference issues:** "Fixes #123" or "Part of #123" (REQUIRED)
 
 ## 🔧 When Making Changes
 
@@ -191,12 +230,26 @@ git commit -m "WIP"
 3. Verify it's actively maintained
 4. Run `npm audit` after installing
 
+### Before Starting Work
+1. Check if GitHub issue exists for this work
+2. If not, create issue: `gh issue create --title "..." --label "enhancement"`
+3. Comment on issue that you're starting work
+4. Create branch: `git checkout -b feature/issue-30-voting-system`
+
 ### Before Committing
-1. Run: `npm run code:quick`
-2. Remove any TODO comments (move to TODO.md)
-3. Remove console.log statements
-4. Format: `npm run format`
-5. Write clear commit message (no Claude attribution)
+1. Ensure work relates to a GitHub issue
+2. Run: `npm run code:quick` (if available, otherwise lint/type check)
+3. Remove any TODO comments (create issues instead)
+4. Remove console.log statements
+5. Format: `npm run format` (if available)
+6. Write clear commit message referencing issue (no Claude attribution)
+7. Example: `git commit -m "Add upvote/downvote buttons\n\nPart of #30"`
+
+### After Work is Complete
+1. Push branch and create PR
+2. Reference issue in PR: "Closes #30" or "Fixes #30"
+3. Wait for review/merge
+4. Issue will auto-close when PR merges (or close manually)
 
 ## 🎨 Code Patterns
 
@@ -263,45 +316,71 @@ export default function Form() {
 }
 ```
 
-## 📊 TODO Management System
+## 📊 Task Management (GitHub Issues)
+
+### IMPORTANT: GitHub Issues are Source of Truth
+
+**TODO.md is now a reference/index only.** All actual task tracking happens in GitHub Issues.
 
 ### Adding New Tasks
 
 When you identify work that needs to be done:
 
-1. **Open TODO.md**
-2. **Add to appropriate priority section**
-3. **Include:**
-   - Brief description
-   - Context/why it's needed
-   - Related files (if applicable)
-   - Estimated complexity (if known)
+1. **Create GitHub Issue IMMEDIATELY**
+   ```bash
+   gh issue create --title "Add rate limiting to prevent brute force" \
+                   --body "Security vulnerability from audit..." \
+                   --label "enhancement"
+   ```
 
-**Example:**
-```markdown
-| Task | Description | Context | Files |
-|------|-------------|---------|-------|
-| Add rate limiting | Prevent brute force attacks on login | Security vulnerability from audit | middleware.ts, app/login/page.tsx |
-```
+2. **Reference the issue number in TODO.md** (optional, for quick reference)
 
-### Moving Tasks
+3. **Never start work without an issue**
 
-**From TODO to Done:**
-1. Move row to Done column
-2. Add completion date
-3. Keep for historical reference (don't delete)
+**Bad:**
+- Adding TODO comments in code
+- Starting work without creating issue
+- Completing work without closing issue
 
-**Changing Priority:**
-- Move row to new priority section
-- Update context if priority reason changed
+**Good:**
+- Create issue → Start work → Reference in commits → Close when done
+- All work traceable to a specific issue number
 
-### Reviewing TODOs
+### Working on Tasks
 
-**During Sessions:**
-- Check TODO.md at start to see what's pending
-- Update task status as we work
-- Add new tasks as we discover them
-- Move completed tasks to Done
+**Before Starting:**
+1. Check existing issues: `gh issue list`
+2. Find relevant issue or create new one
+3. Comment on issue: "Starting work on this"
+4. Create branch: `git checkout -b feature/issue-30-voting`
+
+**While Working:**
+1. Reference issue in commits: `git commit -m "Add vote buttons\n\nPart of #30"`
+2. Push progress regularly
+3. Update issue with blockers/questions
+
+**When Done:**
+1. Final commit with: `Closes #30` or `Fixes #30`
+2. Create PR referencing issue
+3. Issue auto-closes when PR merges
+
+### Reviewing Tasks
+
+**At Session Start:**
+1. Check open issues: `gh issue list`
+2. Review priorities in TODO.md (reference only)
+3. Ask user what to work on
+4. Ensure issue exists before starting
+
+**During Session:**
+1. Create issues for any new work discovered
+2. Update issues with progress/blockers
+3. Close issues as work completes
+
+**At Session End:**
+1. Verify all work has corresponding issues
+2. Update any in-progress issues
+3. Close completed issues
 
 ## 🔍 Code Review Reminders
 
@@ -357,41 +436,52 @@ Before proposing changes:
 ## 🔄 Session Management
 
 **At Session Start:**
-1. Read TODO.md to understand current priorities
-2. Ask what user wants to work on
-3. Review any recent changes mentioned
+1. Check open GitHub issues: `gh issue list`
+2. Read TODO.md for quick priority reference
+3. Ask what user wants to work on
+4. **Ensure issue exists before starting work**
 
 **During Session:**
-1. Update TODO.md as tasks complete
-2. Add new tasks discovered during work
-3. Suggest workflows if patterns emerge (with approval)
-4. Keep code organized and files small
+1. Create GitHub issues for any new work discovered
+2. Reference issues in all commits: `Part of #30`
+3. Update issues with progress/blockers
+4. Suggest workflows if patterns emerge (with approval, create issue first)
+5. Keep code organized and files small
 
 **At Session End:**
-1. Ensure TODO.md is updated
-2. Verify all changes committed (no Claude attribution)
-3. Run final code check: `npm run code:quick`
-4. Summarize what was accomplished
+1. Verify all work has corresponding GitHub issues
+2. Close completed issues: `gh issue close 30`
+3. Verify all changes committed (no Claude attribution)
+4. Run final code check if available
+5. Summarize what was accomplished + issue numbers closed
 
 ## 🎯 Current Project State
 
-**Status:** Development - Infrastructure complete, features working
-**Production Ready:** No - Security fixes required (3-4 weeks)
-**Priority:** Fix critical security issues before deployment
+**Status:** Development - Core features complete, social features in progress
+**Production Ready:** No - Needs social features + legal docs (5-6 weeks)
+**Goal:** Compete with Pinbox as a more social alternative
+**Priority:**
+1. Add voting/comments system (Issue #30)
+2. Add city-based discovery feed (Issue #29)
+3. Legal compliance (Issue #21)
 
-**Key Features:**
-- Event creation and management
-- RSVP tracking
-- User profiles with avatars
-- Notifications (real-time)
-- Comments with @ mentions
-- Host auto-RSVP
-- Guest list management
+**Implemented Features:**
+- Pin creation with Google Places integration (up to 5 images)
+- Collections (public/private, custom colors)
+- Follow system and notifications
+- User profiles with stats
+- Friends/Discover tabs
+- Interactive Google Maps with multiple styles
+- GDPR compliance (data export, account deletion)
 
-**Active Workflows:**
-- Code review (automated + manual)
-- Security audits (automated + manual)
-- Build and deployment
+**Missing Critical Features (vs Pinbox):**
+- Voting/rating system (Issue #30) ⭐ CRITICAL
+- Comments on collections (Issue #30) ⭐ CRITICAL
+- City-based discovery feed (Issue #29) ⭐ CRITICAL
+- Mobile optimization (Issue #26)
+- UX polish (Issue #31)
+
+**See:** COMPETITIVE_ANALYSIS.md for full feature comparison
 
 ## 💡 Communication Preferences
 
@@ -419,27 +509,30 @@ Before proposing changes:
 # Development
 npm run dev              # Start dev server
 npm run build            # Build for production
+npm run lint             # Run ESLint
 
-# Code Quality
-npm run code:quick       # Fast: lint + type check
-npm run code:review      # Full: all quality checks
-npm run format           # Auto-format code
+# GitHub Issues (ALWAYS USE)
+gh issue list                    # View all open issues
+gh issue create --title "..."    # Create new issue
+gh issue view 30                 # View issue details
+gh issue close 30                # Close issue when done
 
-# Security
-npm run security:check   # Quick security scan
-npm run security:audit   # Full security audit
-
-# Pre-commit
-npm run pre-commit       # All quick checks
+# Git Workflow
+git checkout -b feature/issue-30-voting  # Create feature branch
+git commit -m "Add feature\n\nPart of #30"  # Commit with issue ref
+git push origin feature/issue-30-voting   # Push branch
+gh pr create --title "..." --body "Closes #30"  # Create PR
 ```
 
 ## 📖 Key Documentation
 
-- **README.md** - Project overview and setup
-- **TODO.md** - All pending tasks (kanban board)
+- **README.md** - Project overview, setup, and feature list
+- **TODO.md** - Quick reference to GitHub issues (not source of truth)
+- **CLAUDE.md** - This file - project conventions and workflow
+- **COMPETITIVE_ANALYSIS.md** - Feature comparison with Pinbox
 - **SECURITY.md** - Security overview and status
-- **CODE_REVIEW_GUIDE.md** - How to review code
-- **docs/** - Feature-specific documentation
+- **LEGAL_COMPLIANCE_CHECKLIST.md** - Legal requirements tracker
+- **GitHub Issues** - Source of truth for all tasks (gh issue list)
 
 ## 🎓 Learning from Sessions
 
@@ -456,21 +549,24 @@ npm run pre-commit       # All quick checks
 
 ## 🔒 Reminders
 
-1. **No Claude attribution** - Ever
-2. **TODO.md is source of truth** - All tasks go there
-3. **Keep files small** - Split when needed
-4. **Suggest workflows** - But wait for approval
-5. **Organized structure** - Clear folders and naming
-6. **Security first** - Always validate and protect
-7. **Documentation matters** - But don't over-document
+1. **No Claude attribution** - Ever, in any commits or code
+2. **GitHub Issues REQUIRED** - All work must have an issue, create if missing
+3. **Reference issues in commits** - Always use "Part of #30" or "Closes #30"
+4. **Keep files small** - Split when needed (< 400 lines)
+5. **Suggest workflows** - But wait for approval (and create issue first)
+6. **Organized structure** - Clear folders and naming
+7. **Security first** - Always validate and protect
+8. **Documentation matters** - But don't over-document
+9. **Check issues at session start** - Before starting any work
 
 ---
 
-**Last Updated:** March 13, 2026
+**Last Updated:** March 17, 2026
 
 This file defines how we work together on this project. Following these guidelines ensures:
 - Clean, maintainable codebase
-- Clear task tracking
+- Clear task tracking via GitHub Issues (REQUIRED)
 - Organized files and documentation
 - No AI attribution in commits
+- All work traceable to specific issues
 - Collaborative workflow suggestions

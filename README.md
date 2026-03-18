@@ -8,12 +8,40 @@ Drop pins, share spots, build your perfect city guide.
   <img src="public/screenshots/screenshot-3.png" width="32%" />
 </p>
 
-> **🚧 Currently Building**  
-> Pls Don't expect everything to work perfectly (yet).
+> **🚧 Development Status**
+> Core features are working! Currently adding social engagement features (voting, comments, city feeds).
+> Security hardening in progress. Not production-ready yet, but great for testing!
+
+## ✨ What Works Right Now
+
+### Core Features
+- 📍 Drop pins anywhere on the map with photos & details
+- 📁 Organize pins into collections (public or private)
+- 🎨 Custom collection colors (preset + hex color picker)
+- 🗺️ Multiple map styles (Streets, Satellite, Terrain, Dark)
+- 🔍 Google Places integration with business details, hours, ratings
+
+### Social Features
+- 👥 Follow other users and see their public collections
+- 🔔 Real-time notifications for follows and friend activity
+- 🌍 Discover public collections from friends and the community
+- 👤 User profiles with stats (pins, collections, followers)
+
+### Advanced
+- 📸 Up to 5 images per pin with image galleries
+- 🏷️ 10 pin categories with custom colored icons
+- 🔒 GDPR compliance (data export, account deletion, consent management)
+- 📱 Dark mode support
+
+### Coming Soon
+- 💬 Comments on collections
+- ⬆️⬇️ Voting/rating system
+- 🏙️ City-based discovery feeds
+- 📊 Enhanced mobile experience
 
 ## 🎯 Save, collect, share
 
-Drop pins on that random taco spot you found, organize them into collections like "Date Night Spots" or "Best Coffee in Portland," and share them publically.
+Drop pins on that random taco spot you found, organize them into collections like "Date Night Spots" or "Best Coffee in Portland," and share them publicly with friends or the world.
 
 ## 🚀 Get It Running
 
@@ -71,18 +99,28 @@ Maps: Mapbox GL JS
 Styling: Pure CSS with custom properties
 TypeScript
 
-📁 Arch
+📁 Project Structure
 ```
-src/
-├── app/                    # Next.js app router stuff
-├── components/             # React components
-│   ├── Auth.tsx           # Login/signup 
-│   ├── Map.tsx            # The main map interface
-│   ├── PinCreationModal.tsx # Pin creation with image uploads
-│   ├── ProfilePictureUpload.tsx # Profile pic management
-│   └── ...more            # SingleImageUpload, MultipleImageUpload, etc.
-├── hooks/                 # Custom hooks
-└── lib/                   # Database services, utilities
+travlr/
+├── src/
+│   ├── app/                    # Next.js 15 app router pages
+│   │   ├── page.tsx           # Main map interface (homepage)
+│   │   ├── profile/page.tsx   # User profiles
+│   │   └── settings/page.tsx  # User settings
+│   ├── components/            # React components
+│   │   ├── Auth.tsx          # Authentication (login/signup)
+│   │   ├── Map.tsx           # Interactive Google Maps
+│   │   ├── PinCreationModal.tsx    # Pin creation with images
+│   │   ├── CollectionDetailsModal.tsx  # Collection management
+│   │   ├── NotificationBadge.tsx   # Real-time notifications
+│   │   ├── ConsentBanner.tsx      # GDPR consent
+│   │   └── ...more               # Image uploads, modals, avatars
+│   ├── hooks/                # Custom React hooks
+│   └── lib/                  # Utilities and Supabase client
+├── migrations/               # Database migrations & schema
+├── scripts/                  # Utility scripts
+├── public/                   # Static assets
+└── docs/                     # Additional documentation
 ```
 
 
