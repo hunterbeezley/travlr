@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Toast from '@/components/Toast'
 
 interface Profile {
   username: string | null
@@ -181,6 +182,7 @@ export default function PinPageClient({
                   <>
                     <button
                       onClick={() => setCurrentImageIndex((prev) => (prev - 1 + sortedImages.length) % sortedImages.length)}
+                      aria-label="Previous image"
                       style={{
                         position: 'absolute',
                         left: '1rem',
@@ -197,13 +199,21 @@ export default function PinPageClient({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        zIndex: 10
+                        zIndex: 10,
+                        transition: 'background 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(0, 0, 0, 0.8)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)'
                       }}
                     >
                       ‹
                     </button>
                     <button
                       onClick={() => setCurrentImageIndex((prev) => (prev + 1) % sortedImages.length)}
+                      aria-label="Next image"
                       style={{
                         position: 'absolute',
                         right: '1rem',
@@ -220,25 +230,39 @@ export default function PinPageClient({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        zIndex: 10
+                        zIndex: 10,
+                        transition: 'background 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(0, 0, 0, 0.8)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)'
                       }}
                     >
                       ›
                     </button>
 
                     {/* Image Indicators */}
-                    <div style={{
-                      position: 'absolute',
-                      bottom: '1rem',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      display: 'flex',
-                      gap: '0.5rem',
-                      zIndex: 10
-                    }}>
+                    <div
+                      role="tablist"
+                      aria-label="Image gallery navigation"
+                      style={{
+                        position: 'absolute',
+                        bottom: '1rem',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        display: 'flex',
+                        gap: '0.5rem',
+                        zIndex: 10
+                      }}
+                    >
                       {sortedImages.map((_, idx) => (
                         <button
                           key={idx}
+                          role="tab"
+                          aria-label={`Go to image ${idx + 1} of ${sortedImages.length}`}
+                          aria-selected={idx === currentImageIndex}
                           onClick={() => setCurrentImageIndex(idx)}
                           style={{
                             width: '10px',
@@ -247,7 +271,18 @@ export default function PinPageClient({
                             border: 'none',
                             background: idx === currentImageIndex ? 'white' : 'rgba(255, 255, 255, 0.5)',
                             cursor: 'pointer',
-                            padding: 0
+                            padding: 0,
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (idx !== currentImageIndex) {
+                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.7)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (idx !== currentImageIndex) {
+                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)'
+                            }
                           }}
                         />
                       ))}
@@ -574,6 +609,7 @@ export default function PinPageClient({
                 <button
                   onClick={handleCopyCoordinates}
                   className="btn btn-secondary btn-small"
+                  aria-label="Copy coordinates to clipboard"
                 >
                   📋 COPY
                 </button>
@@ -589,6 +625,7 @@ export default function PinPageClient({
               <button
                 onClick={handleShare}
                 className="btn btn-primary"
+                aria-label="Share this pin"
                 style={{
                   flex: 1,
                   minWidth: '150px'
@@ -725,24 +762,11 @@ export default function PinPageClient({
 
       {/* Toast Notification */}
       {showCopyToast && (
-        <div style={{
-          position: 'fixed',
-          bottom: '2rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'var(--accent)',
-          color: 'white',
-          padding: '1rem 2rem',
-          borderRadius: 'var(--radius)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-          zIndex: 9999,
-          animation: 'slideUp 0.3s ease',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '0.875rem',
-          fontWeight: '600'
-        }}>
-          📋 Copied to clipboard!
-        </div>
+        <Toast
+          message="Copied to clipboard!"
+          icon="📋"
+          onClose={() => setShowCopyToast(false)}
+        />
       )}
     </div>
   )

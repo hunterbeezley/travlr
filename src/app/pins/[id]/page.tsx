@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import PinPageClient from './PinPageClient'
+import { PinPageSkeleton } from '@/components/SkeletonLoader'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -117,24 +118,7 @@ export default function PinPage({ params }: PageProps) {
   }, [pinId])
 
   if (loading) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        background: 'var(--background)'
-      }}>
-        <div style={{
-          width: '3rem',
-          height: '3rem',
-          border: '3px solid var(--muted)',
-          borderTop: '3px solid var(--accent)',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }} />
-      </div>
-    )
+    return <PinPageSkeleton />
   }
 
   if (notFoundError || !pin) {

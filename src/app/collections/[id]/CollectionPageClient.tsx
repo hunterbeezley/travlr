@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Toast from '@/components/Toast'
 
 interface Profile {
   username: string | null
@@ -117,6 +118,7 @@ export default function CollectionPageClient({
           <button
             onClick={() => router.back()}
             className="btn btn-secondary btn-small"
+            aria-label="Go back to previous page"
           >
             ← BACK
           </button>
@@ -467,24 +469,11 @@ export default function CollectionPageClient({
 
       {/* Share Toast */}
       {showShareToast && (
-        <div style={{
-          position: 'fixed',
-          bottom: '2rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'var(--accent)',
-          color: 'white',
-          padding: '1rem 2rem',
-          borderRadius: 'var(--radius)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-          zIndex: 9999,
-          animation: 'slideUp 0.3s ease',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '0.875rem',
-          fontWeight: '600'
-        }}>
-          🔗 Link copied to clipboard!
-        </div>
+        <Toast
+          message="Link copied to clipboard!"
+          icon="🔗"
+          onClose={() => setShowShareToast(false)}
+        />
       )}
     </div>
   )
