@@ -101,22 +101,25 @@ export function useAuth(): AuthData {
 
         const currentUser = session?.user ?? null
         console.log('Current user:', currentUser?.id || 'none')
-        setUser(currentUser)
 
         if (currentUser) {
+          // Fetch profile BEFORE updating state to avoid race condition
           const profileData = await fetchUserProfile(currentUser)
           if (mounted) {
+            // Set user and profile together, then set loading to false
+            setUser(currentUser)
             setProfile(profileData)
+            console.log('Setting loading to false - user and profile ready')
+            setLoading(false)
           }
         } else {
           if (mounted) {
+            // No user - set everything together
+            setUser(null)
             setProfile(null)
+            console.log('Setting loading to false - no user')
+            setLoading(false)
           }
-        }
-
-        if (mounted) {
-          console.log('Setting loading to false')
-          setLoading(false)
         }
       } catch (error) {
         console.error('Error in getSession:', error)
@@ -142,21 +145,23 @@ export function useAuth(): AuthData {
         if (!mounted) return
 
         const currentUser = session?.user ?? null
-        setUser(currentUser)
 
         if (currentUser) {
+          // Fetch profile BEFORE updating state to avoid race condition
           const profileData = await fetchUserProfile(currentUser)
           if (mounted) {
+            // Set user and profile together
+            setUser(currentUser)
             setProfile(profileData)
+            setLoading(false)
           }
         } else {
           if (mounted) {
+            // No user - set everything together
+            setUser(null)
             setProfile(null)
+            setLoading(false)
           }
-        }
-
-        if (mounted) {
-          setLoading(false)
         }
       }
     )
