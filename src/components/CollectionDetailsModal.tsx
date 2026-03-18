@@ -13,6 +13,9 @@ interface Collection {
   first_pin_image?: string | null
   user_id?: string
   color: string
+  upvotes?: number
+  downvotes?: number
+  net_score?: number
 }
 
 interface CollectionDetailsModalProps {
@@ -47,13 +50,23 @@ export default function CollectionDetailsModal({
   const [images, setImages] = useState<PinImage[]>([])
   const [loadingImages, setLoadingImages] = useState(true)
 
+  // Voting state
+  const [userVote, setUserVote] = useState<'up' | 'down' | null>(null)
+  const [voteCounts, setVoteCounts] = useState({
+    upvotes: collection.upvotes || 0,
+    downvotes: collection.downvotes || 0,
+    net_score: collection.net_score || 0
+  })
+  const [votingInProgress, setVotingInProgress] = useState(false)
+
   // Check if the current user owns this collection
   const isOwner = collection.user_id === userId
 
-  // Load collection images
+  // Load collection images and vote data
   useEffect(() => {
-    const loadImages = async () => {
+    const loadData = async () => {
       try {
+        // Load images
         const { data: pins } = await supabase
           .from('pins')
           .select('id')
@@ -69,14 +82,32 @@ export default function CollectionDetailsModal({
 
           setImages(pinImages || [])
         }
+
+        // Load user's vote
+        const { data: voteData } = await supabase
+          .rpc('get_user_vote_on_collection', { p_collection_id: collection.id })
+
+        setUserVote(voteData as 'up' | 'down' | null)
+
+        // Load vote counts
+        const { data: countsData } = await supabase
+          .rpc('get_collection_vote_counts', { p_collection_id: collection.id })
+
+        if (countsData) {
+          setVoteCounts({
+            upvotes: countsData.upvotes || 0,
+            downvotes: countsData.downvotes || 0,
+            net_score: countsData.net_score || 0
+          })
+        }
       } catch (err) {
-        console.error('Error loading images:', err)
+        console.error('Error loading data:', err)
       } finally {
         setLoadingImages(false)
       }
     }
 
-    loadImages()
+    loadData()
   }, [collection.id])
 
   const handleSave = async () => {
@@ -122,6 +153,79 @@ export default function CollectionDetailsModal({
     })
     setError('')
     setIsEditing(false)
+  }
+
+  const handleVote = async (voteType: 'up' | 'down') => {
+    if (votingInProgress) return
+
+    setVotingInProgress(true)
+
+    try {
+      // Optimistic update
+      const wasVoted = userVote === voteType
+      const previousVote = userVote
+      const previousCounts = { ...voteCounts }
+
+      // Update UI immediately
+      if (wasVoted) {
+        // Removing vote
+        setUserVote(null)
+        setVoteCounts(prev => ({
+          upvotes: voteType === 'up' ? prev.upvotes - 1 : prev.upvotes,
+          downvotes: voteType === 'down' ? prev.downvotes - 1 : prev.downvotes,
+          net_score: voteType === 'up' ? prev.net_score - 1 : prev.net_score + 1
+        }))
+      } else if (previousVote) {
+        // Changing vote
+        setUserVote(voteType)
+        setVoteCounts(prev => ({
+          upvotes: voteType === 'up' ? prev.upvotes + 1 : prev.upvotes - 1,
+          downvotes: voteType === 'down' ? prev.downvotes + 1 : prev.downvotes - 1,
+          net_score: voteType === 'up' ? prev.net_score + 2 : prev.net_score - 2
+        }))
+      } else {
+        // Adding new vote
+        setUserVote(voteType)
+        setVoteCounts(prev => ({
+          upvotes: voteType === 'up' ? prev.upvotes + 1 : prev.upvotes,
+          downvotes: voteType === 'down' ? prev.downvotes + 1 : prev.downvotes,
+          net_score: voteType === 'up' ? prev.net_score + 1 : prev.net_score - 1
+        }))
+      }
+
+      // Make API call
+      const { data, error: voteError } = await supabase
+        .rpc('toggle_collection_vote', {
+          p_collection_id: collection.id,
+          p_vote_type: voteType
+        })
+
+      if (voteError) throw voteError
+
+      // Refresh actual counts from server
+      const { data: countsData } = await supabase
+        .rpc('get_collection_vote_counts', { p_collection_id: collection.id })
+
+      if (countsData) {
+        setVoteCounts({
+          upvotes: countsData.upvotes || 0,
+          downvotes: countsData.downvotes || 0,
+          net_score: countsData.net_score || 0
+        })
+      }
+
+      const { data: voteData } = await supabase
+        .rpc('get_user_vote_on_collection', { p_collection_id: collection.id })
+
+      setUserVote(voteData as 'up' | 'down' | null)
+
+    } catch (err: any) {
+      console.error('Error voting:', err)
+      setError('Failed to record vote. Please try again.')
+      // Note: Optimistic update already happened, real data will sync on next load
+    } finally {
+      setVotingInProgress(false)
+    }
   }
 
   return (
@@ -311,6 +415,102 @@ export default function CollectionDetailsModal({
             </div>
           )}
         </div>
+
+        {/* Voting Section */}
+        {!isOwner && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              padding: '1rem',
+              background: 'var(--muted)',
+              borderRadius: 'var(--radius)',
+              border: '2px solid var(--border)'
+            }}>
+              {/* Upvote Button */}
+              <button
+                onClick={() => handleVote('up')}
+                disabled={votingInProgress}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  background: userVote === 'up' ? '#22c55e' : 'var(--background)',
+                  color: userVote === 'up' ? 'white' : 'var(--foreground)',
+                  border: '2px solid',
+                  borderColor: userVote === 'up' ? '#22c55e' : 'var(--border)',
+                  borderRadius: 'var(--radius)',
+                  cursor: votingInProgress ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '700',
+                  fontFamily: 'var(--font-mono)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  transition: 'all 0.2s ease',
+                  opacity: votingInProgress ? 0.6 : 1
+                }}
+              >
+                <span style={{ fontSize: '1.25rem' }}>▲</span>
+                <span>{voteCounts.upvotes}</span>
+              </button>
+
+              {/* Net Score Display */}
+              <div style={{
+                flex: 1,
+                textAlign: 'center',
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                fontFamily: 'var(--font-mono)',
+                color: voteCounts.net_score > 0 ? '#22c55e' : voteCounts.net_score < 0 ? '#ef4444' : 'var(--muted-foreground)'
+              }}>
+                {voteCounts.net_score > 0 ? '+' : ''}{voteCounts.net_score}
+              </div>
+
+              {/* Downvote Button */}
+              <button
+                onClick={() => handleVote('down')}
+                disabled={votingInProgress}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  background: userVote === 'down' ? '#ef4444' : 'var(--background)',
+                  color: userVote === 'down' ? 'white' : 'var(--foreground)',
+                  border: '2px solid',
+                  borderColor: userVote === 'down' ? '#ef4444' : 'var(--border)',
+                  borderRadius: 'var(--radius)',
+                  cursor: votingInProgress ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '700',
+                  fontFamily: 'var(--font-mono)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  transition: 'all 0.2s ease',
+                  opacity: votingInProgress ? 0.6 : 1
+                }}
+              >
+                <span style={{ fontSize: '1.25rem' }}>▼</span>
+                <span>{voteCounts.downvotes}</span>
+              </button>
+            </div>
+
+            {/* Voting hint */}
+            <div style={{
+              marginTop: '0.5rem',
+              fontSize: '0.65rem',
+              color: 'var(--muted-foreground)',
+              fontFamily: 'var(--font-mono)',
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              {userVote ? `You voted ${userVote === 'up' ? 'up' : 'down'} • Click again to remove` : 'Vote to rate this collection'}
+            </div>
+          </div>
+        )}
 
         {/* Color Picker - Only show when editing */}
         {isOwner && isEditing && (
@@ -524,9 +724,18 @@ export default function CollectionDetailsModal({
           gap: '1.5rem',
           marginBottom: '1.5rem',
           fontSize: '0.875rem',
-          color: 'var(--muted-foreground)'
+          color: 'var(--muted-foreground)',
+          flexWrap: 'wrap'
         }}>
           <div>📌 {collection.pin_count || 0} pins</div>
+          {voteCounts.net_score !== 0 && (
+            <div style={{
+              color: voteCounts.net_score > 0 ? '#22c55e' : '#ef4444',
+              fontWeight: '700'
+            }}>
+              {voteCounts.net_score > 0 ? '👍' : '👎'} {Math.abs(voteCounts.net_score)} {voteCounts.net_score > 0 ? 'upvotes' : 'downvotes'} net
+            </div>
+          )}
           <div>📅 {new Date(collection.created_at).toLocaleDateString()}</div>
         </div>
 
