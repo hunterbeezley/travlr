@@ -4,7 +4,7 @@ import { Wrapper } from '@googlemaps/react-wrapper'
 import { useAuth } from '@/hooks/useAuth'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { supabase } from '@/lib/supabase'
-import { DatabaseService, FriendsCollection, DiscoverCollection } from '@/lib/database'
+import { DatabaseService, FriendsCollection } from '@/lib/database'
 import PinCreationModal from './PinCreationModal'
 import PinEditModal from './PinEditModal'
 import PinImageViewerModal from './PinImageViewerModal'
@@ -253,15 +253,10 @@ function MapComponent({ onMapClick }: MapProps) {
   const [allPins, setAllPins] = useState<Pin[]>([])
 
   // Friends/Follow state
-  const [activeTab, setActiveTab] = useState<'my-collections' | 'friends' | 'discover'>('my-collections')
+  const [activeTab, setActiveTab] = useState<'my-collections' | 'friends'>('my-collections')
   const [friendsCollections, setFriendsCollections] = useState<FriendsCollection[]>([])
   const [loadingFriendsCollections, setLoadingFriendsCollections] = useState(false)
   const [friendsPins, setFriendsPins] = useState<Pin[]>([])
-
-  // Discover state
-  const [discoverCollections, setDiscoverCollections] = useState<DiscoverCollection[]>([])
-  const [loadingDiscoverCollections, setLoadingDiscoverCollections] = useState(false)
-  const [discoverPins, setDiscoverPins] = useState<Pin[]>([])
 
   // Collection details modal state
   const [showCollectionDetails, setShowCollectionDetails] = useState(false)
@@ -732,44 +727,6 @@ function MapComponent({ onMapClick }: MapProps) {
     }
   }
 
-  // Load discover collections
-  const loadDiscoverCollections = async () => {
-    if (!user) return
-
-    setLoadingDiscoverCollections(true)
-    try {
-      const data = await DatabaseService.getDiscoverCollections(50)
-      setDiscoverCollections(data || [])
-    } catch (error) {
-      console.error('Error loading discover collections:', error)
-    } finally {
-      setLoadingDiscoverCollections(false)
-    }
-  }
-
-  // Load pins for a specific discover collection
-  const loadDiscoverCollectionPins = async (collectionId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('pins')
-        .select('*')
-        .eq('collection_id', collectionId)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error loading discover collection pins:', error)
-        return
-      }
-
-      const discoverPinsData = data || []
-      setDiscoverPins(discoverPinsData)
-      setPins(discoverPinsData)
-      fitMapToPins(discoverPinsData)
-    } catch (error) {
-      console.error('Error loading discover collection pins:', error)
-    }
-  }
-
   // Filter pins by collection
   const filterPinsByCollection = (collectionId: string | null) => {
     if (collectionId === null) {
@@ -805,15 +762,12 @@ function MapComponent({ onMapClick }: MapProps) {
   // Handle collection selection
   const handleCollectionSelect = (
     collectionId: string | null,
-    isFriendCollection: boolean = false,
-    isDiscoverCollection: boolean = false
+    isFriendCollection: boolean = false
   ) => {
     setSelectedCollectionId(collectionId)
 
     if (isFriendCollection && collectionId) {
       loadFriendCollectionPins(collectionId)
-    } else if (isDiscoverCollection && collectionId) {
-      loadDiscoverCollectionPins(collectionId)
     } else {
       const filteredPins = collectionId === null
         ? allPins
@@ -1279,7 +1233,6 @@ function MapComponent({ onMapClick }: MapProps) {
       loadPins()
       loadCollections()
       loadFriendsCollections()
-      loadDiscoverCollections()
     }
   }, [user])
 
@@ -1541,31 +1494,6 @@ function MapComponent({ onMapClick }: MapProps) {
               }}
             >
               FRIENDS
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('discover')
-                setSelectedCollectionId(null)
-              }}
-              style={{
-                flex: '1 1 auto',
-                minWidth: '50px',
-                padding: '0.75rem 0.25rem',
-                backgroundColor: activeTab === 'discover' ? 'var(--accent)' : 'transparent',
-                color: activeTab === 'discover' ? 'white' : 'var(--foreground)',
-                border: 'none',
-                borderBottom: activeTab === 'discover' ? '2px solid var(--color-red)' : '2px solid transparent',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.625rem',
-                fontWeight: '700',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                transition: 'var(--transition)',
-                marginBottom: '-2px'
-              }}
-            >
-              DISCOVER
             </button>
           </div>
 
@@ -1863,7 +1791,7 @@ function MapComponent({ onMapClick }: MapProps) {
                 )}
               </div>
             </>
-          ) : activeTab === 'friends' ? (
+          ) : (
             <>
               {/* Friends Tab Content */}
               <div style={{
@@ -1990,137 +1918,6 @@ function MapComponent({ onMapClick }: MapProps) {
                   <div>No friends collections</div>
                   <div style={{ fontSize: '0.65rem', marginTop: '0.5rem', opacity: 0.7 }}>
                     Follow users to see their collections
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              {/* Discover Tab Content */}
-              <div style={{
-                fontSize: '0.875rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em'
-              }}>
-                Discover Collections
-              </div>
-
-              {/* Loading State */}
-              {loadingDiscoverCollections && (
-                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
-                  Loading discover collections...
-                </div>
-              )}
-
-              {/* Discover Collection Items */}
-              {!loadingDiscoverCollections && discoverCollections.map(collection => (
-                <div
-                  key={collection.id}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid var(--border)',
-                    backgroundColor: 'transparent',
-                    color: 'var(--foreground)',
-                    transition: 'var(--transition)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    position: 'relative',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => handleCollectionSelect(collection.id, false, true)}
-                >
-                  {/* Thumbnail */}
-                  {collection.first_pin_image ? (
-                    <img
-                      src={collection.first_pin_image}
-                      alt=""
-                      style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: 'var(--radius)',
-                        objectFit: 'cover'
-                      }}
-                    />
-                  ) : (
-                    <div style={{
-                      width: '48px',
-                      height: '48px',
-                      border: '2px solid var(--border)',
-                      backgroundColor: 'var(--muted)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1rem',
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: '700',
-                      color: 'var(--color-red)'
-                    }}>
-                      [ ]
-                    </div>
-                  )}
-
-                  {/* Collection Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontWeight: '500',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {collection.title}
-                    </div>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      opacity: 0.8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      flexWrap: 'wrap'
-                    }}>
-                      <span>{collection.pin_count || 0} pins</span>
-                      <span>by @{collection.username}</span>
-                      {collection.net_score !== undefined && collection.net_score !== 0 && (
-                        <span style={{
-                          backgroundColor: collection.net_score > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                          color: collection.net_score > 0 ? '#22c55e' : '#ef4444',
-                          padding: '0.125rem 0.375rem',
-                          borderRadius: 'var(--radius)',
-                          fontSize: '0.625rem',
-                          fontWeight: '700'
-                        }}>
-                          {collection.net_score > 0 ? '+' : ''}{collection.net_score}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Empty State */}
-              {!loadingDiscoverCollections && discoverCollections.length === 0 && (
-                <div style={{
-                  padding: '2rem 1rem',
-                  textAlign: 'center',
-                  color: 'var(--muted-foreground)',
-                  fontSize: '0.75rem',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  <div style={{
-                    marginBottom: '0.5rem',
-                    fontSize: '1.5rem',
-                    fontWeight: '700',
-                    color: 'var(--color-red)'
-                  }}>[ ]</div>
-                  <div>No discover collections</div>
-                  <div style={{ fontSize: '0.65rem', marginTop: '0.5rem', opacity: 0.7 }}>
-                    Check back later for new collections
                   </div>
                 </div>
               )}
@@ -2392,14 +2189,14 @@ function MapComponent({ onMapClick }: MapProps) {
         </div>
       </div>
 
-      {/* Map Layers Button - Matches FAB style */}
+      {/* Map Layers Button - Below collections FAB on mobile */}
       <button
         onClick={() => setShowMapLayersModal(true)}
-        className="map-style-selector"
+        className="map-style-selector mobile-only"
         style={{
-          position: 'absolute',
-          top: '0.75rem',
-          right: '5rem',
+          position: 'fixed',
+          bottom: '9rem',
+          left: '1rem',
           width: '56px',
           height: '56px',
           borderRadius: '50%',
@@ -2408,7 +2205,7 @@ function MapComponent({ onMapClick }: MapProps) {
           border: '2px solid var(--border)',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
           cursor: 'pointer',
-          zIndex: 10,
+          zIndex: 997,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -2670,29 +2467,6 @@ function MapComponent({ onMapClick }: MapProps) {
               }}
             >
               FRIENDS
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('discover')
-                setSelectedCollectionId(null)
-              }}
-              style={{
-                flex: 1,
-                padding: '0.75rem 0.5rem',
-                backgroundColor: activeTab === 'discover' ? 'var(--accent)' : 'transparent',
-                color: activeTab === 'discover' ? 'white' : 'var(--foreground)',
-                border: 'none',
-                borderRadius: 'var(--radius)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.625rem',
-                fontWeight: '700',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                transition: 'var(--transition)'
-              }}
-            >
-              DISCOVER
             </button>
           </div>
 
@@ -2956,91 +2730,6 @@ function MapComponent({ onMapClick }: MapProps) {
             </>
           )}
 
-          {/* Tab Content - Discover */}
-          {activeTab === 'discover' && (
-            <>
-              <div style={{
-                fontSize: '0.875rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em'
-              }}>
-                Discover Collections
-              </div>
-
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem'
-              }}>
-                {!loadingDiscoverCollections && discoverCollections.map((collection) => (
-                  <button
-                    key={`${collection.user_id}-${collection.id}`}
-                    onClick={() => {
-                      handleCollectionSelect(collection.id, true)
-                      setIsBottomSheetOpen(false)
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid var(--border)',
-                      borderRadius: 'var(--radius)',
-                      backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
-                      color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'var(--transition)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem'
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <div style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        textTransform: 'uppercase',
-                        marginBottom: '0.25rem'
-                      }}>
-                        {collection.title}
-                      </div>
-                      <div style={{
-                        fontSize: '0.625rem',
-                        color: 'var(--muted-foreground)',
-                        fontFamily: 'var(--font-mono)'
-                      }}>
-                        by @{collection.username} • {collection.pin_count || 0} pins
-                      </div>
-                    </div>
-                  </button>
-                ))}
-
-                {loadingDiscoverCollections && (
-                  <div style={{
-                    padding: '2rem',
-                    textAlign: 'center',
-                    color: 'var(--muted-foreground)'
-                  }}>
-                    Loading...
-                  </div>
-                )}
-
-                {!loadingDiscoverCollections && discoverCollections.length === 0 && (
-                  <div style={{
-                    padding: '2rem',
-                    textAlign: 'center',
-                    color: 'var(--muted-foreground)',
-                    fontSize: '0.75rem'
-                  }}>
-                    No discover collections yet
-                  </div>
-                )}
-              </div>
-            </>
-          )}
         </BottomSheet>
       )}
 

@@ -1185,14 +1185,6 @@ select option {
   .map-sidebar {
     display: none !important;
   }
-
-  /* Reposition map layers button below search bar on mobile */
-  .map-style-selector {
-    top: 4.5rem !important;
-    left: 1rem !important;
-    right: auto !important;
-    bottom: auto !important;
-  }
 }
 
 /* Tablet - reduce sidebar width */

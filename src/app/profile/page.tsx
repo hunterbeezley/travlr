@@ -434,13 +434,6 @@ export default function ProfilePage() {
             >
               FEED
             </button>
-
-            <button
-              onClick={() => router.push('/profile')}
-              className="nav-link active"
-            >
-              PROFILE
-            </button>
           </div>
 
           {!loading && user && (
@@ -458,7 +451,7 @@ export default function ProfilePage() {
                 className="btn btn-destructive btn-small"
                 title="Sign out"
               >
-                EXIT
+                LOGOUT
               </button>
             </div>
           )}

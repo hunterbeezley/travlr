@@ -98,25 +98,21 @@ export default function FeedPage() {
             >
               FEED
             </button>
-
-            <button
-              onClick={() => {
-                setActiveNav('profile')
-                router.push('/profile')
-              }}
-              className={`nav-link ${activeNav === 'profile' ? 'active' : ''}`}
-            >
-              PROFILE
-            </button>
           </div>
 
           {!loading && user && (
             <div className="navbar-user">
-              <UserAvatar
-                profileImageUrl={profile?.profile_image}
-                email={user.email || ''}
-                size="medium"
-              />
+              <div
+                onClick={() => router.push('/profile')}
+                style={{ cursor: 'pointer' }}
+                title="Go to profile"
+              >
+                <UserAvatar
+                  profileImageUrl={profile?.profile_image}
+                  email={user.email || ''}
+                  size="medium"
+                />
+              </div>
               <span className="user-email">
                 {getDisplayName(profile, user)}
               </span>
@@ -125,7 +121,7 @@ export default function FeedPage() {
                 className="btn btn-destructive btn-small"
                 title="Sign out"
               >
-                EXIT
+                LOGOUT
               </button>
             </div>
           )}

@@ -245,22 +245,21 @@ export default function HomePage() {
             >
               FEED
             </button>
-
-            <button
-              onClick={() => router.push('/profile')}
-              className="nav-link"
-            >
-              PROFILE
-            </button>
           </div>
 
           {!loading && user && (
             <div className="navbar-user">
-              <UserAvatar
-                profileImageUrl={profile?.profile_image}
-                email={user.email || ''}
-                size="medium"
-              />
+              <div
+                onClick={() => router.push('/profile')}
+                style={{ cursor: 'pointer' }}
+                title="Go to profile"
+              >
+                <UserAvatar
+                  profileImageUrl={profile?.profile_image}
+                  email={user.email || ''}
+                  size="medium"
+                />
+              </div>
               <span className="user-email">
                 {getDisplayName(profile, user)}
               </span>
@@ -269,7 +268,7 @@ export default function HomePage() {
                 className="btn btn-destructive btn-small"
                 title="Sign out"
               >
-                EXIT
+                LOGOUT
               </button>
             </div>
           )}
