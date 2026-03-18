@@ -2235,8 +2235,14 @@ function MapComponent({ onMapClick }: MapProps) {
         🗺️
       </button>
 
-      {/* User Instructions - Hidden on mobile */}
-      {!authLoading && user && (
+      {/* User Instructions - Only show for new users (within 7 days of signup) */}
+      {!authLoading && user && (() => {
+        // Check if user is new (signed up within last 7 days)
+        if (!profile?.created_at) return false
+        const signupDate = new Date(profile.created_at)
+        const daysSinceSignup = (Date.now() - signupDate.getTime()) / (1000 * 60 * 60 * 24)
+        return daysSinceSignup <= 7
+      })() && (
         <div className="mobile-hidden" style={{
           position: 'absolute',
           bottom: '1rem',
@@ -2258,29 +2264,6 @@ function MapComponent({ onMapClick }: MapProps) {
           fontWeight: '600'
         }}>
           <span style={{ color: 'var(--color-red)' }}>[DBL-CLICK]</span> Create Pin <span style={{ color: 'var(--muted-foreground)' }}>•</span> <span style={{ color: 'var(--color-red)' }}>[CLICK]</span> View Pin
-        </div>
-      )}
-
-      {/* Pin Count Display - Hidden on mobile */}
-      {pins.length > 0 && (
-        <div className="mobile-hidden" style={{
-          position: 'absolute',
-          bottom: '1rem',
-          right: '1rem',
-          zIndex: 10,
-          background: 'rgba(39, 39, 42, 0.7)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          padding: '0.5rem 0.75rem',
-          fontSize: '0.75rem',
-          color: 'var(--foreground)',
-          boxShadow: 'var(--shadow)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          fontFamily: 'var(--font-mono)',
-          fontWeight: '700',
-          letterSpacing: '0.1em'
-        }}>
-          <span style={{ color: 'var(--color-red)' }}>{pins.length.toString().padStart(2, '0')}</span> PIN{pins.length !== 1 ? 'S' : ''}
         </div>
       )}
 

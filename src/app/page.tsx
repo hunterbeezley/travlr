@@ -260,9 +260,6 @@ export default function HomePage() {
                   size="medium"
                 />
               </div>
-              <span className="user-email">
-                {getDisplayName(profile, user)}
-              </span>
               <button
                 onClick={handleSignOut}
                 className="btn btn-destructive btn-small"

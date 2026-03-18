@@ -443,9 +443,6 @@ export default function ProfilePage() {
                 email={user.email || ''}
                 size="medium"
               />
-              <span className="user-email">
-                {getDisplayName(profile)}
-              </span>
               <button
                 onClick={handleSignOut}
                 className="btn btn-destructive btn-small"
