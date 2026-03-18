@@ -1,0 +1,147 @@
+# Security Audit Workflow
+# Run this workflow manually or on schedule to audit security
+
+name: Security Audit
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+
+  # Run weekly on Mondays at 9 AM UTC
+  schedule:
+    - cron: '0 9 * * 1'
+
+  # Run on pull requests to main
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Check for vulnerable dependencies
+        run: npm audit --json > npm-audit-report.json
+        continue-on-error: true
+
+      - name: Run ESLint security rules
+        run: npx eslint . --ext .ts,.tsx --format json --output-file eslint-report.json
+        continue-on-error: true
+
+      - name: Check for exposed secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+        continue-on-error: true
+
+      - name: Scan for security vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Check TypeScript strict mode
+        run: |
+          if ! grep -q '"strict": true' tsconfig.json; then
+            echo "⚠️  TypeScript strict mode is not enabled"
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Check for unsafe React patterns
+        run: |
+          echo "Checking for unsafe React patterns..."
+
+          # Check for dangerouslySetInnerHTML
+          if grep -r "dangerouslySetInnerHTML" --include="*.tsx" --include="*.jsx" .; then
+            echo "❌ Found dangerouslySetInnerHTML usage"
+            exit 1
+          fi
+
+          # Check for eval()
+          if grep -r "eval(" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" .; then
+            echo "❌ Found eval() usage"
+            exit 1
+          fi
+
+          echo "✅ No unsafe React patterns found"
+        continue-on-error: true
+
+      - name: Check environment variable usage
+        run: |
+          echo "Checking for hardcoded secrets..."
+
+          # Check for potential API keys in code
+          if grep -rE "(api[_-]?key|secret|password|token)[\s]*=[\s]*['\"][^'\"]+['\"]" --include="*.ts" --include="*.tsx" --include="*.js" .; then
+            echo "⚠️  Potential hardcoded secrets found"
+          fi
+
+          echo "✅ Environment variable check complete"
+        continue-on-error: true
+
+      - name: Generate security report
+        run: |
+          echo "# Security Audit Report - $(date)" > security-report.md
+          echo "" >> security-report.md
+          echo "## npm Audit Results" >> security-report.md
+          if [ -f npm-audit-report.json ]; then
+            cat npm-audit-report.json >> security-report.md
+          fi
+          echo "" >> security-report.md
+          echo "## ESLint Results" >> security-report.md
+          if [ -f eslint-report.json ]; then
+            cat eslint-report.json >> security-report.md
+          fi
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            security-report.md
+            npm-audit-report.json
+            eslint-report.json
+            trivy-results.sarif
+        if: always()
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## 🔒 Security Audit Results\n\n';
+
+            if (fs.existsSync('security-report.md')) {
+              const report = fs.readFileSync('security-report.md', 'utf8');
+              comment += report;
+            }
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

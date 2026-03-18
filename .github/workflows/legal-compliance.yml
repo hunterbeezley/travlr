@@ -1,0 +1,161 @@
+name: Legal & Compliance Check
+
+on:
+  # Manual trigger with option to create issues
+  workflow_dispatch:
+    inputs:
+      create_issues:
+        description: 'Create GitHub issues for compliance items'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+  # Weekly audit on Mondays at 10 AM UTC
+  schedule:
+    - cron: '0 10 * * 1'
+
+  # On pull requests to main
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'lib/**'
+      - 'package.json'
+      - '.github/workflows/legal-compliance.yml'
+
+jobs:
+  compliance-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Legal & Compliance Audit
+        id: compliance
+        run: |
+          chmod +x scripts/legal-compliance-audit.sh
+          ./scripts/legal-compliance-audit.sh || echo "COMPLIANCE_FAILED=true" >> $GITHUB_ENV
+        continue-on-error: true
+
+      - name: Upload Compliance Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compliance-report-${{ github.sha }}
+          path: legal-reports/
+          retention-days: 90
+
+      - name: Check Critical Issues
+        if: env.COMPLIANCE_FAILED == 'true'
+        run: |
+          echo "::error::Legal compliance audit found critical issues"
+          echo "::warning::Review the compliance report artifact for details"
+          exit 1
+
+      - name: Comment PR with Results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'legal-reports/';
+
+            // Find the latest report file
+            const reports = fs.readdirSync(reportPath).filter(f => f.startsWith('compliance-audit-'));
+            if (reports.length === 0) return;
+
+            const latestReport = reports[reports.length - 1];
+            const reportContent = fs.readFileSync(reportPath + latestReport, 'utf8');
+
+            // Extract summary (first 2000 chars)
+            const summary = reportContent.substring(0, 2000);
+
+            // Post comment
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ⚖️ Legal & Compliance Audit Results\n\n${summary}\n\n<details>\n<summary>View full report</summary>\n\nDownload the full compliance report from the workflow artifacts.\n</details>`
+            });
+
+  create-issues:
+    runs-on: ubuntu-latest
+    name: Create GitHub Issues for Compliance Items
+    if: github.event.inputs.create_issues == 'true' || github.event_name == 'schedule'
+    needs: compliance-audit
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Legal Compliance Issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          chmod +x scripts/create-legal-issues.sh
+          ./scripts/create-legal-issues.sh
+
+  check-legal-docs:
+    runs-on: ubuntu-latest
+    name: Verify Legal Documents Exist
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for Terms of Service
+        run: |
+          if [ ! -f "app/terms/page.tsx" ] && [ ! -f "app/(legal)/terms/page.tsx" ] && [ ! -f "public/terms.html" ]; then
+            echo "::error::Terms of Service not found. Create at app/terms/page.tsx"
+            exit 1
+          fi
+
+      - name: Check for Privacy Policy
+        run: |
+          if [ ! -f "app/privacy/page.tsx" ] && [ ! -f "app/(legal)/privacy/page.tsx" ] && [ ! -f "public/privacy.html" ]; then
+            echo "::error::Privacy Policy not found. Create at app/privacy/page.tsx"
+            exit 1
+          fi
+
+      - name: Verify Legal Links
+        run: |
+          # Check if legal docs are referenced but don't exist
+          if grep -rq "Terms of Service\|Privacy Policy" app/ components/; then
+            echo "✓ Legal document references found in code"
+          else
+            echo "::warning::No references to Terms/Privacy Policy found. Add to footer and signup page."
+          fi
+
+  trademark-check:
+    runs-on: ubuntu-latest
+    name: Trademark Risk Assessment
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check App Name
+        run: |
+          APP_NAME=$(grep '"name"' package.json | head -1 | sed 's/.*"name": "\(.*\)".*/\1/')
+          echo "Application name: $APP_NAME"
+
+          # Check for known trademark conflicts
+          if [ "$APP_NAME" = "rally-app" ] || [ "$APP_NAME" = "rally" ]; then
+            echo "::warning::App name 'Rally' has trademark risks. See LEGAL_COMPLIANCE_REPORT.md Section 2"
+            echo "::warning::Consider trademark search and legal consultation before launch"
+          else
+            echo "✓ App name does not match known conflicts"
+          fi

@@ -1,0 +1,295 @@
+# Code Review Workflow
+# Automated code quality checks on pull requests
+
+name: Code Review
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 1. LINTING
+      - name: Run ESLint
+        run: |
+          npx eslint . --ext .ts,.tsx,.js,.jsx --max-warnings 0 --format json --output-file eslint-report.json
+          npx eslint . --ext .ts,.tsx,.js,.jsx --max-warnings 0
+        continue-on-error: true
+
+      # 2. TYPE CHECKING
+      - name: TypeScript Type Check
+        run: npx tsc --noEmit --pretty
+        continue-on-error: true
+
+      # 3. CODE FORMATTING
+      - name: Check Prettier Formatting
+        run: |
+          npx prettier --check "**/*.{ts,tsx,js,jsx,json,css,md}"
+        continue-on-error: true
+
+      # 4. CODE COMPLEXITY
+      - name: Analyze Code Complexity
+        run: |
+          npm install -g complexity-report
+          echo "## Code Complexity Report" > complexity-report.md
+          echo "" >> complexity-report.md
+          complexity-report --format markdown app/ components/ lib/ >> complexity-report.md || true
+        continue-on-error: true
+
+      # 5. DUPLICATE CODE DETECTION
+      - name: Check for Code Duplication
+        run: |
+          npm install -g jscpd
+          npx jscpd app/ components/ lib/ --format markdown --output ./jscpd-report.md || true
+        continue-on-error: true
+
+      # 6. DEAD CODE DETECTION
+      - name: Find Unused Exports
+        run: |
+          npm install -g ts-prune
+          npx ts-prune > unused-exports.txt || true
+          if [ -s unused-exports.txt ]; then
+            echo "⚠️  Found unused exports:"
+            cat unused-exports.txt
+          fi
+        continue-on-error: true
+
+      # 7. BUNDLE SIZE ANALYSIS
+      - name: Check Bundle Size
+        run: |
+          npm run build
+          echo "## Bundle Size Analysis" > bundle-report.md
+          du -sh .next/ >> bundle-report.md
+          find .next/static -name "*.js" -exec du -h {} \; | sort -hr | head -20 >> bundle-report.md
+        continue-on-error: true
+
+      # 8. SECURITY PATTERNS
+      - name: Check for Security Anti-patterns
+        run: |
+          echo "## Security Anti-patterns Check" > security-patterns.md
+
+          # Check for dangerous React patterns
+          if grep -r "dangerouslySetInnerHTML" --include="*.tsx" --include="*.jsx" .; then
+            echo "❌ Found dangerouslySetInnerHTML" >> security-patterns.md
+          fi
+
+          # Check for eval()
+          if grep -r "eval(" --include="*.ts" --include="*.tsx" .; then
+            echo "❌ Found eval()" >> security-patterns.md
+          fi
+
+          # Check for console.log
+          CONSOLE_COUNT=$(grep -r "console.log" --include="*.ts" --include="*.tsx" . | wc -l)
+          echo "Found $CONSOLE_COUNT console.log statements" >> security-patterns.md
+
+          # Check for TODO/FIXME
+          TODO_COUNT=$(grep -rE "(TODO|FIXME|HACK)" --include="*.ts" --include="*.tsx" . | wc -l)
+          echo "Found $TODO_COUNT TODO/FIXME/HACK comments" >> security-patterns.md
+        continue-on-error: true
+
+      # 9. PERFORMANCE CHECKS
+      - name: Check Performance Patterns
+        run: |
+          echo "## Performance Analysis" > performance-report.md
+
+          # Check for missing React.memo
+          echo "### Components without React.memo:" >> performance-report.md
+          grep -l "export default function" app/**/*.tsx components/**/*.tsx | while read file; do
+            if ! grep -q "React.memo\|memo(" "$file"; then
+              echo "- $file" >> performance-report.md
+            fi
+          done
+
+          # Check for missing key props in map
+          echo "" >> performance-report.md
+          echo "### Potential missing keys in map:" >> performance-report.md
+          grep -n "\.map(" app/**/*.tsx components/**/*.tsx | grep -v "key=" >> performance-report.md || echo "None found" >> performance-report.md
+        continue-on-error: true
+
+      # 10. ACCESSIBILITY CHECKS
+      - name: Check Accessibility
+        run: |
+          npm install -g eslint-plugin-jsx-a11y
+          echo "## Accessibility Issues" > a11y-report.md
+
+          # Check for missing alt text
+          grep -rn "<img" --include="*.tsx" --include="*.jsx" . | grep -v "alt=" > missing-alt.txt || true
+          if [ -s missing-alt.txt ]; then
+            echo "### Missing alt attributes:" >> a11y-report.md
+            cat missing-alt.txt >> a11y-report.md
+          fi
+
+          # Check for button without type
+          grep -rn "<button" --include="*.tsx" --include="*.jsx" . | grep -v 'type=' > missing-button-type.txt || true
+          if [ -s missing-button-type.txt ]; then
+            echo "### Buttons without explicit type:" >> a11y-report.md
+            cat missing-button-type.txt >> a11y-report.md
+          fi
+        continue-on-error: true
+
+      # 11. CODE STYLE CONSISTENCY
+      - name: Check Code Style Consistency
+        run: |
+          echo "## Code Style Report" > style-report.md
+
+          # Check for var usage (should use const/let)
+          VAR_COUNT=$(grep -r "var " --include="*.ts" --include="*.tsx" --include="*.js" . | wc -l)
+          echo "- var statements: $VAR_COUNT (should be 0)" >> style-report.md
+
+          # Check for any/unknown usage
+          ANY_COUNT=$(grep -r ": any" --include="*.ts" --include="*.tsx" . | wc -l)
+          echo "- 'any' type usage: $ANY_COUNT (minimize)" >> style-report.md
+
+          # Check for console statements
+          CONSOLE_COUNT=$(grep -r "console\." --include="*.ts" --include="*.tsx" . | wc -l)
+          echo "- console statements: $CONSOLE_COUNT (should remove for production)" >> style-report.md
+        continue-on-error: true
+
+      # 12. GENERATE SUMMARY REPORT
+      - name: Generate Code Review Summary
+        if: always()
+        run: |
+          echo "# 📋 Code Review Report" > code-review-summary.md
+          echo "" >> code-review-summary.md
+          echo "**Generated:** $(date)" >> code-review-summary.md
+          echo "**Branch:** ${{ github.head_ref || github.ref_name }}" >> code-review-summary.md
+          echo "**Commit:** ${{ github.sha }}" >> code-review-summary.md
+          echo "" >> code-review-summary.md
+
+          # Add all reports
+          for report in eslint-report.json complexity-report.md jscpd-report.md bundle-report.md security-patterns.md performance-report.md a11y-report.md style-report.md; do
+            if [ -f "$report" ]; then
+              echo "---" >> code-review-summary.md
+              cat "$report" >> code-review-summary.md
+              echo "" >> code-review-summary.md
+            fi
+          done
+
+      # 13. UPLOAD REPORTS
+      - name: Upload Code Review Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: code-review-reports
+          path: |
+            code-review-summary.md
+            eslint-report.json
+            complexity-report.md
+            jscpd-report.md
+            bundle-report.md
+            security-patterns.md
+            performance-report.md
+            a11y-report.md
+            style-report.md
+            unused-exports.txt
+
+      # 14. COMMENT ON PR
+      - name: Comment on Pull Request
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let comment = '## 🔍 Automated Code Review\n\n';
+
+            // Read summary if exists
+            if (fs.existsSync('code-review-summary.md')) {
+              const summary = fs.readFileSync('code-review-summary.md', 'utf8');
+              comment += summary;
+            }
+
+            comment += '\n\n---\n';
+            comment += '📊 Full reports available in workflow artifacts\n';
+            comment += '📖 See [CODE_REVIEW_GUIDE.md](../blob/main/CODE_REVIEW_GUIDE.md) for review guidelines';
+
+            // Post comment
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  dependency-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Check for Outdated Dependencies
+        run: |
+          npm outdated > outdated-deps.txt || true
+          if [ -s outdated-deps.txt ]; then
+            echo "⚠️  Outdated dependencies found:"
+            cat outdated-deps.txt
+          fi
+
+      - name: Check Package Lock
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "❌ package-lock.json missing"
+            exit 1
+          fi
+
+  test-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Project
+        run: npm run build
+
+      - name: Check Build Size
+        run: |
+          echo "## Build Output Size" > build-size.md
+          du -sh .next/ >> build-size.md
+          echo "" >> build-size.md
+          echo "### Largest Files:" >> build-size.md
+          find .next -type f -exec du -h {} + | sort -hr | head -20 >> build-size.md
+
+      - name: Upload Build Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-report
+          path: build-size.md
