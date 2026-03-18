@@ -240,7 +240,11 @@ export class DatabaseService {
     longitude: number,
     description?: string,
     imageUrl?: string,
-    category?: string
+    category?: string,
+    city?: string | null,
+    state?: string | null,
+    country?: string | null,
+    countryCode?: string | null
   ) {
     console.log('🔧 DatabaseService.createPin called with:', {
       userId,
@@ -250,7 +254,11 @@ export class DatabaseService {
       longitude,
       description,
       imageUrl,
-      category
+      category,
+      city,
+      state,
+      country,
+      countryCode
     })
 
     try {
@@ -264,7 +272,11 @@ export class DatabaseService {
           longitude,
           description,
           image_url: imageUrl,
-          category
+          category,
+          city: city || null,
+          state: state || null,
+          country: country || null,
+          country_code: countryCode || null
         })
         .select()
         .single()

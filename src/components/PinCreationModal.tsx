@@ -59,6 +59,19 @@ export default function PinCreationModal({
   const [address, setAddress] = useState<string>('')
   const [loadingAddress, setLoadingAddress] = useState(false)
 
+  // Location data from geocoding
+  const [locationData, setLocationData] = useState<{
+    city: string | null
+    state: string | null
+    country: string | null
+    country_code: string | null
+  }>({
+    city: null,
+    state: null,
+    country: null,
+    country_code: null
+  })
+
   // Form state
   const [formData, setFormData] = useState({
     title: '',
@@ -187,7 +200,48 @@ export default function PinCreationModal({
       const data = await response.json()
 
       if (data.results && data.results.length > 0) {
-        setAddress(data.results[0].formatted_address)
+        const result = data.results[0]
+        setAddress(result.formatted_address)
+
+        // Extract city, state, country from address_components
+        const addressComponents = result.address_components || []
+        let city = null
+        let state = null
+        let country = null
+        let countryCode = null
+
+        for (const component of addressComponents) {
+          const types = component.types
+
+          // City - can be locality or postal_town
+          if (types.includes('locality')) {
+            city = component.long_name
+          } else if (!city && types.includes('postal_town')) {
+            city = component.long_name
+          } else if (!city && types.includes('sublocality')) {
+            city = component.long_name
+          }
+
+          // State/Province
+          if (types.includes('administrative_area_level_1')) {
+            state = component.short_name // Use short name for states (e.g., "CA" instead of "California")
+          }
+
+          // Country
+          if (types.includes('country')) {
+            country = component.long_name
+            countryCode = component.short_name
+          }
+        }
+
+        console.log('📍 Extracted location data:', { city, state, country, countryCode })
+
+        setLocationData({
+          city,
+          state,
+          country,
+          country_code: countryCode
+        })
       } else {
         setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
       }
@@ -256,7 +310,7 @@ export default function PinCreationModal({
 
       console.log('📡 Creating pin with main image:', mainImageUrl)
 
-      // Create the pin first
+      // Create the pin first with location data
       const result = await DatabaseService.createPin(
         user.id,
         formData.collectionId,
@@ -265,7 +319,11 @@ export default function PinCreationModal({
         longitude,
         formData.description.trim() || undefined,
         mainImageUrl, // This goes in the main pins table for backward compatibility
-        formData.category
+        formData.category,
+        locationData.city,
+        locationData.state,
+        locationData.country,
+        locationData.country_code
       )
 
       if (!result.success || !result.data) {

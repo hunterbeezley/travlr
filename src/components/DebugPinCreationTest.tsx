@@ -139,7 +139,11 @@ export default function DebugPinCreationTest() {
         formData.longitude,
         formData.description,
         undefined, // no image URL
-        formData.category
+        formData.category,
+        null, // city
+        null, // state
+        null, // country
+        null  // country_code
       )
 
       console.log('📥 Pin creation result:', result)
