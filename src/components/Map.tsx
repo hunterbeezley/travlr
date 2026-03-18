@@ -12,6 +12,7 @@ import PinProfileModal from './PinProfileModal'
 import FollowButton from './FollowButton'
 import CollectionDetailsModal from './CollectionDetailsModal'
 import AddSearchLocationModal from './AddSearchLocationModal'
+import CityFeed from './CityFeed'
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!
 
@@ -224,7 +225,7 @@ function MapComponent({ onMapClick }: MapProps) {
   const [allPins, setAllPins] = useState<Pin[]>([])
 
   // Friends/Follow state
-  const [activeTab, setActiveTab] = useState<'my-collections' | 'friends' | 'discover'>('my-collections')
+  const [activeTab, setActiveTab] = useState<'my-collections' | 'friends' | 'discover' | 'feed'>('my-collections')
   const [friendsCollections, setFriendsCollections] = useState<FriendsCollection[]>([])
   const [loadingFriendsCollections, setLoadingFriendsCollections] = useState(false)
   const [friendsPins, setFriendsPins] = useState<Pin[]>([])
@@ -1245,6 +1246,30 @@ function MapComponent({ onMapClick }: MapProps) {
             >
               DISCOVER
             </button>
+            <button
+              onClick={() => {
+                setActiveTab('feed')
+                setSelectedCollectionId(null)
+              }}
+              style={{
+                flex: 1,
+                padding: '0.75rem 0.5rem',
+                backgroundColor: activeTab === 'feed' ? 'var(--accent)' : 'transparent',
+                color: activeTab === 'feed' ? 'white' : 'var(--foreground)',
+                border: 'none',
+                borderBottom: activeTab === 'feed' ? '2px solid var(--color-red)' : '2px solid transparent',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.625rem',
+                fontWeight: '700',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                transition: 'var(--transition)',
+                marginBottom: '-2px'
+              }}
+            >
+              FEED
+            </button>
           </div>
 
           {/* Tab Content */}
@@ -1672,7 +1697,7 @@ function MapComponent({ onMapClick }: MapProps) {
                 </div>
               )}
             </>
-          ) : (
+          ) : activeTab === 'discover' ? (
             <>
               {/* Discover Tab Content */}
               <div style={{
@@ -1802,6 +1827,11 @@ function MapComponent({ onMapClick }: MapProps) {
                   </div>
                 </div>
               )}
+            </>
+          ) : (
+            <>
+              {/* Feed Tab Content */}
+              <CityFeed userId={user.id} />
             </>
           )}
         </div>

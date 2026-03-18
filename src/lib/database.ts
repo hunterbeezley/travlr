@@ -64,6 +64,11 @@ export interface Pin {
   price_level: number | null
   opening_hours: any | null
   last_place_refresh: string | null
+  // Location fields for city-based discovery
+  city: string | null
+  state: string | null
+  country: string | null
+  country_code: string | null
 }
 
 export interface CollectionWithPins {
@@ -179,6 +184,36 @@ export interface FriendsCollection {
 
 // DiscoverCollection has the same structure as FriendsCollection
 export type DiscoverCollection = FriendsCollection
+
+// City-based feed interfaces
+export interface CityFeedCollection {
+  id: string
+  title: string
+  description: string | null
+  is_public: boolean
+  created_at: string
+  updated_at: string
+  user_id: string
+  username: string
+  user_profile_image: string | null
+  pin_count: number
+  first_pin_image: string | null
+  color: string
+  upvotes: number
+  downvotes: number
+  net_score: number
+  city: string
+  state: string | null
+  country: string | null
+}
+
+export interface CityWithCollections {
+  city: string
+  state: string | null
+  country: string | null
+  country_code: string | null
+  collection_count: number
+}
 
 export interface Notification {
   id: string
@@ -1062,6 +1097,68 @@ export class DatabaseService {
 
       console.log('✅ Discover collections fetched:', data?.length || 0)
       return data as DiscoverCollection[]
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get all cities that have public collections
+   * Used for city selector in feed
+   */
+  static async getCitiesWithCollections(): Promise<CityWithCollections[]> {
+    console.log('🔧 DatabaseService.getCitiesWithCollections called')
+
+    try {
+      const { data, error } = await supabase.rpc('get_cities_with_collections')
+
+      if (error) {
+        console.error('❌ Error getting cities with collections:', error)
+        return []
+      }
+
+      console.log('✅ Cities fetched:', data?.length || 0)
+      return data as CityWithCollections[]
+    } catch (error) {
+      console.error('💥 DatabaseService error:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get collections filtered by city
+   * @param city - City name to filter by
+   * @param sortBy - Sort option: 'recent', 'popular', 'top_rated'
+   * @param limit - Maximum number of results
+   * @param offset - Pagination offset
+   * @param friendsOnly - Filter to only friends' collections
+   */
+  static async getCollectionsByCity(
+    city: string,
+    sortBy: 'recent' | 'popular' | 'top_rated' = 'recent',
+    limit: number = 50,
+    offset: number = 0,
+    friendsOnly: boolean = false
+  ): Promise<CityFeedCollection[]> {
+    console.log('🔧 DatabaseService.getCollectionsByCity called', { city, sortBy, limit, offset, friendsOnly })
+
+    try {
+      const { data, error } = await supabase.rpc('get_collections_by_city', {
+        p_city: city,
+        p_sort_by: sortBy,
+        p_limit: limit,
+        p_offset: offset,
+        p_friends_only: friendsOnly
+      })
+
+      if (error) {
+        console.error('❌ Error getting collections by city:', error)
+        return []
+      }
+
+      console.log('✅ Collections by city fetched:', data?.length || 0)
+      return data as CityFeedCollection[]
     } catch (error) {
       console.error('💥 DatabaseService error:', error)
       return []
