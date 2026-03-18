@@ -26,18 +26,23 @@ export default function ConsentBanner() {
         localStorage.setItem('session_id', sessionId)
       }
 
-      // Record consent in database
-      await DatabaseService.recordConsent('data_collection', consented, sessionId)
+      // Try to record consent in database (gracefully handle if migration not run yet)
+      try {
+        await DatabaseService.recordConsent('data_collection', consented, sessionId)
+      } catch (dbError) {
+        console.warn('Could not record consent in database (migration may not be run):', dbError)
+        // Continue anyway - local storage is enough for now
+      }
 
-      // Store consent locally
+      // Store consent locally (primary storage until migration is run)
       localStorage.setItem('gdpr_consent', consented ? 'accepted' : 'declined')
       localStorage.setItem('gdpr_consent_date', new Date().toISOString())
 
       // Hide banner
       setShowBanner(false)
     } catch (error) {
-      console.error('Error recording consent:', error)
-      // Still hide banner and store locally even if DB record fails
+      console.error('Error handling consent:', error)
+      // Still hide banner and store locally even if everything fails
       localStorage.setItem('gdpr_consent', consented ? 'accepted' : 'declined')
       setShowBanner(false)
     } finally {
