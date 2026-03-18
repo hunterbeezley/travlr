@@ -67,6 +67,22 @@ interface Pin {
   collection_id: string
 }
 
+interface POI {
+  place_id: string
+  name: string
+  types: string[]
+  geometry: {
+    location: {
+      lat: number
+      lng: number
+    }
+  }
+  rating?: number
+  user_ratings_total?: number
+  price_level?: string | null
+  business_status?: string
+}
+
 interface Collection {
   id: string
   title: string
@@ -205,6 +221,11 @@ function MapComponent({ onMapClick }: MapProps) {
   const [pins, setPins] = useState<Pin[]>([])
   const [loadingPins, setLoadingPins] = useState(false)
 
+  // POI state
+  const [pois, setPois] = useState<POI[]>([])
+  const [showPOIs, setShowPOIs] = useState(true)
+  const poiMarkersRef = useRef<google.maps.Marker[]>([])
+
   // Image viewer modal state
   const [showImageViewer, setShowImageViewer] = useState(false)
   const [selectedPinForImages, setSelectedPinForImages] = useState<{
@@ -266,19 +287,86 @@ function MapComponent({ onMapClick }: MapProps) {
     return icons[category || 'other'] || 'OT'
   }
 
-  // Create custom marker icon SVG
+  // Create custom marker icon SVG - Pin/thumbtack shape for better visibility
   const createMarkerIcon = (category: string | null, color: string = '#E63946') => {
     const icon = getCategoryIcon(category)
+    // Use color as part of filter ID to ensure uniqueness
+    const filterId = `shadow-${color.replace('#', '')}`
     const svg = `
-      <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="16" cy="16" r="8" fill="${color}" stroke="#ffffff" stroke-width="2"/>
-        <text x="16" y="20" font-size="12" fill="#ffffff" text-anchor="middle" font-family="monospace" font-weight="bold">${icon}</text>
+      <svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="${filterId}" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.5"/>
+          </filter>
+        </defs>
+
+        <!-- Pin shape with shadow -->
+        <g filter="url(#${filterId})">
+          <!-- Pin head (circle) -->
+          <circle cx="20" cy="16" r="14" fill="${color}" stroke="#ffffff" stroke-width="2.5"/>
+
+          <!-- Pin point (triangle) -->
+          <path d="M 20 28 L 14 42 L 20 48 L 26 42 Z" fill="${color}" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+        </g>
+
+        <!-- Category icon -->
+        <text x="20" y="22" font-size="14" fill="#ffffff" text-anchor="middle" font-family="monospace" font-weight="bold">${icon}</text>
       </svg>
     `
     return {
       url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-      scaledSize: new google.maps.Size(32, 32),
-      anchor: new google.maps.Point(16, 16)
+      scaledSize: new google.maps.Size(40, 48),
+      anchor: new google.maps.Point(20, 48) // Anchor at bottom tip of pin
+    }
+  }
+
+  // Create POI marker icon - Smaller, muted style to differentiate from user pins
+  const createPOIMarkerIcon = (types: string[]) => {
+    // Determine icon based on primary type
+    let emoji = '📍' // Default
+    if (types.includes('restaurant')) emoji = '🍽️'
+    else if (types.includes('cafe') || types.includes('coffee_shop')) emoji = '☕'
+    else if (types.includes('bar') || types.includes('night_club')) emoji = '🍷'
+    else if (types.includes('museum') || types.includes('art_gallery')) emoji = '🎨'
+    else if (types.includes('park')) emoji = '🌳'
+    else if (types.includes('tourist_attraction') || types.includes('point_of_interest')) emoji = '⭐'
+    else if (types.includes('store') || types.includes('shopping_mall')) emoji = '🛍️'
+    else if (types.includes('lodging') || types.includes('hotel')) emoji = '🏨'
+
+    const filterId = `poi-shadow-${types[0]?.replace(/[^a-z]/g, '') || 'default'}`
+    const svg = `
+      <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="${filterId}" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.3"/>
+          </filter>
+        </defs>
+
+        <!-- Muted circle background -->
+        <circle
+          cx="14"
+          cy="14"
+          r="12"
+          fill="rgba(120, 120, 130, 0.7)"
+          stroke="rgba(255, 255, 255, 0.6)"
+          stroke-width="1.5"
+          filter="url(#${filterId})"
+        />
+
+        <!-- Emoji icon -->
+        <text
+          x="14"
+          y="19"
+          font-size="14"
+          text-anchor="middle"
+          font-family="system-ui, -apple-system, sans-serif"
+        >${emoji}</text>
+      </svg>
+    `
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+      scaledSize: new google.maps.Size(28, 28),
+      anchor: new google.maps.Point(14, 14)
     }
   }
 
@@ -553,6 +641,42 @@ function MapComponent({ onMapClick }: MapProps) {
       console.error('Error loading collections:', error)
     } finally {
       setLoadingCollections(false)
+    }
+  }
+
+  // Fetch nearby POIs from Google Places
+  const fetchNearbyPOIs = async () => {
+    if (!map.current || !showPOIs) return
+
+    const currentZoom = map.current.getZoom()
+    // Only show POIs when zoomed in close enough
+    if (currentZoom === undefined || currentZoom < 14) {
+      setPois([])
+      return
+    }
+
+    const center = map.current.getCenter()
+    if (!center) return
+
+    try {
+      const params = new URLSearchParams({
+        lat: center.lat().toString(),
+        lng: center.lng().toString(),
+        radius: '1500', // 1.5km radius
+        types: 'restaurant,cafe,bar,museum,park,tourist_attraction,store'
+      })
+
+      const response = await fetch(`/api/google-places/nearby?${params.toString()}`)
+      const data = await response.json()
+
+      if (data.error) {
+        console.error('POI fetch error:', data.error)
+        return
+      }
+
+      setPois(data.results || [])
+    } catch (error) {
+      console.error('Error fetching nearby POIs:', error)
     }
   }
 
@@ -912,6 +1036,176 @@ function MapComponent({ onMapClick }: MapProps) {
 
     console.log('🎯 Pin display setup complete')
   }, [pins, isMapLoaded, user, collections])
+
+  // Add POIs to map as markers
+  const addPOIsToMap = useCallback(() => {
+    if (!map.current || !isMapLoaded || !showPOIs) {
+      // Clear existing POI markers if POIs are hidden
+      poiMarkersRef.current.forEach(marker => marker.setMap(null))
+      poiMarkersRef.current = []
+      return
+    }
+
+    // Clear existing POI markers
+    poiMarkersRef.current.forEach(marker => marker.setMap(null))
+    poiMarkersRef.current = []
+
+    if (pois.length === 0) {
+      return
+    }
+
+    console.log('📍 Adding POIs to map:', pois.length, 'places')
+
+    // Create markers for each POI
+    pois.forEach(poi => {
+      const marker = new google.maps.Marker({
+        position: { lat: poi.geometry.location.lat, lng: poi.geometry.location.lng },
+        map: map.current!,
+        icon: createPOIMarkerIcon(poi.types),
+        title: poi.name,
+        opacity: 0.8 // Slightly transparent to differentiate from user pins
+      })
+
+      // Create click handler for POI marker
+      marker.addListener('click', () => {
+        console.log('🖱️ POI clicked:', poi.name)
+
+        // Close any open InfoWindow
+        if (activeInfoWindowRef.current) {
+          activeInfoWindowRef.current.close()
+        }
+
+        const infoWindowContent = document.createElement('div')
+        infoWindowContent.style.minWidth = '200px'
+        infoWindowContent.style.maxWidth = '280px'
+        infoWindowContent.style.fontFamily = "'Share Tech Mono', monospace"
+        infoWindowContent.style.padding = '12px'
+        infoWindowContent.style.color = '#F4F4F5'
+
+        const title = document.createElement('h3')
+        title.textContent = poi.name
+        title.style.margin = '0 0 8px 0'
+        title.style.fontSize = '14px'
+        title.style.fontWeight = '700'
+        title.style.textTransform = 'uppercase'
+        title.style.letterSpacing = '0.1em'
+        title.style.color = '#F4F4F5'
+        infoWindowContent.appendChild(title)
+
+        const type = document.createElement('div')
+        type.textContent = `[${poi.types[0]?.replace(/_/g, ' ') || 'place'}]`
+        type.style.fontSize = '10px'
+        type.style.color = '#78787E'
+        type.style.fontWeight = '700'
+        type.style.letterSpacing = '0.1em'
+        type.style.textTransform = 'uppercase'
+        type.style.marginBottom = '8px'
+        infoWindowContent.appendChild(type)
+
+        if (poi.rating) {
+          const rating = document.createElement('div')
+          rating.textContent = `⭐ ${poi.rating} ${poi.user_ratings_total ? `(${poi.user_ratings_total})` : ''}`
+          rating.style.fontSize = '12px'
+          rating.style.color = '#A1A1AA'
+          rating.style.marginBottom = '8px'
+          infoWindowContent.appendChild(rating)
+        }
+
+        // Add "Add to Collection" button if user is logged in
+        if (user) {
+          const addButton = document.createElement('button')
+          addButton.textContent = '+ Add to Collection'
+          addButton.style.width = '100%'
+          addButton.style.padding = '8px'
+          addButton.style.marginTop = '8px'
+          addButton.style.background = 'var(--accent)'
+          addButton.style.color = 'white'
+          addButton.style.border = '1px solid var(--border)'
+          addButton.style.borderRadius = 'var(--radius)'
+          addButton.style.cursor = 'pointer'
+          addButton.style.fontFamily = "'Share Tech Mono', monospace"
+          addButton.style.fontSize = '11px'
+          addButton.style.fontWeight = '700'
+          addButton.style.letterSpacing = '0.05em'
+          addButton.style.textTransform = 'uppercase'
+
+          addButton.addEventListener('click', () => {
+            // Pre-fill location for pin creation
+            setSelectedLocation({
+              lat: poi.geometry.location.lat,
+              lng: poi.geometry.location.lng
+            })
+            // Store POI details for auto-fill
+            setSelectedSearchLocation({
+              id: poi.place_id,
+              place_name: poi.name,
+              center: [poi.geometry.location.lng, poi.geometry.location.lat],
+              place_type: poi.types,
+              properties: { category: poi.types[0] },
+              placeDetails: {
+                name: poi.name,
+                geometry: poi.geometry,
+                rating: poi.rating,
+                user_ratings_total: poi.user_ratings_total,
+                business_status: poi.business_status
+              }
+            })
+            setShowPinModal(true)
+            if (activeInfoWindowRef.current) {
+              activeInfoWindowRef.current.close()
+            }
+          })
+
+          infoWindowContent.appendChild(addButton)
+        }
+
+        const infoWindow = new google.maps.InfoWindow({
+          content: infoWindowContent
+        })
+
+        infoWindow.open(map.current!, marker)
+        activeInfoWindowRef.current = infoWindow
+      })
+
+      poiMarkersRef.current.push(marker)
+    })
+
+    console.log('📍 POI display setup complete')
+  }, [pois, isMapLoaded, showPOIs, user])
+
+  // Fetch POIs when map moves or zoom changes (with debouncing)
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) return
+
+    let debounceTimer: NodeJS.Timeout
+
+    const handleMapChange = () => {
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => {
+        fetchNearbyPOIs()
+      }, 500) // Debounce for 500ms
+    }
+
+    // Listen to zoom and bounds changes
+    const zoomListener = map.current.addListener('zoom_changed', handleMapChange)
+    const boundsListener = map.current.addListener('bounds_changed', handleMapChange)
+
+    // Initial fetch
+    fetchNearbyPOIs()
+
+    return () => {
+      clearTimeout(debounceTimer)
+      google.maps.event.removeListener(zoomListener)
+      google.maps.event.removeListener(boundsListener)
+    }
+  }, [isMapLoaded, showPOIs])
+
+  // Update POI markers when pois state changes
+  useEffect(() => {
+    if (map.current && isMapLoaded) {
+      addPOIsToMap()
+    }
+  }, [pois, isMapLoaded, showPOIs, addPOIsToMap])
 
   // Cleanup search timeout on unmount
   useEffect(() => {
