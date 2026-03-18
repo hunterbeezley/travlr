@@ -1366,11 +1366,5 @@ a:focus-visible {
     width: 100vw;
     height: calc(100vh - 80px);
     z-index: 100;
-    touch-action: pan-x pan-y; /* Allow single-finger panning */
-  }
-
-  .pin-mobile-map-container iframe {
-    pointer-events: auto;
-    touch-action: pan-x pan-y;
   }
 }

@@ -157,7 +157,7 @@ export default function PinPageClient({
 
       {/* Mobile Map - Full Screen Below Navbar */}
       <div
-        className="mobile-only pin-mobile-map-container"
+        className="pin-mobile-map-container"
         onClick={() => {
           // Open directly in maps app on tap
           const url = `https://www.google.com/maps/search/?api=1&query=${pin.latitude},${pin.longitude}`
