@@ -110,23 +110,25 @@ export default function FeedPage() {
             </button>
           </div>
 
-          <div className="navbar-user">
-            <UserAvatar
-              profileImageUrl={profile?.profile_image}
-              email={user.email || ''}
-              size="medium"
-            />
-            <span className="user-email">
-              {getDisplayName(profile, user)}
-            </span>
-            <button
-              onClick={handleSignOut}
-              className="btn btn-destructive btn-small"
-              title="Sign out"
-            >
-              EXIT
-            </button>
-          </div>
+          {!loading && user && (
+            <div className="navbar-user">
+              <UserAvatar
+                profileImageUrl={profile?.profile_image}
+                email={user.email || ''}
+                size="medium"
+              />
+              <span className="user-email">
+                {getDisplayName(profile, user)}
+              </span>
+              <button
+                onClick={handleSignOut}
+                className="btn btn-destructive btn-small"
+                title="Sign out"
+              >
+                EXIT
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 

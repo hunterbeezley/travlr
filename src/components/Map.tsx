@@ -177,7 +177,7 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
 ]
 
 function MapComponent({ onMapClick }: MapProps) {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const { preferences, updatePreference } = useUserPreferences()
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<google.maps.Map | null>(null)
@@ -1153,7 +1153,7 @@ function MapComponent({ onMapClick }: MapProps) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       {/* Collections Sidebar with Tabs */}
-      {user && (
+      {!authLoading && user && (
         <div
           className="map-sidebar"
           style={{
@@ -2132,7 +2132,7 @@ function MapComponent({ onMapClick }: MapProps) {
       </div>
 
       {/* User Instructions */}
-      {user && (
+      {!authLoading && user && (
         <div style={{
           position: 'absolute',
           bottom: '1rem',
