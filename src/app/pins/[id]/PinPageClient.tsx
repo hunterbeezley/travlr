@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Toast from '@/components/Toast'
@@ -86,6 +86,17 @@ export default function PinPageClient({
   const emoji = categoryEmojis[pin.category || 'other'] || '📍'
   const displayName = pin.profiles.full_name || pin.profiles.username || 'Anonymous'
 
+  // Disable body scroll on mobile
+  useEffect(() => {
+    const isMobile = window.innerWidth <= 767
+    if (isMobile) {
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = 'auto'
+      }
+    }
+  }, [])
+
   const handleCopyCoordinates = async () => {
     const coords = `${pin.latitude}, ${pin.longitude}`
     await navigator.clipboard.writeText(coords)
@@ -144,12 +155,77 @@ export default function PinPageClient({
         </div>
       </nav>
 
-      {/* Content */}
-      <div style={{
+      {/* Mobile Map - Full Screen Below Navbar */}
+      <div className="mobile-only pin-mobile-map-container">
+        <iframe
+          width="100%"
+          height="100%"
+          style={{ border: 0, display: 'block' }}
+          loading="lazy"
+          allow="geolocation"
+          src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${pin.latitude},${pin.longitude}&zoom=15`}
+          title="Pin location map"
+        />
+
+        {/* Map Overlay with Actions */}
+        <div style={{
+          position: 'absolute',
+          top: '1rem',
+          left: '1rem',
+          right: '1rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: '1rem',
+          pointerEvents: 'none',
+          zIndex: 10
+        }}>
+          <div style={{
+            background: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(10px)',
+            padding: '0.75rem 1rem',
+            borderRadius: 'var(--radius)',
+            pointerEvents: 'auto'
+          }}>
+            <div style={{
+              fontSize: '0.75rem',
+              color: 'rgba(255, 255, 255, 0.7)',
+              marginBottom: '0.25rem'
+            }}>
+              Location
+            </div>
+            <div style={{
+              fontSize: '0.875rem',
+              color: 'white',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: '600'
+            }}>
+              {pin.latitude.toFixed(4)}, {pin.longitude.toFixed(4)}
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              const url = `https://www.google.com/maps/search/?api=1&query=${pin.latitude},${pin.longitude}`
+              window.open(url, '_blank')
+            }}
+            className="btn btn-primary btn-small"
+            style={{
+              pointerEvents: 'auto',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+            }}
+            aria-label="Open in Google Maps app"
+          >
+            📍 OPEN
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Content */}
+      <div className="mobile-hidden" style={{
         maxWidth: '1200px',
         margin: '0 auto',
-        padding: '2rem',
-        overflow: 'visible'
+        padding: '2rem'
       }}>
         <div style={{
           display: 'grid',
@@ -613,72 +689,6 @@ export default function PinPageClient({
                   aria-label="Copy coordinates to clipboard"
                 >
                   📋 COPY
-                </button>
-              </div>
-            </div>
-
-            {/* Mobile Map - Full Screen */}
-            <div className="mobile-only pin-mobile-map">
-              <iframe
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${pin.latitude},${pin.longitude}&zoom=15&gestureHandling=greedy`}
-                title="Pin location map"
-              />
-
-              {/* Map Overlay with Actions */}
-              <div style={{
-                position: 'absolute',
-                top: '1rem',
-                left: '1rem',
-                right: '1rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                gap: '1rem',
-                pointerEvents: 'none',
-                zIndex: 10
-              }}>
-                <div style={{
-                  background: 'rgba(0, 0, 0, 0.8)',
-                  backdropFilter: 'blur(10px)',
-                  padding: '0.75rem 1rem',
-                  borderRadius: 'var(--radius)',
-                  pointerEvents: 'auto'
-                }}>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    marginBottom: '0.25rem'
-                  }}>
-                    Location
-                  </div>
-                  <div style={{
-                    fontSize: '0.875rem',
-                    color: 'white',
-                    fontFamily: 'var(--font-mono)',
-                    fontWeight: '600'
-                  }}>
-                    {pin.latitude.toFixed(4)}, {pin.longitude.toFixed(4)}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    // Open in native maps app
-                    const url = `https://www.google.com/maps/search/?api=1&query=${pin.latitude},${pin.longitude}`
-                    window.open(url, '_blank')
-                  }}
-                  className="btn btn-primary btn-small"
-                  style={{
-                    pointerEvents: 'auto',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-                  }}
-                  aria-label="Open in Google Maps app"
-                >
-                  📍 OPEN
                 </button>
               </div>
             </div>

@@ -1350,18 +1350,27 @@ a:focus-visible {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-/* Mobile full-screen map */
-.pin-mobile-map {
+/* Mobile full-screen map container */
+.pin-mobile-map-container {
   display: none !important;
 }
 
 @media (max-width: 767px) {
-  .pin-mobile-map {
+  .pin-mobile-map-container {
     display: block !important;
-    position: relative;
-    width: 100vw; /* Full viewport width */
-    height: calc(100vh - 80px); /* Full height minus navbar */
-    margin-left: calc(-50vw + 50%); /* Center and expand to edges */
-    margin-bottom: 2rem;
+    position: fixed;
+    top: 80px; /* Below navbar */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: calc(100vh - 80px);
+    z-index: 100;
+    touch-action: pan-x pan-y; /* Allow single-finger panning */
+  }
+
+  .pin-mobile-map-container iframe {
+    pointer-events: auto;
+    touch-action: pan-x pan-y;
   }
 }
