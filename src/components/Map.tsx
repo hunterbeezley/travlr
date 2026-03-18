@@ -2378,7 +2378,7 @@ function MapComponent({ onMapClick }: MapProps) {
         </div>
       </div>
 
-      {/* Map Layers Button */}
+      {/* Map Layers Button - Matches FAB style */}
       <button
         onClick={() => setShowMapLayersModal(true)}
         className="map-style-selector"
@@ -2386,37 +2386,30 @@ function MapComponent({ onMapClick }: MapProps) {
           position: 'absolute',
           top: '0.75rem',
           right: '5rem',
-          zIndex: 10,
-          background: 'rgba(39, 39, 42, 0.85)',
-          border: '2px solid rgba(255, 255, 255, 0.15)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '0.625rem 1rem',
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          background: 'var(--accent)',
+          color: 'white',
+          border: '2px solid var(--border)',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
           cursor: 'pointer',
+          zIndex: 10,
           display: 'flex',
           alignItems: 'center',
-          gap: '0.5rem',
-          transition: 'all 0.2s ease',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '0.75rem',
-          fontWeight: '700',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          color: 'var(--foreground)'
+          justifyContent: 'center',
+          fontSize: '1.5rem',
+          transition: 'all 0.2s ease'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(39, 39, 42, 0.95)'
-          e.currentTarget.style.borderColor = 'var(--accent)'
+          e.currentTarget.style.transform = 'scale(1.1)'
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(39, 39, 42, 0.85)'
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'
+          e.currentTarget.style.transform = 'scale(1)'
         }}
+        aria-label="Map layers"
       >
-        <span style={{ fontSize: '1rem' }}>🗺️</span>
-        Layers
+        🗺️
       </button>
 
       {/* User Instructions - Hidden on mobile */}
