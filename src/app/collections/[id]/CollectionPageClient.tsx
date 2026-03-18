@@ -1,8 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Toast from '@/components/Toast'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 
 interface Profile {
   username: string | null
@@ -37,11 +39,29 @@ interface Pin {
   pin_images: PinImage[]
 }
 
+interface Comment {
+  id: string
+  collection_id: string
+  user_id: string
+  comment_text: string
+  created_at: string
+  updated_at: string
+  username?: string
+  profile_image?: string | null
+  full_name?: string | null
+}
+
 interface CollectionPageClientProps {
   collection: Collection
   pins: Pin[]
   pinCount: number
   isOwner: boolean
+  initialVoteCounts: {
+    upvotes: number
+    downvotes: number
+    net_score: number
+  }
+  initialUserVote: 'up' | 'down' | null
 }
 
 const categoryEmojis: Record<string, string> = {
@@ -61,10 +81,26 @@ export default function CollectionPageClient({
   collection,
   pins,
   pinCount,
-  isOwner
+  isOwner,
+  initialVoteCounts,
+  initialUserVote
 }: CollectionPageClientProps) {
   const router = useRouter()
+  const { user } = useAuth()
   const [showShareToast, setShowShareToast] = useState(false)
+
+  // Voting state
+  const [userVote, setUserVote] = useState<'up' | 'down' | null>(initialUserVote)
+  const [voteCounts, setVoteCounts] = useState(initialVoteCounts)
+  const [votingInProgress, setVotingInProgress] = useState(false)
+
+  // Comments state
+  const [comments, setComments] = useState<Comment[]>([])
+  const [loadingComments, setLoadingComments] = useState(true)
+  const [newComment, setNewComment] = useState('')
+  const [postingComment, setPostingComment] = useState(false)
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+  const [editingCommentText, setEditingCommentText] = useState('')
 
   const handleShare = async () => {
     const url = window.location.href
@@ -90,6 +126,251 @@ export default function CollectionPageClient({
   const displayName = collection.profiles.full_name ||
                       collection.profiles.username ||
                       'Anonymous'
+
+  // Load comments
+  useEffect(() => {
+    const loadComments = async () => {
+      try {
+        const { data: commentsData, error: commentsError } = await supabase
+          .from('collection_comments')
+          .select(`
+            *,
+            users:user_id (
+              username,
+              full_name,
+              profile_image
+            )
+          `)
+          .eq('collection_id', collection.id)
+          .order('created_at', { ascending: true })
+
+        if (commentsError) throw commentsError
+
+        // Transform data to flatten user info
+        const transformedComments = (commentsData || []).map((comment: any) => ({
+          id: comment.id,
+          collection_id: comment.collection_id,
+          user_id: comment.user_id,
+          comment_text: comment.comment_text,
+          created_at: comment.created_at,
+          updated_at: comment.updated_at,
+          username: comment.users?.username,
+          full_name: comment.users?.full_name,
+          profile_image: comment.users?.profile_image
+        }))
+
+        setComments(transformedComments)
+      } catch (err) {
+        console.error('Error loading comments:', err)
+      } finally {
+        setLoadingComments(false)
+      }
+    }
+
+    loadComments()
+  }, [collection.id])
+
+  const handleVote = async (voteType: 'up' | 'down') => {
+    if (!user) {
+      alert('Please log in to vote')
+      return
+    }
+
+    if (votingInProgress) return
+
+    setVotingInProgress(true)
+
+    try {
+      // Optimistic update
+      const wasVoted = userVote === voteType
+      const previousVote = userVote
+
+      // Update UI immediately
+      if (wasVoted) {
+        // Removing vote
+        setUserVote(null)
+        setVoteCounts(prev => ({
+          upvotes: voteType === 'up' ? prev.upvotes - 1 : prev.upvotes,
+          downvotes: voteType === 'down' ? prev.downvotes - 1 : prev.downvotes,
+          net_score: voteType === 'up' ? prev.net_score - 1 : prev.net_score + 1
+        }))
+      } else if (previousVote) {
+        // Changing vote
+        setUserVote(voteType)
+        setVoteCounts(prev => ({
+          upvotes: voteType === 'up' ? prev.upvotes + 1 : prev.upvotes - 1,
+          downvotes: voteType === 'down' ? prev.downvotes + 1 : prev.downvotes - 1,
+          net_score: voteType === 'up' ? prev.net_score + 2 : prev.net_score - 2
+        }))
+      } else {
+        // Adding new vote
+        setUserVote(voteType)
+        setVoteCounts(prev => ({
+          upvotes: voteType === 'up' ? prev.upvotes + 1 : prev.upvotes,
+          downvotes: voteType === 'down' ? prev.downvotes + 1 : prev.downvotes,
+          net_score: voteType === 'up' ? prev.net_score + 1 : prev.net_score - 1
+        }))
+      }
+
+      // Make API call
+      await supabase.rpc('toggle_collection_vote', {
+        p_collection_id: collection.id,
+        p_vote_type: voteType
+      })
+
+      // Refresh actual counts from server
+      const { data: countsData } = await supabase
+        .rpc('get_collection_vote_counts', { p_collection_id: collection.id })
+
+      if (countsData) {
+        setVoteCounts(countsData)
+      }
+
+      const { data: voteData } = await supabase
+        .rpc('get_user_vote_on_collection', { p_collection_id: collection.id })
+
+      setUserVote(voteData as 'up' | 'down' | null)
+    } catch (err) {
+      console.error('Error voting:', err)
+      alert('Failed to record vote. Please try again.')
+    } finally {
+      setVotingInProgress(false)
+    }
+  }
+
+  const handlePostComment = async () => {
+    if (!user) {
+      alert('Please log in to comment')
+      return
+    }
+
+    if (!newComment.trim()) return
+    if (postingComment) return
+
+    setPostingComment(true)
+
+    try {
+      const { data: insertedComment, error: insertError } = await supabase
+        .from('collection_comments')
+        .insert({
+          collection_id: collection.id,
+          user_id: user.id,
+          comment_text: newComment.trim()
+        })
+        .select(`
+          *,
+          users:user_id (
+            username,
+            full_name,
+            profile_image
+          )
+        `)
+        .single()
+
+      if (insertError) throw insertError
+
+      // Transform and add new comment
+      const transformedComment = {
+        id: insertedComment.id,
+        collection_id: insertedComment.collection_id,
+        user_id: insertedComment.user_id,
+        comment_text: insertedComment.comment_text,
+        created_at: insertedComment.created_at,
+        updated_at: insertedComment.updated_at,
+        username: (insertedComment.users as any)?.username,
+        full_name: (insertedComment.users as any)?.full_name,
+        profile_image: (insertedComment.users as any)?.profile_image
+      }
+
+      setComments(prev => [...prev, transformedComment])
+      setNewComment('')
+    } catch (err) {
+      console.error('Error posting comment:', err)
+      alert('Failed to post comment. Please try again.')
+    } finally {
+      setPostingComment(false)
+    }
+  }
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm('Delete this comment?')) return
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('collection_comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', user?.id)
+
+      if (deleteError) throw deleteError
+
+      setComments(prev => prev.filter(c => c.id !== commentId))
+    } catch (err) {
+      console.error('Error deleting comment:', err)
+      alert('Failed to delete comment.')
+    }
+  }
+
+  const startEditComment = (comment: Comment) => {
+    setEditingCommentId(comment.id)
+    setEditingCommentText(comment.comment_text)
+  }
+
+  const cancelEditComment = () => {
+    setEditingCommentId(null)
+    setEditingCommentText('')
+  }
+
+  const handleUpdateComment = async (commentId: string) => {
+    if (!editingCommentText.trim()) return
+
+    try {
+      const { error: updateError } = await supabase
+        .from('collection_comments')
+        .update({
+          comment_text: editingCommentText.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', commentId)
+        .eq('user_id', user?.id)
+
+      if (updateError) throw updateError
+
+      setComments(prev => prev.map(c =>
+        c.id === commentId
+          ? { ...c, comment_text: editingCommentText.trim(), updated_at: new Date().toISOString() }
+          : c
+      ))
+
+      setEditingCommentId(null)
+      setEditingCommentText('')
+    } catch (err) {
+      console.error('Error updating comment:', err)
+      alert('Failed to update comment.')
+    }
+  }
+
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInMs = now.getTime() - date.getTime()
+    const diffInMins = Math.floor(diffInMs / 60000)
+
+    if (diffInMins < 1) return 'just now'
+    if (diffInMins < 60) return `${diffInMins}m ago`
+
+    const diffInHours = Math.floor(diffInMins / 60)
+    if (diffInHours < 24) return `${diffInHours}h ago`
+
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays < 7) return `${diffInDays}d ago`
+
+    const diffInWeeks = Math.floor(diffInDays / 7)
+    if (diffInWeeks < 4) return `${diffInWeeks}w ago`
+
+    const diffInMonths = Math.floor(diffInDays / 30)
+    return `${diffInMonths}mo ago`
+  }
 
   return (
     <div style={{
@@ -443,6 +724,110 @@ export default function CollectionPageClient({
                   </span>
                 </div>
               </div>
+
+              {/* Voting */}
+              {user && !isOwner && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: 'var(--muted)',
+                  borderRadius: 'var(--radius)',
+                  marginTop: '1rem'
+                }}>
+                  <button
+                    onClick={() => handleVote('up')}
+                    disabled={votingInProgress}
+                    aria-label="Upvote collection"
+                    style={{
+                      background: userVote === 'up' ? 'var(--accent)' : 'var(--card)',
+                      border: `2px solid ${userVote === 'up' ? 'var(--accent)' : 'var(--border)'}`,
+                      borderRadius: 'var(--radius)',
+                      padding: '0.5rem 1rem',
+                      cursor: votingInProgress ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '1rem',
+                      fontWeight: '600',
+                      color: userVote === 'up' ? 'white' : 'var(--foreground)',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    👍 {voteCounts.upvotes}
+                  </button>
+
+                  <div style={{
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    color: voteCounts.net_score >= 0 ? 'var(--accent)' : 'var(--muted-foreground)'
+                  }}>
+                    {voteCounts.net_score >= 0 ? '+' : ''}{voteCounts.net_score}
+                  </div>
+
+                  <button
+                    onClick={() => handleVote('down')}
+                    disabled={votingInProgress}
+                    aria-label="Downvote collection"
+                    style={{
+                      background: userVote === 'down' ? '#ff6b6b' : 'var(--card)',
+                      border: `2px solid ${userVote === 'down' ? '#ff6b6b' : 'var(--border)'}`,
+                      borderRadius: 'var(--radius)',
+                      padding: '0.5rem 1rem',
+                      cursor: votingInProgress ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '1rem',
+                      fontWeight: '600',
+                      color: userVote === 'down' ? 'white' : 'var(--foreground)',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    👎 {voteCounts.downvotes}
+                  </button>
+                </div>
+              )}
+
+              {/* Vote counts display for non-logged-in users or owner */}
+              {(!user || isOwner) && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: 'var(--muted)',
+                  borderRadius: 'var(--radius)',
+                  marginTop: '1rem'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '1rem',
+                    color: 'var(--muted-foreground)'
+                  }}>
+                    👍 <strong style={{ color: 'var(--foreground)' }}>{voteCounts.upvotes}</strong>
+                  </div>
+                  <div style={{
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    color: voteCounts.net_score >= 0 ? 'var(--accent)' : 'var(--muted-foreground)'
+                  }}>
+                    {voteCounts.net_score >= 0 ? '+' : ''}{voteCounts.net_score}
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '1rem',
+                    color: 'var(--muted-foreground)'
+                  }}>
+                    👎 <strong style={{ color: 'var(--foreground)' }}>{voteCounts.downvotes}</strong>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Actions */}
@@ -642,6 +1027,281 @@ export default function CollectionPageClient({
             )}
           </div>
         )}
+
+        {/* Comments Section */}
+        <div style={{
+          marginTop: '3rem',
+          background: 'var(--card)',
+          borderRadius: 'var(--radius)',
+          border: '1px solid var(--border)',
+          padding: '2rem'
+        }}>
+          <h2 style={{
+            fontSize: '1.5rem',
+            fontWeight: '700',
+            color: 'var(--foreground)',
+            marginBottom: '1.5rem',
+            fontFamily: 'var(--font-display)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            Comments ({comments.length})
+          </h2>
+
+          {/* Post Comment Form */}
+          {user ? (
+            <div style={{
+              marginBottom: '2rem',
+              padding: '1.5rem',
+              background: 'var(--background)',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)'
+            }}>
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Share your thoughts about this collection..."
+                style={{
+                  width: '100%',
+                  minHeight: '100px',
+                  padding: '0.75rem',
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  color: 'var(--foreground)',
+                  fontSize: '0.875rem',
+                  fontFamily: 'inherit',
+                  resize: 'vertical'
+                }}
+              />
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                marginTop: '1rem'
+              }}>
+                <button
+                  onClick={handlePostComment}
+                  disabled={postingComment || !newComment.trim()}
+                  className="btn btn-primary"
+                  style={{
+                    opacity: postingComment || !newComment.trim() ? 0.5 : 1,
+                    cursor: postingComment || !newComment.trim() ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {postingComment ? 'POSTING...' : 'POST COMMENT'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{
+              padding: '2rem',
+              textAlign: 'center',
+              background: 'var(--muted)',
+              borderRadius: 'var(--radius)',
+              marginBottom: '2rem'
+            }}>
+              <p style={{
+                color: 'var(--muted-foreground)',
+                marginBottom: '1rem'
+              }}>
+                Please log in to comment
+              </p>
+            </div>
+          )}
+
+          {/* Comments List */}
+          {loadingComments ? (
+            <div style={{
+              padding: '2rem',
+              textAlign: 'center',
+              color: 'var(--muted-foreground)'
+            }}>
+              Loading comments...
+            </div>
+          ) : comments.length === 0 ? (
+            <div style={{
+              padding: '2rem',
+              textAlign: 'center',
+              color: 'var(--muted-foreground)'
+            }}>
+              No comments yet. Be the first to comment!
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.5rem'
+            }}>
+              {comments.map((comment) => {
+                const commentDisplayName = comment.full_name || comment.username || 'Anonymous'
+                const isCommentOwner = user?.id === comment.user_id
+                const isEditing = editingCommentId === comment.id
+
+                return (
+                  <div
+                    key={comment.id}
+                    style={{
+                      padding: '1.5rem',
+                      background: 'var(--background)',
+                      borderRadius: 'var(--radius)',
+                      border: '1px solid var(--border)'
+                    }}
+                  >
+                    {/* Comment Header */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '1rem'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem'
+                      }}>
+                        {comment.profile_image ? (
+                          <Image
+                            src={comment.profile_image}
+                            alt={commentDisplayName}
+                            width={32}
+                            height={32}
+                            style={{
+                              borderRadius: '50%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: 'var(--muted)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.875rem',
+                            fontWeight: '600'
+                          }}>
+                            {commentDisplayName[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div style={{
+                            fontSize: '0.875rem',
+                            fontWeight: '600',
+                            color: 'var(--foreground)'
+                          }}>
+                            {commentDisplayName}
+                          </div>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--muted-foreground)'
+                          }}>
+                            {formatRelativeTime(comment.created_at)}
+                            {comment.updated_at !== comment.created_at && ' (edited)'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Comment Actions */}
+                      {isCommentOwner && !isEditing && (
+                        <div style={{
+                          display: 'flex',
+                          gap: '0.5rem'
+                        }}>
+                          <button
+                            onClick={() => startEditComment(comment)}
+                            style={{
+                              padding: '0.25rem 0.75rem',
+                              background: 'var(--muted)',
+                              border: '1px solid var(--border)',
+                              borderRadius: 'var(--radius)',
+                              fontSize: '0.75rem',
+                              color: 'var(--foreground)',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            style={{
+                              padding: '0.25rem 0.75rem',
+                              background: '#ff6b6b',
+                              border: 'none',
+                              borderRadius: 'var(--radius)',
+                              fontSize: '0.75rem',
+                              color: 'white',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Comment Content */}
+                    {isEditing ? (
+                      <div>
+                        <textarea
+                          value={editingCommentText}
+                          onChange={(e) => setEditingCommentText(e.target.value)}
+                          style={{
+                            width: '100%',
+                            minHeight: '80px',
+                            padding: '0.75rem',
+                            background: 'var(--card)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius)',
+                            color: 'var(--foreground)',
+                            fontSize: '0.875rem',
+                            fontFamily: 'inherit',
+                            resize: 'vertical',
+                            marginBottom: '0.75rem'
+                          }}
+                        />
+                        <div style={{
+                          display: 'flex',
+                          gap: '0.5rem',
+                          justifyContent: 'flex-end'
+                        }}>
+                          <button
+                            onClick={cancelEditComment}
+                            className="btn btn-secondary btn-small"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleUpdateComment(comment.id)}
+                            disabled={!editingCommentText.trim()}
+                            className="btn btn-primary btn-small"
+                            style={{
+                              opacity: !editingCommentText.trim() ? 0.5 : 1,
+                              cursor: !editingCommentText.trim() ? 'not-allowed' : 'pointer'
+                            }}
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p style={{
+                        fontSize: '0.875rem',
+                        color: 'var(--foreground)',
+                        lineHeight: '1.6',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word'
+                      }}>
+                        {comment.comment_text}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Share Toast */}

@@ -18,6 +18,8 @@ export default function CollectionPage({ params }: PageProps) {
   const [isOwner, setIsOwner] = useState(false)
   const [notFoundError, setNotFoundError] = useState(false)
   const [collectionId, setCollectionId] = useState<string | null>(null)
+  const [voteCounts, setVoteCounts] = useState({ upvotes: 0, downvotes: 0, net_score: 0 })
+  const [userVote, setUserVote] = useState<'up' | 'down' | null>(null)
 
   useEffect(() => {
     async function unwrapParams() {
@@ -35,7 +37,7 @@ export default function CollectionPage({ params }: PageProps) {
         // Get current user
         const { data: { user } } = await supabase.auth.getUser()
 
-        // Fetch collection data
+        // Fetch collection data with vote counts
         const { data: collectionData, error: collectionError } = await supabase
           .from('collections')
           .select(`
@@ -54,6 +56,24 @@ export default function CollectionPage({ params }: PageProps) {
           `)
           .eq('id', collectionId)
           .single()
+
+        // Get vote counts
+        let voteCounts = { upvotes: 0, downvotes: 0, net_score: 0 }
+        let userVote = null
+        if (collectionData && !collectionError) {
+          const { data: countsData } = await supabase
+            .rpc('get_collection_vote_counts', { p_collection_id: collectionId })
+
+          if (countsData) {
+            voteCounts = countsData
+          }
+
+          if (user) {
+            const { data: voteData } = await supabase
+              .rpc('get_user_vote_on_collection', { p_collection_id: collectionId })
+            userVote = voteData
+          }
+        }
 
         if (collectionError || !collectionData) {
           setNotFoundError(true)
@@ -93,6 +113,8 @@ export default function CollectionPage({ params }: PageProps) {
           .order('created_at', { ascending: false })
 
         setPins(pinsData || [])
+        setVoteCounts(voteCounts)
+        setUserVote(userVote)
         setLoading(false)
       } catch (error) {
         console.error('Error loading collection:', error)
@@ -118,6 +140,8 @@ export default function CollectionPage({ params }: PageProps) {
       pins={pins}
       pinCount={pins.length}
       isOwner={isOwner}
+      initialVoteCounts={voteCounts}
+      initialUserVote={userVote}
     />
   )
 }
