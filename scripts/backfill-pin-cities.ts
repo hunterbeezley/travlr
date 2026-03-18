@@ -93,7 +93,7 @@ async function backfillPinCities() {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'X-Goog-Api-Key': GOOGLE_API_KEY,
+          'X-Goog-Api-Key': GOOGLE_API_KEY!,
           'X-Goog-FieldMask': 'addressComponents'
         }
       })

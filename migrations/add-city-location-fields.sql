@@ -41,16 +41,16 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT
-    p.city,
-    p.state,
-    p.country,
-    p.country_code,
-    COUNT(*) as pin_count
-  FROM pins p
-  WHERE p.collection_id = p_collection_id
-    AND p.city IS NOT NULL
-  GROUP BY p.city, p.state, p.country, p.country_code
-  ORDER BY COUNT(*) DESC, p.city ASC
+    pins_table.city AS city,
+    pins_table.state AS state,
+    pins_table.country AS country,
+    pins_table.country_code AS country_code,
+    COUNT(*)::BIGINT AS pin_count
+  FROM pins pins_table
+  WHERE pins_table.collection_id = p_collection_id
+    AND pins_table.city IS NOT NULL
+  GROUP BY pins_table.city, pins_table.state, pins_table.country, pins_table.country_code
+  ORDER BY COUNT(*) DESC, pins_table.city ASC
   LIMIT 1;
 END;
 $$;
@@ -96,36 +96,39 @@ BEGIN
   WITH collection_cities AS (
     -- Get primary city for each collection
     SELECT
-      p.collection_id,
-      p.city,
-      p.state,
-      p.country,
+      pins_table.collection_id,
+      pins_table.city,
+      pins_table.state,
+      pins_table.country,
       COUNT(*) as city_pin_count,
-      ROW_NUMBER() OVER (PARTITION BY p.collection_id ORDER BY COUNT(*) DESC, p.city ASC) as rn
-    FROM pins p
-    WHERE p.city IS NOT NULL
-    GROUP BY p.collection_id, p.city, p.state, p.country
+      ROW_NUMBER() OVER (
+        PARTITION BY pins_table.collection_id
+        ORDER BY COUNT(*) DESC, pins_table.city ASC
+      ) as rn
+    FROM pins pins_table
+    WHERE pins_table.city IS NOT NULL
+    GROUP BY pins_table.collection_id, pins_table.city, pins_table.state, pins_table.country
   ),
   collection_primary_city AS (
     SELECT
-      collection_id,
-      city,
-      state,
-      country
-    FROM collection_cities
-    WHERE rn = 1
+      cc.collection_id,
+      cc.city AS primary_city,
+      cc.state AS primary_state,
+      cc.country AS primary_country
+    FROM collection_cities cc
+    WHERE cc.rn = 1
   )
   SELECT
-    c.id,
-    c.title,
-    c.description,
-    c.is_public,
-    c.created_at,
-    c.updated_at,
-    c.user_id,
-    u.username,
-    u.profile_image as user_profile_image,
-    COUNT(DISTINCT p.id) as pin_count,
+    c.id AS collection_id,
+    c.title AS collection_title,
+    c.description AS collection_description,
+    c.is_public AS collection_is_public,
+    c.created_at AS collection_created_at,
+    c.updated_at AS collection_updated_at,
+    c.user_id AS collection_user_id,
+    u.username AS collection_username,
+    u.profile_image AS user_profile_image,
+    COUNT(DISTINCT p.id)::BIGINT AS pin_count,
     (
       SELECT pi.image_url
       FROM pins p2
@@ -133,22 +136,22 @@ BEGIN
       WHERE p2.collection_id = c.id
       ORDER BY p2.created_at DESC, pi.upload_order ASC
       LIMIT 1
-    ) as first_pin_image,
-    c.color,
+    ) AS first_pin_image,
+    c.color AS collection_color,
     COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'up'), 0)::INTEGER AS upvotes,
     COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'down'), 0)::INTEGER AS downvotes,
     (COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'up'), 0) -
      COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'down'), 0))::INTEGER AS net_score,
-    cpc.city,
-    cpc.state,
-    cpc.country
+    cpc.primary_city AS city,
+    cpc.primary_state AS state,
+    cpc.primary_country AS country
   FROM collections c
   INNER JOIN users u ON c.user_id = u.id
   INNER JOIN collection_primary_city cpc ON cpc.collection_id = c.id
   LEFT JOIN pins p ON p.collection_id = c.id
   LEFT JOIN collection_votes cv ON cv.collection_id = c.id
   WHERE c.is_public = true
-    AND LOWER(cpc.city) = LOWER(p_city)
+    AND LOWER(cpc.primary_city) = LOWER(p_city)
     AND (
       NOT p_friends_only
       OR c.user_id IN (
@@ -157,7 +160,9 @@ BEGIN
         WHERE follower_id = auth.uid()
       )
     )
-  GROUP BY c.id, u.username, u.profile_image, cpc.city, cpc.state, cpc.country
+  GROUP BY c.id, c.title, c.description, c.is_public, c.created_at, c.updated_at,
+           c.user_id, c.color, u.username, u.profile_image,
+           cpc.primary_city, cpc.primary_state, cpc.primary_country
   ORDER BY
     CASE
       WHEN p_sort_by = 'recent' THEN c.created_at
@@ -199,29 +204,33 @@ BEGIN
   RETURN QUERY
   WITH collection_cities AS (
     SELECT
-      p.city,
-      p.state,
-      p.country,
-      p.country_code,
-      p.collection_id,
+      pins_table.city AS pin_city,
+      pins_table.state AS pin_state,
+      pins_table.country AS pin_country,
+      pins_table.country_code AS pin_country_code,
+      pins_table.collection_id,
       COUNT(*) as city_pin_count,
-      ROW_NUMBER() OVER (PARTITION BY p.collection_id ORDER BY COUNT(*) DESC) as rn
-    FROM pins p
-    INNER JOIN collections c ON c.id = p.collection_id
-    WHERE p.city IS NOT NULL
+      ROW_NUMBER() OVER (
+        PARTITION BY pins_table.collection_id
+        ORDER BY COUNT(*) DESC
+      ) as rn
+    FROM pins pins_table
+    INNER JOIN collections c ON c.id = pins_table.collection_id
+    WHERE pins_table.city IS NOT NULL
       AND c.is_public = true
-    GROUP BY p.city, p.state, p.country, p.country_code, p.collection_id
+    GROUP BY pins_table.city, pins_table.state, pins_table.country,
+             pins_table.country_code, pins_table.collection_id
   )
   SELECT
-    cc.city,
-    cc.state,
-    cc.country,
-    cc.country_code,
-    COUNT(DISTINCT cc.collection_id) as collection_count
+    cc.pin_city AS city,
+    cc.pin_state AS state,
+    cc.pin_country AS country,
+    cc.pin_country_code AS country_code,
+    COUNT(DISTINCT cc.collection_id)::BIGINT AS collection_count
   FROM collection_cities cc
   WHERE cc.rn = 1
-  GROUP BY cc.city, cc.state, cc.country, cc.country_code
-  ORDER BY collection_count DESC, cc.city ASC;
+  GROUP BY cc.pin_city, cc.pin_state, cc.pin_country, cc.pin_country_code
+  ORDER BY COUNT(DISTINCT cc.collection_id) DESC, cc.pin_city ASC;
 END;
 $$;
 
