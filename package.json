@@ -11,7 +11,7 @@
   "dependencies": {
     "@googlemaps/react-wrapper": "^1.1.42",
     "@supabase/supabase-js": "^2.50.2",
-    "next": "15.3.4",
+    "next": "^15.5.13",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
