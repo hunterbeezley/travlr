@@ -2125,9 +2125,9 @@ function MapComponent({ onMapClick }: MapProps) {
         Layers
       </button>
 
-      {/* User Instructions */}
+      {/* User Instructions - Hidden on mobile */}
       {!authLoading && user && (
-        <div style={{
+        <div className="mobile-hidden" style={{
           position: 'absolute',
           bottom: '1rem',
           left: '50%',
@@ -2151,9 +2151,9 @@ function MapComponent({ onMapClick }: MapProps) {
         </div>
       )}
 
-      {/* Pin Count Display */}
+      {/* Pin Count Display - Hidden on mobile */}
       {pins.length > 0 && (
-        <div style={{
+        <div className="mobile-hidden" style={{
           position: 'absolute',
           bottom: '1rem',
           right: '1rem',
