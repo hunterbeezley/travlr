@@ -226,6 +226,12 @@ function MapComponent({ onMapClick }: MapProps) {
   const [showPOIs, setShowPOIs] = useState(true)
   const poiMarkersRef = useRef<google.maps.Marker[]>([])
 
+  // Ref to track current user for event listeners
+  const userRef = useRef(user)
+  useEffect(() => {
+    userRef.current = user
+  }, [user])
+
   // Image viewer modal state
   const [showImageViewer, setShowImageViewer] = useState(false)
   const [selectedPinForImages, setSelectedPinForImages] = useState<{
@@ -406,12 +412,16 @@ function MapComponent({ onMapClick }: MapProps) {
           radius: '50000'
         })
 
+        console.log('🔍 Searching for:', query)
         const response = await fetch(`/api/google-places/autocomplete?${params.toString()}`)
         const data = await response.json()
+
+        console.log('🔍 Search response:', data)
 
         if (data.error) {
           console.error('Google Places API error:', data.error)
           setSearchResults([])
+          setHasSearched(true)
           return
         }
 
@@ -427,6 +437,7 @@ function MapComponent({ onMapClick }: MapProps) {
             }
           }))
 
+        console.log('🔍 Transformed results:', transformedResults)
         setSearchResults(transformedResults)
         setHasSearched(true)
       } catch (error) {
@@ -1332,7 +1343,8 @@ function MapComponent({ onMapClick }: MapProps) {
 
     // Handle double-click for pin creation
     mapInstance.addListener('dblclick', (e: google.maps.MapMouseEvent) => {
-      if (!user) {
+      // Use userRef.current to get the latest user value
+      if (!userRef.current) {
         alert('Please log in to create pins')
         return
       }
