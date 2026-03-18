@@ -222,7 +222,12 @@ export default function PinProfileModal({
       website: (pinData as any).website || null,
       price_level: (pinData as any).price_level !== undefined ? (pinData as any).price_level : null,
       opening_hours: (pinData as any).opening_hours || null,
-      last_place_refresh: (pinData as any).last_place_refresh || null
+      last_place_refresh: (pinData as any).last_place_refresh || null,
+      // Location fields
+      city: (pinData as any).city || null,
+      state: (pinData as any).state || null,
+      country: (pinData as any).country || null,
+      country_code: (pinData as any).country_code || null
     }
 
     onEditPin(pin)
