@@ -12,6 +12,7 @@ import PinProfileModal from './PinProfileModal'
 import FollowButton from './FollowButton'
 import CollectionDetailsModal from './CollectionDetailsModal'
 import AddSearchLocationModal from './AddSearchLocationModal'
+import BottomSheet from './BottomSheet'
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!
 
@@ -216,6 +217,9 @@ function MapComponent({ onMapClick }: MapProps) {
   // Pin editing state
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null)
+
+  // Mobile bottom sheet state
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
 
   // Collections state
   const [collections, setCollections] = useState<Collection[]>([])
@@ -2276,6 +2280,477 @@ function MapComponent({ onMapClick }: MapProps) {
             loadCollections()
           }}
         />
+      )}
+
+      {/* Mobile Floating Action Button - Only show on mobile when user is authenticated */}
+      {!authLoading && user && (
+        <button
+          onClick={() => setIsBottomSheetOpen(true)}
+          className="mobile-only"
+          style={{
+            position: 'fixed',
+            bottom: '2rem',
+            right: '1rem',
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'var(--accent)',
+            color: 'white',
+            border: '2px solid var(--border)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            cursor: 'pointer',
+            zIndex: 997,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.5rem',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)'
+          }}
+          aria-label="Open collections"
+        >
+          📂
+        </button>
+      )}
+
+      {/* Mobile Bottom Sheet - Shows collections on mobile */}
+      {!authLoading && user && (
+        <BottomSheet
+          isOpen={isBottomSheetOpen}
+          onClose={() => setIsBottomSheetOpen(false)}
+          snapPoints={[40, 85]}
+          defaultSnap={0}
+        >
+          {/* Tab Headers */}
+          <div style={{
+            display: 'flex',
+            gap: '0.5rem',
+            marginBottom: '1rem',
+            borderBottom: '2px solid var(--border)',
+            paddingBottom: '0.5rem'
+          }}>
+            <button
+              onClick={() => {
+                setActiveTab('my-collections')
+                setSelectedCollectionId(null)
+              }}
+              style={{
+                flex: 1,
+                padding: '0.75rem 0.5rem',
+                backgroundColor: activeTab === 'my-collections' ? 'var(--accent)' : 'transparent',
+                color: activeTab === 'my-collections' ? 'white' : 'var(--foreground)',
+                border: 'none',
+                borderRadius: 'var(--radius)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.625rem',
+                fontWeight: '700',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                transition: 'var(--transition)'
+              }}
+            >
+              MY COLLECTIONS
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('friends')
+                setSelectedCollectionId(null)
+              }}
+              style={{
+                flex: 1,
+                padding: '0.75rem 0.5rem',
+                backgroundColor: activeTab === 'friends' ? 'var(--accent)' : 'transparent',
+                color: activeTab === 'friends' ? 'white' : 'var(--foreground)',
+                border: 'none',
+                borderRadius: 'var(--radius)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.625rem',
+                fontWeight: '700',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                transition: 'var(--transition)'
+              }}
+            >
+              FRIENDS
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('discover')
+                setSelectedCollectionId(null)
+              }}
+              style={{
+                flex: 1,
+                padding: '0.75rem 0.5rem',
+                backgroundColor: activeTab === 'discover' ? 'var(--accent)' : 'transparent',
+                color: activeTab === 'discover' ? 'white' : 'var(--foreground)',
+                border: 'none',
+                borderRadius: 'var(--radius)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.625rem',
+                fontWeight: '700',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                transition: 'var(--transition)'
+              }}
+            >
+              DISCOVER
+            </button>
+          </div>
+
+          {/* Tab Content - My Collections */}
+          {activeTab === 'my-collections' && (
+            <>
+              <div style={{
+                fontSize: '0.875rem',
+                fontWeight: '700',
+                marginBottom: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
+              }}>
+                Collections
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  color: 'var(--color-red)',
+                  backgroundColor: 'var(--muted)',
+                  padding: '0.125rem 0.5rem',
+                  marginLeft: 'auto',
+                  fontFamily: 'var(--font-mono)',
+                  borderRadius: 'var(--radius)'
+                }}>
+                  {allPins.length}
+                </span>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem'
+              }}>
+                {/* All Pins Button */}
+                <button
+                  onClick={() => {
+                    handleCollectionSelect(null, false)
+                    setIsBottomSheetOpen(false)
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '2px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    backgroundColor: selectedCollectionId === null ? 'var(--accent)' : 'transparent',
+                    color: selectedCollectionId === null ? 'white' : 'var(--foreground)',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'var(--transition)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontWeight: '600',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase',
+                    fontSize: '0.75rem',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  All Pins
+                  <span style={{
+                    fontSize: '0.75rem',
+                    marginLeft: 'auto',
+                    backgroundColor: selectedCollectionId === null ? 'rgba(255,255,255,0.2)' : 'var(--muted)',
+                    padding: '0.125rem 0.5rem',
+                    borderRadius: 'var(--radius)',
+                    fontFamily: 'var(--font-mono)'
+                  }}>
+                    {allPins.length}
+                  </span>
+                </button>
+
+                {/* Collection Items */}
+                {!loadingCollections && collections.map(collection => (
+                  <button
+                    key={collection.id}
+                    onClick={() => {
+                      handleCollectionSelect(collection.id, false)
+                      setIsBottomSheetOpen(false)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '2px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
+                      color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'var(--transition)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem'
+                    }}
+                  >
+                    {collection.first_pin_image ? (
+                      <img
+                        src={collection.first_pin_image}
+                        alt=""
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: 'var(--radius)',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        border: '2px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        backgroundColor: 'var(--muted)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1rem',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: '700'
+                      }}>
+                        {collection.color || '📂'}
+                      </div>
+                    )}
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '0.75rem',
+                        fontWeight: '700',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        marginBottom: '0.25rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {collection.title}
+                      </div>
+                      <div style={{
+                        fontSize: '0.625rem',
+                        color: selectedCollectionId === collection.id ? 'rgba(255,255,255,0.8)' : 'var(--muted-foreground)',
+                        fontFamily: 'var(--font-mono)'
+                      }}>
+                        {collection.pin_count || 0} pins
+                      </div>
+                    </div>
+                  </button>
+                ))}
+
+                {loadingCollections && (
+                  <div style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    color: 'var(--muted-foreground)'
+                  }}>
+                    Loading collections...
+                  </div>
+                )}
+
+                {!loadingCollections && collections.length === 0 && (
+                  <div style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    color: 'var(--muted-foreground)',
+                    fontSize: '0.75rem'
+                  }}>
+                    No collections yet. Start creating collections to organize your pins!
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Tab Content - Friends */}
+          {activeTab === 'friends' && (
+            <>
+              <div style={{
+                fontSize: '0.875rem',
+                fontWeight: '700',
+                marginBottom: '1rem',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
+              }}>
+                Friends Collections
+              </div>
+
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem'
+              }}>
+                {!loadingFriendsCollections && friendsCollections.map((item) => (
+                  <button
+                    key={`${item.user_id}-${item.collection.id}`}
+                    onClick={() => {
+                      handleCollectionSelect(item.collection.id, true)
+                      setIsBottomSheetOpen(false)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '2px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      backgroundColor: selectedCollectionId === item.collection.id ? 'var(--accent)' : 'transparent',
+                      color: selectedCollectionId === item.collection.id ? 'white' : 'var(--foreground)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'var(--transition)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem'
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '0.75rem',
+                        fontWeight: '700',
+                        textTransform: 'uppercase',
+                        marginBottom: '0.25rem'
+                      }}>
+                        {item.collection.title}
+                      </div>
+                      <div style={{
+                        fontSize: '0.625rem',
+                        color: 'var(--muted-foreground)',
+                        fontFamily: 'var(--font-mono)'
+                      }}>
+                        by @{item.username} • {item.collection.pin_count || 0} pins
+                      </div>
+                    </div>
+                  </button>
+                ))}
+
+                {loadingFriendsCollections && (
+                  <div style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    color: 'var(--muted-foreground)'
+                  }}>
+                    Loading...
+                  </div>
+                )}
+
+                {!loadingFriendsCollections && friendsCollections.length === 0 && (
+                  <div style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    color: 'var(--muted-foreground)',
+                    fontSize: '0.75rem'
+                  }}>
+                    No friends collections yet
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Tab Content - Discover */}
+          {activeTab === 'discover' && (
+            <>
+              <div style={{
+                fontSize: '0.875rem',
+                fontWeight: '700',
+                marginBottom: '1rem',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
+              }}>
+                Discover Collections
+              </div>
+
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem'
+              }}>
+                {!loadingDiscoverCollections && discoverCollections.map((item) => (
+                  <button
+                    key={`${item.user_id}-${item.collection.id}`}
+                    onClick={() => {
+                      handleCollectionSelect(item.collection.id, true)
+                      setIsBottomSheetOpen(false)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '2px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      backgroundColor: selectedCollectionId === item.collection.id ? 'var(--accent)' : 'transparent',
+                      color: selectedCollectionId === item.collection.id ? 'white' : 'var(--foreground)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'var(--transition)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem'
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '0.75rem',
+                        fontWeight: '700',
+                        textTransform: 'uppercase',
+                        marginBottom: '0.25rem'
+                      }}>
+                        {item.collection.title}
+                      </div>
+                      <div style={{
+                        fontSize: '0.625rem',
+                        color: 'var(--muted-foreground)',
+                        fontFamily: 'var(--font-mono)'
+                      }}>
+                        by @{item.username} • {item.collection.pin_count || 0} pins
+                      </div>
+                    </div>
+                  </button>
+                ))}
+
+                {loadingDiscoverCollections && (
+                  <div style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    color: 'var(--muted-foreground)'
+                  }}>
+                    Loading...
+                  </div>
+                )}
+
+                {!loadingDiscoverCollections && discoverCollections.length === 0 && (
+                  <div style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    color: 'var(--muted-foreground)',
+                    fontSize: '0.75rem'
+                  }}>
+                    No discover collections yet
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </BottomSheet>
       )}
     </div>
   )
