@@ -103,15 +103,22 @@ export function useAuth(): AuthData {
         console.log('Current user:', currentUser?.id || 'none')
 
         if (currentUser) {
-          // Set user and loading=false immediately to unblock UI
-          setUser(currentUser)
-          console.log('Setting loading to false - user authenticated')
-          setLoading(false)
+          // Fetch profile with a timeout to prevent hanging
+          const profilePromise = fetchUserProfile(currentUser)
+          const timeoutPromise = new Promise<UserProfile | null>((resolve) => {
+            setTimeout(() => {
+              console.warn('Profile fetch timeout after 3 seconds, continuing anyway')
+              resolve(null)
+            }, 3000)
+          })
 
-          // Fetch profile in background after UI is unblocked
-          const profileData = await fetchUserProfile(currentUser)
+          const profileData = await Promise.race([profilePromise, timeoutPromise])
+
           if (mounted) {
+            setUser(currentUser)
             setProfile(profileData)
+            console.log('Setting loading to false - user and profile ready (or timed out)')
+            setLoading(false)
           }
         } else {
           if (mounted) {
@@ -147,14 +154,21 @@ export function useAuth(): AuthData {
         const currentUser = session?.user ?? null
 
         if (currentUser) {
-          // Set user and loading=false immediately to unblock UI
-          setUser(currentUser)
-          setLoading(false)
+          // Fetch profile with a timeout to prevent hanging
+          const profilePromise = fetchUserProfile(currentUser)
+          const timeoutPromise = new Promise<UserProfile | null>((resolve) => {
+            setTimeout(() => {
+              console.warn('Profile fetch timeout after 3 seconds, continuing anyway')
+              resolve(null)
+            }, 3000)
+          })
 
-          // Fetch profile in background after UI is unblocked
-          const profileData = await fetchUserProfile(currentUser)
+          const profileData = await Promise.race([profilePromise, timeoutPromise])
+
           if (mounted) {
+            setUser(currentUser)
             setProfile(profileData)
+            setLoading(false)
           }
         } else {
           if (mounted) {
