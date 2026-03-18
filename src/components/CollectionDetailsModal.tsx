@@ -32,6 +32,17 @@ interface PinImage {
   upload_order: number
 }
 
+interface Comment {
+  id: string
+  collection_id: string
+  user_id: string
+  comment_text: string
+  created_at: string
+  updated_at: string
+  username?: string
+  profile_image?: string | null
+}
+
 export default function CollectionDetailsModal({
   collection,
   onClose,
@@ -59,10 +70,16 @@ export default function CollectionDetailsModal({
   })
   const [votingInProgress, setVotingInProgress] = useState(false)
 
+  // Comments state
+  const [comments, setComments] = useState<Comment[]>([])
+  const [loadingComments, setLoadingComments] = useState(true)
+  const [newComment, setNewComment] = useState('')
+  const [postingComment, setPostingComment] = useState(false)
+
   // Check if the current user owns this collection
   const isOwner = collection.user_id === userId
 
-  // Load collection images and vote data
+  // Load collection images, vote data, and comments
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -100,10 +117,40 @@ export default function CollectionDetailsModal({
             net_score: countsData.net_score || 0
           })
         }
+
+        // Load comments with user information
+        const { data: commentsData, error: commentsError } = await supabase
+          .from('collection_comments')
+          .select(`
+            *,
+            users:user_id (
+              username,
+              profile_image
+            )
+          `)
+          .eq('collection_id', collection.id)
+          .order('created_at', { ascending: true })
+
+        if (commentsError) throw commentsError
+
+        // Transform the data to flatten user info
+        const transformedComments = (commentsData || []).map((comment: any) => ({
+          id: comment.id,
+          collection_id: comment.collection_id,
+          user_id: comment.user_id,
+          comment_text: comment.comment_text,
+          created_at: comment.created_at,
+          updated_at: comment.updated_at,
+          username: comment.users?.username,
+          profile_image: comment.users?.profile_image
+        }))
+
+        setComments(transformedComments)
       } catch (err) {
         console.error('Error loading data:', err)
       } finally {
         setLoadingImages(false)
+        setLoadingComments(false)
       }
     }
 
@@ -225,6 +272,73 @@ export default function CollectionDetailsModal({
       // Note: Optimistic update already happened, real data will sync on next load
     } finally {
       setVotingInProgress(false)
+    }
+  }
+
+  const handlePostComment = async () => {
+    if (!newComment.trim()) return
+    if (postingComment) return
+
+    setPostingComment(true)
+    setError('')
+
+    try {
+      // Insert comment
+      const { data: insertedComment, error: insertError } = await supabase
+        .from('collection_comments')
+        .insert({
+          collection_id: collection.id,
+          user_id: userId,
+          comment_text: newComment.trim()
+        })
+        .select(`
+          *,
+          users:user_id (
+            username,
+            profile_image
+          )
+        `)
+        .single()
+
+      if (insertError) throw insertError
+
+      // Transform and add to comments list
+      const transformedComment: Comment = {
+        id: insertedComment.id,
+        collection_id: insertedComment.collection_id,
+        user_id: insertedComment.user_id,
+        comment_text: insertedComment.comment_text,
+        created_at: insertedComment.created_at,
+        updated_at: insertedComment.updated_at,
+        username: (insertedComment.users as any)?.username,
+        profile_image: (insertedComment.users as any)?.profile_image
+      }
+
+      setComments(prev => [...prev, transformedComment])
+      setNewComment('')
+    } catch (err: any) {
+      console.error('Error posting comment:', err)
+      setError('Failed to post comment. Please try again.')
+    } finally {
+      setPostingComment(false)
+    }
+  }
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      const { error: deleteError } = await supabase
+        .from('collection_comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', userId) // Ensure user can only delete their own comments
+
+      if (deleteError) throw deleteError
+
+      // Remove from local state
+      setComments(prev => prev.filter(c => c.id !== commentId))
+    } catch (err: any) {
+      console.error('Error deleting comment:', err)
+      setError('Failed to delete comment. Please try again.')
     }
   }
 
@@ -736,7 +850,273 @@ export default function CollectionDetailsModal({
               {voteCounts.net_score > 0 ? '👍' : '👎'} {Math.abs(voteCounts.net_score)} {voteCounts.net_score > 0 ? 'upvotes' : 'downvotes'} net
             </div>
           )}
+          <div>💬 {comments.length} comments</div>
           <div>📅 {new Date(collection.created_at).toLocaleDateString()}</div>
+        </div>
+
+        {/* Comments Section */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{
+            display: 'block',
+            fontSize: '0.75rem',
+            fontWeight: '700',
+            marginBottom: '1rem',
+            fontFamily: 'var(--font-mono)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            color: 'var(--muted-foreground)'
+          }}>
+            💬 COMMENTS ({comments.length})
+          </label>
+
+          {/* Comments List */}
+          <div style={{
+            marginBottom: '1rem',
+            maxHeight: '300px',
+            overflowY: 'auto',
+            border: '2px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            background: 'var(--muted)'
+          }}>
+            {loadingComments ? (
+              <div style={{
+                padding: '2rem',
+                textAlign: 'center',
+                color: 'var(--muted-foreground)',
+                fontSize: '0.875rem',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                Loading comments...
+              </div>
+            ) : comments.length === 0 ? (
+              <div style={{
+                padding: '2rem',
+                textAlign: 'center',
+                color: 'var(--muted-foreground)',
+                fontSize: '0.875rem',
+                fontFamily: 'var(--font-mono)',
+                fontStyle: 'italic'
+              }}>
+                No comments yet. Be the first to comment!
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {comments.map((comment, index) => (
+                  <div
+                    key={comment.id}
+                    style={{
+                      padding: '1rem',
+                      borderBottom: index < comments.length - 1 ? '1px solid var(--border)' : 'none',
+                      background: comment.user_id === userId ? 'rgba(99, 102, 241, 0.05)' : 'transparent'
+                    }}
+                  >
+                    {/* Comment Header */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '0.5rem',
+                      gap: '0.5rem'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        flex: 1,
+                        minWidth: 0
+                      }}>
+                        {/* Profile Image */}
+                        {comment.profile_image ? (
+                          <img
+                            src={comment.profile_image}
+                            alt={comment.username || 'User'}
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              border: '2px solid var(--border)',
+                              objectFit: 'cover',
+                              flexShrink: 0
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: 'var(--accent)',
+                            border: '2px solid var(--border)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.75rem',
+                            fontWeight: '700',
+                            color: 'white',
+                            flexShrink: 0
+                          }}>
+                            {(comment.username || 'U')[0].toUpperCase()}
+                          </div>
+                        )}
+
+                        {/* Username */}
+                        <span style={{
+                          fontSize: '0.75rem',
+                          fontWeight: '700',
+                          fontFamily: 'var(--font-mono)',
+                          color: 'var(--foreground)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {comment.username || 'Anonymous'}
+                        </span>
+
+                        {/* Owner Badge */}
+                        {comment.user_id === collection.user_id && (
+                          <span style={{
+                            fontSize: '0.625rem',
+                            fontWeight: '700',
+                            fontFamily: 'var(--font-mono)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            padding: '0.125rem 0.375rem',
+                            background: 'var(--accent)',
+                            color: 'white',
+                            borderRadius: 'var(--radius)',
+                            flexShrink: 0
+                          }}>
+                            OWNER
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Timestamp and Delete Button */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        flexShrink: 0
+                      }}>
+                        <span style={{
+                          fontSize: '0.625rem',
+                          color: 'var(--muted-foreground)',
+                          fontFamily: 'var(--font-mono)',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {new Date(comment.created_at).toLocaleDateString()}
+                        </span>
+
+                        {comment.user_id === userId && (
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              background: 'transparent',
+                              border: '1px solid var(--border)',
+                              borderRadius: 'var(--radius)',
+                              color: '#ef4444',
+                              cursor: 'pointer',
+                              fontSize: '0.625rem',
+                              fontWeight: '700',
+                              fontFamily: 'var(--font-mono)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em',
+                              transition: 'all 0.2s ease'
+                            }}
+                            title="Delete comment"
+                          >
+                            DELETE
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Comment Text */}
+                    <p style={{
+                      margin: 0,
+                      fontSize: '0.875rem',
+                      color: 'var(--foreground)',
+                      lineHeight: '1.5',
+                      wordBreak: 'break-word'
+                    }}>
+                      {comment.comment_text}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Post Comment Form */}
+          <div style={{
+            display: 'flex',
+            gap: '0.5rem',
+            alignItems: 'flex-start'
+          }}>
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Write a comment..."
+              disabled={postingComment}
+              style={{
+                flex: 1,
+                padding: '0.75rem',
+                border: '2px solid var(--border)',
+                borderRadius: 'var(--radius)',
+                background: 'var(--background)',
+                color: 'var(--foreground)',
+                fontSize: '0.875rem',
+                resize: 'vertical',
+                minHeight: '80px',
+                fontFamily: 'inherit',
+                opacity: postingComment ? 0.6 : 1
+              }}
+              maxLength={1000}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  handlePostComment()
+                }
+              }}
+            />
+            <button
+              onClick={handlePostComment}
+              disabled={!newComment.trim() || postingComment}
+              style={{
+                padding: '0.75rem 1rem',
+                background: !newComment.trim() || postingComment ? 'var(--muted)' : 'var(--accent)',
+                color: !newComment.trim() || postingComment ? 'var(--muted-foreground)' : 'white',
+                border: '2px solid',
+                borderColor: !newComment.trim() || postingComment ? 'var(--border)' : 'var(--accent)',
+                borderRadius: 'var(--radius)',
+                cursor: !newComment.trim() || postingComment ? 'not-allowed' : 'pointer',
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                whiteSpace: 'nowrap',
+                minHeight: '80px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+              title="⌘/Ctrl + Enter to post"
+            >
+              {postingComment ? 'POSTING...' : 'POST'}
+            </button>
+          </div>
+
+          {/* Keyboard shortcut hint */}
+          <div style={{
+            marginTop: '0.5rem',
+            fontSize: '0.625rem',
+            color: 'var(--muted-foreground)',
+            fontFamily: 'var(--font-mono)',
+            textAlign: 'right'
+          }}>
+            ⌘/Ctrl + Enter to post
+          </div>
         </div>
 
         {/* Error Message */}
