@@ -287,36 +287,50 @@ function MapComponent({ onMapClick }: MapProps) {
     return icons[category || 'other'] || 'OT'
   }
 
-  // Create custom marker icon SVG - Pin/thumbtack shape for better visibility
+  // Create custom marker icon SVG - Classic teardrop/map marker shape
   const createMarkerIcon = (category: string | null, color: string = '#E63946') => {
     const icon = getCategoryIcon(category)
     // Use color as part of filter ID to ensure uniqueness
     const filterId = `shadow-${color.replace('#', '')}`
     const svg = `
-      <svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg">
+      <svg width="36" height="48" viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <filter id="${filterId}" x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.5"/>
           </filter>
         </defs>
 
-        <!-- Pin shape with shadow -->
+        <!-- Classic teardrop/map marker shape -->
         <g filter="url(#${filterId})">
-          <!-- Pin head (circle) -->
-          <circle cx="20" cy="16" r="14" fill="${color}" stroke="#ffffff" stroke-width="2.5"/>
-
-          <!-- Pin point (triangle) -->
-          <path d="M 20 28 L 14 42 L 20 48 L 26 42 Z" fill="${color}" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+          <path
+            d="M 18 2
+               C 9 2, 2 9, 2 18
+               C 2 24, 6 30, 18 46
+               C 30 30, 34 24, 34 18
+               C 34 9, 27 2, 18 2 Z"
+            fill="${color}"
+            stroke="#ffffff"
+            stroke-width="2.5"
+            stroke-linejoin="round"
+          />
         </g>
 
         <!-- Category icon -->
-        <text x="20" y="22" font-size="14" fill="#ffffff" text-anchor="middle" font-family="monospace" font-weight="bold">${icon}</text>
+        <text
+          x="18"
+          y="22"
+          font-size="14"
+          fill="#ffffff"
+          text-anchor="middle"
+          font-family="monospace"
+          font-weight="bold"
+        >${icon}</text>
       </svg>
     `
     return {
       url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-      scaledSize: new google.maps.Size(40, 48),
-      anchor: new google.maps.Point(20, 48) // Anchor at bottom tip of pin
+      scaledSize: new google.maps.Size(36, 48),
+      anchor: new google.maps.Point(18, 46) // Anchor at bottom tip of teardrop
     }
   }
 
