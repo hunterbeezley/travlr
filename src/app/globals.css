@@ -1015,10 +1015,29 @@ select option {
 /* Mobile (481px - 767px) - Standard phones in portrait */
 @media (max-width: 767px) {
   /* Navigation layout */
+  .navbar-content {
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
   .navbar-nav {
     position: static;
     transform: none;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
+    /* Move nav to its own row on very small screens */
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: var(--space-xs);
+  }
+
+  .navbar-user {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .navbar-brand {
+    order: 1;
   }
 
   .nav-link {
@@ -1154,6 +1173,32 @@ select option {
 @media (min-width: 768px) and (max-width: 1023px) {
   .feed-grid {
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+  }
+}
+
+/* =============================================================================
+   MAP COMPONENT RESPONSIVE OPTIMIZATIONS
+   ============================================================================= */
+
+/* Hide sidebar on mobile - too cramped */
+@media (max-width: 767px) {
+  .map-sidebar {
+    display: none !important;
+  }
+
+  /* Reposition map style selector to avoid overlap with search */
+  .map-style-selector {
+    top: auto !important;
+    bottom: 5rem !important;
+    right: 1rem !important;
+    left: auto !important;
+  }
+}
+
+/* Tablet - reduce sidebar width */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .map-sidebar {
+    width: 240px !important;
   }
 }
 

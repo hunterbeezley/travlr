@@ -1154,25 +1154,27 @@ function MapComponent({ onMapClick }: MapProps) {
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       {/* Collections Sidebar with Tabs */}
       {user && (
-        <div style={{
-          position: 'absolute',
-          left: '1rem',
-          top: '5rem',
-          bottom: '1rem',
-          width: '280px',
-          backgroundColor: 'rgba(39, 39, 42, 0.7)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-lg)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          padding: '1rem',
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          maxHeight: 'calc(100vh - 12rem)',
-          overflow: 'hidden'
-        }}>
+        <div
+          className="map-sidebar"
+          style={{
+            position: 'absolute',
+            left: '1rem',
+            top: '5rem',
+            bottom: '1rem',
+            width: '280px',
+            backgroundColor: 'rgba(39, 39, 42, 0.7)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-lg)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            padding: '1rem',
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: 'calc(100vh - 12rem)',
+            overflow: 'hidden'
+          }}>
           {/* Tab Headers */}
           <div style={{
             display: 'flex',
@@ -2082,12 +2084,14 @@ function MapComponent({ onMapClick }: MapProps) {
       </div>
 
       {/* Map Style Selector */}
-      <div style={{
-        position: 'absolute',
-        top: '0.75rem',
-        right: '5rem',
-        zIndex: 10
-      }}>
+      <div
+        className="map-style-selector"
+        style={{
+          position: 'absolute',
+          top: '0.75rem',
+          right: '5rem',
+          zIndex: 10
+        }}>
         <div style={{
           display: 'flex',
           gap: '0.25rem',
