@@ -2671,15 +2671,13 @@ function MapComponent({ onMapClick }: MapProps) {
                         height: '48px',
                         border: '2px solid var(--border)',
                         borderRadius: 'var(--radius)',
-                        backgroundColor: 'var(--muted)',
+                        backgroundColor: collection.color || 'var(--muted)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '1rem',
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: '700'
+                        fontSize: '1.5rem'
                       }}>
-                        {collection.color || '📂'}
+                        📂
                       </div>
                     )}
 

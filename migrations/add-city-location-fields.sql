@@ -185,9 +185,10 @@ END;
 $$;
 
 -- =============================================================================
--- Function: Get all cities with public collections
+-- Function: Get all cities with collections
 -- =============================================================================
 -- Returns a list of cities that have at least one public collection
+-- OR where the current user has collections (even if private)
 -- Used for city selector dropdown
 CREATE OR REPLACE FUNCTION get_cities_with_collections()
 RETURNS TABLE (
@@ -217,7 +218,7 @@ BEGIN
     FROM pins pins_table
     INNER JOIN collections c ON c.id = pins_table.collection_id
     WHERE pins_table.city IS NOT NULL
-      AND c.is_public = true
+      AND (c.is_public = true OR c.user_id = auth.uid())
     GROUP BY pins_table.city, pins_table.state, pins_table.country,
              pins_table.country_code, pins_table.collection_id
   )
