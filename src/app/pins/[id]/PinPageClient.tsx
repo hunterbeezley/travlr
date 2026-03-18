@@ -81,20 +81,31 @@ export default function PinPageClient({
   const router = useRouter()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [showCopyToast, setShowCopyToast] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<any>(null)
 
   const sortedImages = [...pin.pin_images].sort((a, b) => a.upload_order - b.upload_order)
   const emoji = categoryEmojis[pin.category || 'other'] || '📍'
   const displayName = pin.profiles.full_name || pin.profiles.username || 'Anonymous'
 
-  // Disable body scroll on mobile
+  // Disable body scroll on mobile + capture debug info
   useEffect(() => {
-    const isMobile = window.innerWidth <= 767
-    console.log('🔍 DEBUG - Pin Page Mobile Check:', {
-      viewportWidth: window.innerWidth,
-      isMobile,
-      mapContainerShouldShow: isMobile,
-      desktopContentShouldShow: !isMobile
-    })
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    const isMobile = viewportWidth <= 767
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
+    const debug = {
+      viewportWidth,
+      viewportHeight,
+      isMobile: isMobile ? 'YES' : 'NO',
+      isTouchDevice: isTouchDevice ? 'YES' : 'NO',
+      mobileMapShouldShow: isMobile ? 'YES' : 'NO',
+      desktopContentShouldShow: isMobile ? 'NO' : 'YES',
+      userAgent: navigator.userAgent.slice(0, 50)
+    }
+
+    setDebugInfo(debug)
+    console.log('🔍 DEBUG Info:', debug)
 
     if (isMobile) {
       console.log('📱 Mobile detected - disabling body scroll')
@@ -162,6 +173,36 @@ export default function PinPageClient({
           </button>
         </div>
       </nav>
+
+      {/* DEBUG PANEL - Visible on screen */}
+      {debugInfo && (
+        <div style={{
+          position: 'fixed',
+          top: '80px',
+          right: '0',
+          background: 'rgba(230, 57, 70, 0.95)',
+          color: 'white',
+          padding: '1rem',
+          fontSize: '0.75rem',
+          fontFamily: 'monospace',
+          zIndex: 9999,
+          maxWidth: '300px',
+          borderLeft: '2px solid white'
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>🔍 DEBUG INFO</div>
+          <div>Width: {debugInfo.viewportWidth}px</div>
+          <div>Height: {debugInfo.viewportHeight}px</div>
+          <div>Is Mobile (≤767px): {debugInfo.isMobile}</div>
+          <div>Is Touch Device: {debugInfo.isTouchDevice}</div>
+          <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid white' }}>
+            <div>Mobile Map Shows: {debugInfo.mobileMapShouldShow}</div>
+            <div>Desktop Content Shows: {debugInfo.desktopContentShouldShow}</div>
+          </div>
+          <div style={{ marginTop: '0.5rem', fontSize: '0.65rem', opacity: 0.8 }}>
+            {debugInfo.userAgent}
+          </div>
+        </div>
+      )}
 
       {/* Mobile Map - Full Screen Below Navbar */}
       <div
