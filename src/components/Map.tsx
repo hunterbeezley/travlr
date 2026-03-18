@@ -1170,6 +1170,7 @@ function MapComponent({ onMapClick }: MapProps) {
           {/* Tab Headers */}
           <div style={{
             display: 'flex',
+            flexWrap: 'wrap',
             gap: '0.5rem',
             marginBottom: '1rem',
             borderBottom: '2px solid var(--border)'
@@ -1180,8 +1181,9 @@ function MapComponent({ onMapClick }: MapProps) {
                 setSelectedCollectionId(null)
               }}
               style={{
-                flex: 1,
-                padding: '0.75rem 0.5rem',
+                flex: '1 1 auto',
+                minWidth: '50px',
+                padding: '0.75rem 0.25rem',
                 backgroundColor: activeTab === 'my-collections' ? 'var(--accent)' : 'transparent',
                 color: activeTab === 'my-collections' ? 'white' : 'var(--foreground)',
                 border: 'none',
@@ -1204,8 +1206,9 @@ function MapComponent({ onMapClick }: MapProps) {
                 setSelectedCollectionId(null)
               }}
               style={{
-                flex: 1,
-                padding: '0.75rem 0.5rem',
+                flex: '1 1 auto',
+                minWidth: '50px',
+                padding: '0.75rem 0.25rem',
                 backgroundColor: activeTab === 'friends' ? 'var(--accent)' : 'transparent',
                 color: activeTab === 'friends' ? 'white' : 'var(--foreground)',
                 border: 'none',
@@ -1228,8 +1231,9 @@ function MapComponent({ onMapClick }: MapProps) {
                 setSelectedCollectionId(null)
               }}
               style={{
-                flex: 1,
-                padding: '0.75rem 0.5rem',
+                flex: '1 1 auto',
+                minWidth: '50px',
+                padding: '0.75rem 0.25rem',
                 backgroundColor: activeTab === 'discover' ? 'var(--accent)' : 'transparent',
                 color: activeTab === 'discover' ? 'white' : 'var(--foreground)',
                 border: 'none',
@@ -1252,8 +1256,9 @@ function MapComponent({ onMapClick }: MapProps) {
                 setSelectedCollectionId(null)
               }}
               style={{
-                flex: 1,
-                padding: '0.75rem 0.5rem',
+                flex: '1 1 auto',
+                minWidth: '50px',
+                padding: '0.75rem 0.25rem',
                 backgroundColor: activeTab === 'feed' ? 'var(--accent)' : 'transparent',
                 color: activeTab === 'feed' ? 'white' : 'var(--foreground)',
                 border: 'none',
