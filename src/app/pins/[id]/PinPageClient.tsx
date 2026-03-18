@@ -89,7 +89,15 @@ export default function PinPageClient({
   // Disable body scroll on mobile
   useEffect(() => {
     const isMobile = window.innerWidth <= 767
+    console.log('🔍 DEBUG - Pin Page Mobile Check:', {
+      viewportWidth: window.innerWidth,
+      isMobile,
+      mapContainerShouldShow: isMobile,
+      desktopContentShouldShow: !isMobile
+    })
+
     if (isMobile) {
+      console.log('📱 Mobile detected - disabling body scroll')
       document.body.style.overflow = 'hidden'
       return () => {
         document.body.style.overflow = 'auto'
@@ -159,6 +167,7 @@ export default function PinPageClient({
       <div
         className="pin-mobile-map-container"
         onClick={() => {
+          console.log('📍 Mobile map clicked - opening Maps app')
           // Open directly in maps app on tap
           const url = `https://www.google.com/maps/search/?api=1&query=${pin.latitude},${pin.longitude}`
           window.open(url, '_blank')
@@ -174,6 +183,8 @@ export default function PinPageClient({
             height: '100%',
             objectFit: 'cover'
           }}
+          onLoad={() => console.log('✅ Mobile static map image loaded successfully')}
+          onError={() => console.error('❌ Mobile static map image failed to load - check API key')}
         />
 
         {/* Tap Overlay */}
@@ -224,6 +235,10 @@ export default function PinPageClient({
         margin: '0 auto',
         padding: '2rem'
       }}>
+        {(() => {
+          console.log('💻 Desktop content section rendering')
+          return null
+        })()}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr',
@@ -646,12 +661,17 @@ export default function PinPageClient({
                 overflow: 'hidden',
                 marginBottom: '1rem'
               }}>
+                {(() => {
+                  console.log('🗺️ Desktop iframe map rendering')
+                  return null
+                })()}
                 <iframe
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
                   loading="lazy"
                   src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${pin.latitude},${pin.longitude}&zoom=15`}
+                  onLoad={() => console.log('✅ Desktop iframe map loaded')}
                 />
               </div>
 
