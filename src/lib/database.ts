@@ -1115,6 +1115,12 @@ export class DatabaseService {
 
       if (error) {
         console.error('❌ Error getting cities with collections:', error)
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
         return []
       }
 
@@ -1154,6 +1160,12 @@ export class DatabaseService {
 
       if (error) {
         console.error('❌ Error getting collections by city:', error)
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
         return []
       }
 
