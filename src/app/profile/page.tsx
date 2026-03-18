@@ -461,13 +461,13 @@ export default function ProfilePage() {
         minHeight: '100vh',
         background: 'var(--background)'
       }}>
-        <div style={{
+        <div className="profile-container-wrapper" style={{
           maxWidth: '800px',
           margin: '0 auto',
           padding: '2rem'
         }}>
           {/* Profile Header */}
-          <div style={{
+          <div className="profile-header-card" style={{
             background: 'var(--card)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius-lg)',
@@ -475,7 +475,7 @@ export default function ProfilePage() {
             marginBottom: '2rem',
             boxShadow: 'var(--shadow-sm)'
           }}>
-            <div style={{
+            <div className="profile-header-content" style={{
               display: 'flex',
               alignItems: 'flex-start',
               gap: '2rem'
@@ -534,26 +534,31 @@ export default function ProfilePage() {
               />
 
               {/* Profile Info */}
-              <div style={{ flex: 1 }}>
-                <div style={{
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="profile-title-section" style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  marginBottom: '1rem'
+                  marginBottom: '1rem',
+                  gap: '1rem'
                 }}>
-                  <div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <h1 style={{
                       fontSize: '2rem',
                       fontWeight: '700',
                       margin: 0,
-                      marginBottom: '0.5rem'
+                      marginBottom: '0.5rem',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word'
                     }}>
                       {getDisplayName(profile)}
                     </h1>
                     <p style={{
                       fontSize: '1.125rem',
                       color: 'var(--muted-foreground)',
-                      margin: 0
+                      margin: 0,
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word'
                     }}>
                       {profile?.username ? `@${profile.username}` : profile?.email || 'No username set'}
                     </p>
@@ -561,6 +566,7 @@ export default function ProfilePage() {
 
                   <button
                     onClick={() => setIsEditing(!isEditing)}
+                    className="profile-edit-btn"
                     style={{
                       padding: '0.5rem 1rem',
                       background: 'var(--accent)',
@@ -570,7 +576,9 @@ export default function ProfilePage() {
                       cursor: 'pointer',
                       fontSize: '0.875rem',
                       fontWeight: '500',
-                      transition: 'var(--transition)'
+                      transition: 'var(--transition)',
+                      flexShrink: 0,
+                      whiteSpace: 'nowrap'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = 'var(--accent-hover)'
@@ -877,10 +885,10 @@ export default function ProfilePage() {
           </div>
 
           {/* Collections and Pins Sections */}
-          <div style={{
+          <div className="profile-sections-grid" style={{
             display: 'grid',
             gap: '2rem',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))'
           }}>
             {/* Collections */}
             <div style={{

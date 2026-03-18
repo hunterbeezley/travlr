@@ -1367,4 +1367,35 @@ a:focus-visible {
     height: calc(100vh - 80px);
     z-index: 100;
   }
+
+  /* Profile page mobile responsive */
+  .profile-container-wrapper {
+    padding: 1rem !important;
+  }
+
+  .profile-header-card {
+    padding: 1.5rem !important;
+  }
+
+  .profile-header-content {
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+    align-items: center !important;
+  }
+
+  .profile-title-section {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  .profile-edit-btn {
+    width: 100%;
+    padding: 0.75rem 1rem !important;
+  }
+
+  .profile-sections-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
 }
