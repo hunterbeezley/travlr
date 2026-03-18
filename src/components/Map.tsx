@@ -2598,11 +2598,11 @@ function MapComponent({ onMapClick }: MapProps) {
                 flexDirection: 'column',
                 gap: '0.5rem'
               }}>
-                {!loadingFriendsCollections && friendsCollections.map((item) => (
+                {!loadingFriendsCollections && friendsCollections.map((collection) => (
                   <button
-                    key={`${item.user_id}-${item.collection.id}`}
+                    key={`${collection.user_id}-${collection.id}`}
                     onClick={() => {
-                      handleCollectionSelect(item.collection.id, true)
+                      handleCollectionSelect(collection.id, true)
                       setIsBottomSheetOpen(false)
                     }}
                     style={{
@@ -2610,8 +2610,8 @@ function MapComponent({ onMapClick }: MapProps) {
                       padding: '0.75rem',
                       border: '2px solid var(--border)',
                       borderRadius: 'var(--radius)',
-                      backgroundColor: selectedCollectionId === item.collection.id ? 'var(--accent)' : 'transparent',
-                      color: selectedCollectionId === item.collection.id ? 'white' : 'var(--foreground)',
+                      backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
+                      color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
                       textAlign: 'left',
                       cursor: 'pointer',
                       transition: 'var(--transition)',
@@ -2628,14 +2628,14 @@ function MapComponent({ onMapClick }: MapProps) {
                         textTransform: 'uppercase',
                         marginBottom: '0.25rem'
                       }}>
-                        {item.collection.title}
+                        {collection.title}
                       </div>
                       <div style={{
                         fontSize: '0.625rem',
                         color: 'var(--muted-foreground)',
                         fontFamily: 'var(--font-mono)'
                       }}>
-                        by @{item.username} • {item.collection.pin_count || 0} pins
+                        by @{collection.username} • {collection.pin_count || 0} pins
                       </div>
                     </div>
                   </button>
@@ -2684,11 +2684,11 @@ function MapComponent({ onMapClick }: MapProps) {
                 flexDirection: 'column',
                 gap: '0.5rem'
               }}>
-                {!loadingDiscoverCollections && discoverCollections.map((item) => (
+                {!loadingDiscoverCollections && discoverCollections.map((collection) => (
                   <button
-                    key={`${item.user_id}-${item.collection.id}`}
+                    key={`${collection.user_id}-${collection.id}`}
                     onClick={() => {
-                      handleCollectionSelect(item.collection.id, true)
+                      handleCollectionSelect(collection.id, true)
                       setIsBottomSheetOpen(false)
                     }}
                     style={{
@@ -2696,8 +2696,8 @@ function MapComponent({ onMapClick }: MapProps) {
                       padding: '0.75rem',
                       border: '2px solid var(--border)',
                       borderRadius: 'var(--radius)',
-                      backgroundColor: selectedCollectionId === item.collection.id ? 'var(--accent)' : 'transparent',
-                      color: selectedCollectionId === item.collection.id ? 'white' : 'var(--foreground)',
+                      backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
+                      color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
                       textAlign: 'left',
                       cursor: 'pointer',
                       transition: 'var(--transition)',
@@ -2714,14 +2714,14 @@ function MapComponent({ onMapClick }: MapProps) {
                         textTransform: 'uppercase',
                         marginBottom: '0.25rem'
                       }}>
-                        {item.collection.title}
+                        {collection.title}
                       </div>
                       <div style={{
                         fontSize: '0.625rem',
                         color: 'var(--muted-foreground)',
                         fontFamily: 'var(--font-mono)'
                       }}>
-                        by @{item.username} • {item.collection.pin_count || 0} pins
+                        by @{collection.username} • {collection.pin_count || 0} pins
                       </div>
                     </div>
                   </button>
