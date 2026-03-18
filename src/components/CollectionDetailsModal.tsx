@@ -75,6 +75,8 @@ export default function CollectionDetailsModal({
   const [loadingComments, setLoadingComments] = useState(true)
   const [newComment, setNewComment] = useState('')
   const [postingComment, setPostingComment] = useState(false)
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+  const [editingCommentText, setEditingCommentText] = useState('')
 
   // Check if the current user owns this collection
   const isOwner = collection.user_id === userId
@@ -339,6 +341,46 @@ export default function CollectionDetailsModal({
     } catch (err: any) {
       console.error('Error deleting comment:', err)
       setError('Failed to delete comment. Please try again.')
+    }
+  }
+
+  const handleStartEditComment = (comment: Comment) => {
+    setEditingCommentId(comment.id)
+    setEditingCommentText(comment.comment_text)
+  }
+
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null)
+    setEditingCommentText('')
+  }
+
+  const handleUpdateComment = async (commentId: string) => {
+    if (!editingCommentText.trim()) return
+
+    try {
+      const { error: updateError } = await supabase
+        .from('collection_comments')
+        .update({
+          comment_text: editingCommentText.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', commentId)
+        .eq('user_id', userId) // Ensure user can only update their own comments
+
+      if (updateError) throw updateError
+
+      // Update local state
+      setComments(prev => prev.map(c =>
+        c.id === commentId
+          ? { ...c, comment_text: editingCommentText.trim(), updated_at: new Date().toISOString() }
+          : c
+      ))
+
+      setEditingCommentId(null)
+      setEditingCommentText('')
+    } catch (err: any) {
+      console.error('Error updating comment:', err)
+      setError('Failed to update comment. Please try again.')
     }
   }
 
@@ -990,7 +1032,7 @@ export default function CollectionDetailsModal({
                         )}
                       </div>
 
-                      {/* Timestamp and Delete Button */}
+                      {/* Timestamp and Action Buttons */}
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1006,41 +1048,131 @@ export default function CollectionDetailsModal({
                           {new Date(comment.created_at).toLocaleDateString()}
                         </span>
 
-                        {comment.user_id === userId && (
+                        {comment.user_id === userId && editingCommentId !== comment.id && (
+                          <>
+                            <button
+                              onClick={() => handleStartEditComment(comment)}
+                              style={{
+                                padding: '0.25rem 0.5rem',
+                                background: 'transparent',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius)',
+                                color: 'var(--accent)',
+                                cursor: 'pointer',
+                                fontSize: '0.625rem',
+                                fontWeight: '700',
+                                fontFamily: 'var(--font-mono)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                transition: 'all 0.2s ease'
+                              }}
+                              title="Edit comment"
+                            >
+                              EDIT
+                            </button>
+                            <button
+                              onClick={() => handleDeleteComment(comment.id)}
+                              style={{
+                                padding: '0.25rem 0.5rem',
+                                background: 'transparent',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius)',
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                fontSize: '0.625rem',
+                                fontWeight: '700',
+                                fontFamily: 'var(--font-mono)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                transition: 'all 0.2s ease'
+                              }}
+                              title="Delete comment"
+                            >
+                              DELETE
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Comment Text or Edit Form */}
+                    {editingCommentId === comment.id ? (
+                      <div style={{
+                        marginTop: '0.5rem'
+                      }}>
+                        <textarea
+                          value={editingCommentText}
+                          onChange={(e) => setEditingCommentText(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            border: '2px solid var(--border)',
+                            borderRadius: 'var(--radius)',
+                            background: 'var(--background)',
+                            color: 'var(--foreground)',
+                            fontSize: '0.875rem',
+                            resize: 'vertical',
+                            minHeight: '60px',
+                            fontFamily: 'inherit',
+                            marginBottom: '0.5rem'
+                          }}
+                          maxLength={1000}
+                        />
+                        <div style={{
+                          display: 'flex',
+                          gap: '0.5rem',
+                          justifyContent: 'flex-end'
+                        }}>
                           <button
-                            onClick={() => handleDeleteComment(comment.id)}
+                            onClick={handleCancelEditComment}
                             style={{
                               padding: '0.25rem 0.5rem',
-                              background: 'transparent',
+                              background: 'var(--muted)',
                               border: '1px solid var(--border)',
                               borderRadius: 'var(--radius)',
-                              color: '#ef4444',
+                              color: 'var(--foreground)',
                               cursor: 'pointer',
                               fontSize: '0.625rem',
                               fontWeight: '700',
                               fontFamily: 'var(--font-mono)',
                               textTransform: 'uppercase',
-                              letterSpacing: '0.05em',
-                              transition: 'all 0.2s ease'
+                              letterSpacing: '0.05em'
                             }}
-                            title="Delete comment"
                           >
-                            DELETE
+                            CANCEL
                           </button>
-                        )}
+                          <button
+                            onClick={() => handleUpdateComment(comment.id)}
+                            disabled={!editingCommentText.trim()}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              background: !editingCommentText.trim() ? 'var(--muted)' : 'var(--accent)',
+                              border: '1px solid var(--border)',
+                              borderRadius: 'var(--radius)',
+                              color: !editingCommentText.trim() ? 'var(--muted-foreground)' : 'white',
+                              cursor: !editingCommentText.trim() ? 'not-allowed' : 'pointer',
+                              fontSize: '0.625rem',
+                              fontWeight: '700',
+                              fontFamily: 'var(--font-mono)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em'
+                            }}
+                          >
+                            SAVE
+                          </button>
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Comment Text */}
-                    <p style={{
-                      margin: 0,
-                      fontSize: '0.875rem',
-                      color: 'var(--foreground)',
-                      lineHeight: '1.5',
-                      wordBreak: 'break-word'
-                    }}>
-                      {comment.comment_text}
-                    </p>
+                    ) : (
+                      <p style={{
+                        margin: 0,
+                        fontSize: '0.875rem',
+                        color: 'var(--foreground)',
+                        lineHeight: '1.5',
+                        wordBreak: 'break-word'
+                      }}>
+                        {comment.comment_text}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
