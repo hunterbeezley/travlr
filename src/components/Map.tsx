@@ -13,6 +13,7 @@ import FollowButton from './FollowButton'
 import CollectionDetailsModal from './CollectionDetailsModal'
 import AddSearchLocationModal from './AddSearchLocationModal'
 import BottomSheet from './BottomSheet'
+import MapLayersModal from './MapLayersModal'
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!
 
@@ -221,6 +222,9 @@ function MapComponent({ onMapClick }: MapProps) {
   // Mobile bottom sheet state
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
 
+  // Map layers modal state
+  const [showMapLayersModal, setShowMapLayersModal] = useState(false)
+
   // Collections state
   const [collections, setCollections] = useState<Collection[]>([])
   const [loadingCollections, setLoadingCollections] = useState(false)
@@ -245,13 +249,6 @@ function MapComponent({ onMapClick }: MapProps) {
   // Search location state
   const [selectedSearchLocation, setSelectedSearchLocation] = useState<SearchResult | null>(null)
   const [showAddLocationModal, setShowAddLocationModal] = useState(false)
-
-  const mapStyles = [
-    { name: 'Streets', value: 'roadmap', icon: 'ST' },
-    { name: 'Satellite', value: 'satellite', icon: 'SA' },
-    { name: 'Terrain', value: 'terrain', icon: 'TE' },
-    { name: 'Dark', value: 'dark', icon: 'DK' },
-  ]
 
   const getCategoryIcon = (category: string | null) => {
     const icons: { [key: string]: string } = {
@@ -2087,53 +2084,46 @@ function MapComponent({ onMapClick }: MapProps) {
         </div>
       </div>
 
-      {/* Map Style Selector */}
-      <div
+      {/* Map Layers Button */}
+      <button
+        onClick={() => setShowMapLayersModal(true)}
         className="map-style-selector"
         style={{
           position: 'absolute',
           top: '0.75rem',
           right: '5rem',
-          zIndex: 10
-        }}>
-        <div style={{
-          display: 'flex',
-          gap: '0.25rem',
-          background: 'rgba(39, 39, 42, 0.7)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          zIndex: 10,
+          background: 'rgba(39, 39, 42, 0.85)',
+          border: '2px solid rgba(255, 255, 255, 0.15)',
           borderRadius: 'var(--radius-lg)',
-          padding: '0.25rem',
-          boxShadow: 'var(--shadow-lg)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)'
-        }}>
-          {mapStyles.map((style) => (
-            <button
-              key={style.value}
-              onClick={() => handleMapStyleChange(style.value)}
-              title={style.name}
-              style={{
-                padding: '0.375rem 0.5rem',
-                border: '1px solid var(--border)',
-                cursor: 'pointer',
-                fontSize: '0.625rem',
-                fontWeight: '700',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'var(--transition)',
-                background: mapStyle === style.value ? 'var(--accent)' : 'transparent',
-                color: mapStyle === style.value ? 'white' : 'var(--foreground)',
-                fontFamily: 'var(--font-mono)',
-                letterSpacing: '0.05em',
-                minWidth: '32px'
-              }}
-            >
-              {style.icon}
-            </button>
-          ))}
-        </div>
-      </div>
+          padding: '0.625rem 1rem',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          transition: 'all 0.2s ease',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '0.75rem',
+          fontWeight: '700',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          color: 'var(--foreground)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(39, 39, 42, 0.95)'
+          e.currentTarget.style.borderColor = 'var(--accent)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(39, 39, 42, 0.85)'
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'
+        }}
+      >
+        <span style={{ fontSize: '1rem' }}>🗺️</span>
+        Layers
+      </button>
 
       {/* User Instructions */}
       {!authLoading && user && (
@@ -2752,6 +2742,14 @@ function MapComponent({ onMapClick }: MapProps) {
           )}
         </BottomSheet>
       )}
+
+      {/* Map Layers Modal */}
+      <MapLayersModal
+        isOpen={showMapLayersModal}
+        onClose={() => setShowMapLayersModal(false)}
+        currentStyle={mapStyle}
+        onStyleSelect={handleMapStyleChange}
+      />
     </div>
   )
 }
