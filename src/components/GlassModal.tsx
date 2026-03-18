@@ -14,7 +14,7 @@ export default function GlassModal({
   isOpen,
   onClose,
   children,
-  maxWidth = '500px',
+  maxWidth = 'min(500px, calc(100vw - 2rem))',
   title,
   showCloseButton = true
 }: GlassModalProps) {
@@ -47,6 +47,7 @@ export default function GlassModal({
 
   return (
     <div
+      className="modal-overlay"
       style={{
         position: 'fixed',
         top: 0,
@@ -58,7 +59,6 @@ export default function GlassModal({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        padding: '1rem',
         backdropFilter: 'blur(4px)',
         WebkitBackdropFilter: 'blur(4px)',
         animation: 'fadeIn 0.2s ease'
@@ -66,6 +66,7 @@ export default function GlassModal({
       onClick={onClose}
     >
       <div
+        className="modal-content"
         style={{
           backgroundColor: 'rgba(39, 39, 42, 0.85)',
           backdropFilter: 'blur(16px)',
@@ -73,7 +74,7 @@ export default function GlassModal({
           borderRadius: 'var(--radius-lg)',
           width: '100%',
           maxWidth,
-          maxHeight: '90vh',
+          maxHeight: 'calc(100vh - 2rem)',
           overflow: 'auto',
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
           border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -119,18 +120,21 @@ export default function GlassModal({
             {showCloseButton && (
               <button
                 onClick={onClose}
+                className="modal-close"
                 style={{
                   position: 'absolute',
                   top: '1rem',
                   right: '1rem',
-                  width: '36px',
-                  height: '36px',
+                  minWidth: '44px',
+                  minHeight: '44px',
+                  width: '44px',
+                  height: '44px',
                   borderRadius: '50%',
                   backgroundColor: 'rgba(230, 57, 70, 0.15)',
                   color: 'var(--foreground)',
                   border: '1px solid rgba(255, 255, 255, 0.2)',
                   cursor: 'pointer',
-                  fontSize: '16px',
+                  fontSize: '20px',
                   fontWeight: 'bold',
                   display: 'flex',
                   alignItems: 'center',

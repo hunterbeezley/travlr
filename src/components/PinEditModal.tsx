@@ -301,7 +301,8 @@ export default function PinEditModal({
           borderRadius: 'var(--radius-lg)',
           padding: '2rem',
           textAlign: 'center',
-          maxWidth: '400px'
+          maxWidth: 'min(400px, calc(100vw - 2rem))',
+          width: '100%'
         }}>
           <h3 style={{ marginBottom: '1rem', color: 'var(--destructive)' }}>
             ⚠️ Access Denied
@@ -328,7 +329,7 @@ export default function PinEditModal({
   }
 
   return (
-    <div style={{
+    <div className="modal-overlay" style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -338,17 +339,16 @@ export default function PinEditModal({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000,
-      padding: '1rem'
+      zIndex: 1000
     }}>
-      <div style={{
+      <div className="modal-content" style={{
         backgroundColor: 'rgba(39, 39, 42, 0.85)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         borderRadius: 'var(--radius-lg)',
         width: '100%',
-        maxWidth: '500px',
-        maxHeight: '90vh',
+        maxWidth: 'min(500px, calc(100vw - 2rem))',
+        maxHeight: 'calc(100vh - 2rem)',
         overflow: 'auto',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         border: '1px solid rgba(255, 255, 255, 0.15)'

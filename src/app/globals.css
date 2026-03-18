@@ -857,20 +857,262 @@ select option {
   }
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* =============================================================================
+   MODAL RESPONSIVE STYLES
+   ============================================================================= */
+
+/* Base modal overlay - applies to all modals */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-md);
+}
+
+/* Base modal content container */
+.modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+/* Mobile modal adjustments */
+@media (max-width: 767px) {
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-start;
+  }
+
+  .modal-content {
+    width: 100vw;
+    max-width: none;
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* Make modal header sticky on mobile for better UX */
+  .modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Ensure close buttons are easily tappable */
+  .modal-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Adjust modal padding for mobile */
+  .modal-body {
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  /* Form inputs in modals */
+  .modal-content input,
+  .modal-content textarea,
+  .modal-content select {
+    font-size: max(16px, 1rem); /* Prevent iOS zoom */
+  }
+}
+
+/* Tablet modal sizing */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .modal-content {
+    max-width: min(600px, calc(100vw - 4rem));
+  }
+}
+
+/* =============================================================================
+   RESPONSIVE DESIGN - Mobile First Approach
+   ============================================================================= */
+
+/* Small Mobile (320px - 480px) - iPhone SE, small Android phones */
+@media (max-width: 480px) {
+  /* Typography scaling */
+  .navbar-brand {
+    font-size: 1.25rem;
+    letter-spacing: 0.05em;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  /* Container padding */
+  .container {
+    padding: 0 var(--space-sm);
+  }
+
+  /* Form adjustments */
+  .form-container {
+    padding: var(--space-lg);
+    margin: var(--space-lg) var(--space-sm);
+  }
+
+  .form-title {
+    font-size: 1.5rem;
+  }
+
+  /* Navigation - make it fit */
+  .navbar-content {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .navbar-nav {
+    gap: var(--space-xs);
+  }
+
+  .nav-link {
+    padding: var(--space-sm) var(--space-sm);
+    font-size: 0.7rem;
+  }
+
+  /* User avatar */
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.75rem;
+  }
+
+  /* Profile adjustments */
+  .profile-container {
+    padding: var(--space-lg) var(--space-sm);
+  }
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+    font-size: 2rem;
+  }
+}
+
+/* Mobile (481px - 767px) - Standard phones in portrait */
+@media (max-width: 767px) {
+  /* Navigation layout */
   .navbar-nav {
     position: static;
     transform: none;
+    gap: var(--space-sm);
   }
 
+  .nav-link {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.75rem;
+    /* Ensure minimum touch target */
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Hide user email on mobile */
   .user-email {
     display: none;
   }
 
+  /* Buttons - minimum touch targets */
+  .btn {
+    min-height: 44px;
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .btn-small {
+    min-height: 44px;
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  /* User avatar - minimum touch target */
+  .user-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Forms - prevent iOS zoom */
+  .form-input,
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1rem); /* Prevents iOS auto-zoom */
+  }
+
+  .form-input::placeholder {
+    font-size: 14px; /* Placeholders can be smaller */
+  }
+
+  /* Map adjustments */
   .map-container-full {
     height: calc(100vh - 70px);
     padding: var(--space-sm);
+  }
+
+  /* Profile spacing */
+  .profile-header {
+    padding: var(--space-lg);
+  }
+
+  /* Stat cards stack on mobile */
+  .stat-card {
+    margin-bottom: var(--space-md);
+  }
+
+  /* Form container */
+  .form-container {
+    max-width: 100%;
+    margin: var(--space-lg) var(--space-md);
+    padding: var(--space-xl) var(--space-lg);
+  }
+}
+
+/* Tablet (768px - 1023px) - iPads and tablets */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .container {
+    max-width: 720px;
+  }
+
+  .navbar-content {
+    max-width: 720px;
+  }
+
+  .profile-container {
+    max-width: 720px;
+  }
+
+  /* Navigation still centered but with more space */
+  .navbar-nav {
+    gap: var(--space-md);
+  }
+}
+
+/* Desktop adjustments for very large screens */
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1400px;
   }
 }
 

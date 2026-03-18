@@ -202,13 +202,14 @@ export default function AddSearchLocationModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="modal-content"
         style={{
           background: 'var(--background)',
           border: '2px solid var(--border)',
           borderRadius: 'var(--radius-lg)',
-          maxWidth: '500px',
+          maxWidth: 'min(500px, calc(100vw - 2rem))',
           width: '100%',
-          maxHeight: '90vh',
+          maxHeight: 'calc(100vh - 2rem)',
           overflow: 'auto',
           padding: '2rem'
         }}

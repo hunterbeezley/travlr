@@ -387,6 +387,7 @@ export default function CollectionDetailsModal({
   return (
     <div
       onClick={onClose}
+      className="modal-overlay"
       style={{
         position: 'fixed',
         top: 0,
@@ -398,19 +399,19 @@ export default function CollectionDetailsModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000,
-        padding: '1rem'
+        zIndex: 1000
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="modal-content"
         style={{
           background: 'var(--background)',
           border: '2px solid var(--border)',
           borderRadius: 'var(--radius-lg)',
-          maxWidth: '600px',
+          maxWidth: 'min(600px, calc(100vw - 2rem))',
           width: '100%',
-          maxHeight: '90vh',
+          maxHeight: 'calc(100vh - 2rem)',
           overflow: 'auto',
           padding: '2rem'
         }}

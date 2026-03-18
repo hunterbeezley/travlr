@@ -305,14 +305,14 @@ export default function PinProfileModal({
       </button>
 
       {/* Modal Container */}
-      <div style={{
+      <div className="modal-content" style={{
         backgroundColor: 'rgba(39, 39, 42, 0.85)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         borderRadius: 'var(--radius-lg)',
         width: '100%',
-        maxWidth: '800px',
-        maxHeight: '90vh',
+        maxWidth: 'min(800px, calc(100vw - 2rem))',
+        maxHeight: 'calc(100vh - 2rem)',
         overflow: 'auto',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
         border: '1px solid rgba(255, 255, 255, 0.15)'

@@ -317,7 +317,7 @@ export default function PinCreationModal({
   if (!isOpen) return null
 
   return (
-    <div style={{
+    <div className="modal-overlay" style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -327,23 +327,22 @@ export default function PinCreationModal({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000,
-      padding: '1rem'
+      zIndex: 1000
     }}>
-      <div style={{
+      <div className="modal-content" style={{
         backgroundColor: 'rgba(39, 39, 42, 0.85)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         borderRadius: 'var(--radius-lg)',
         width: '100%',
-        maxWidth: '500px',
-        maxHeight: '90vh',
+        maxWidth: 'min(500px, calc(100vw - 2rem))',
+        maxHeight: 'calc(100vh - 2rem)',
         overflow: 'auto',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         border: '1px solid rgba(255, 255, 255, 0.15)'
       }}>
         {/* Header */}
-        <div style={{
+        <div className="modal-header" style={{
           padding: '1.5rem',
           borderBottom: '1px solid var(--border)',
           display: 'flex',
@@ -362,6 +361,7 @@ export default function PinCreationModal({
           </h2>
           <button
             onClick={onClose}
+            className="modal-close"
             style={{
               background: 'none',
               border: 'none',
@@ -369,7 +369,12 @@ export default function PinCreationModal({
               padding: '0.5rem',
               borderRadius: 'var(--radius)',
               fontSize: '1.25rem',
-              transition: 'var(--transition)'
+              transition: 'var(--transition)',
+              minWidth: '44px',
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
             ✕
@@ -377,7 +382,7 @@ export default function PinCreationModal({
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSubmit} style={{ padding: '1.5rem' }}>
+        <form onSubmit={handleSubmit} className="modal-body" style={{ padding: '1.5rem' }}>
           {/* Location Info */}
           <div style={{ marginBottom: '1.5rem' }}>
             <div style={{
