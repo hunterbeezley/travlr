@@ -1267,7 +1267,7 @@ function MapComponent({ onMapClick }: MapProps) {
       center: { lat, lng },
       zoom,
       mapTypeId: mapStyle === 'dark' ? google.maps.MapTypeId.ROADMAP : mapStyle as google.maps.MapTypeId,
-      disableDoubleClickZoom: true,
+      disableDoubleClickZoom: false, // Enable double-click/tap to zoom
       zoomControl: true,
       fullscreenControl: true,
       mapTypeControl: false,
@@ -1342,8 +1342,8 @@ function MapComponent({ onMapClick }: MapProps) {
       }
     })
 
-    // Handle double-click for pin creation
-    mapInstance.addListener('dblclick', (e: google.maps.MapMouseEvent) => {
+    // Handle right-click (desktop) for pin creation
+    mapInstance.addListener('rightclick', (e: google.maps.MapMouseEvent) => {
       // Use userRef.current to get the latest user value
       if (!userRef.current) {
         alert('Please log in to create pins')
@@ -1351,7 +1351,7 @@ function MapComponent({ onMapClick }: MapProps) {
       }
 
       if (e.latLng) {
-        console.log('📍 Double-clicked! Creating new pin at:', e.latLng.lat(), e.latLng.lng())
+        console.log('📍 Right-clicked! Creating new pin at:', e.latLng.lat(), e.latLng.lng())
 
         if (activeInfoWindowRef.current) {
           activeInfoWindowRef.current.close()
@@ -1367,6 +1367,89 @@ function MapComponent({ onMapClick }: MapProps) {
       }
     })
 
+    // Handle long-press (mobile) for pin creation
+    let longPressTimer: NodeJS.Timeout | null = null
+    let longPressLatLng: google.maps.LatLng | null = null
+    let touchMoved = false
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return // Only handle single touch
+
+      touchMoved = false
+
+      // Get the lat/lng from the touch position
+      const touch = e.touches[0]
+      const mapDiv = mapInstance.getDiv()
+      const rect = mapDiv.getBoundingClientRect()
+      const x = touch.clientX - rect.left
+      const y = touch.clientY - rect.top
+
+      // Convert pixel to lat/lng
+      const projection = mapInstance.getProjection()
+      if (!projection) return
+
+      const bounds = mapInstance.getBounds()
+      if (!bounds) return
+
+      const ne = bounds.getNorthEast()
+      const sw = bounds.getSouthWest()
+
+      const mapWidth = rect.width
+      const mapHeight = rect.height
+
+      const lng = sw.lng() + (x / mapWidth) * (ne.lng() - sw.lng())
+      const lat = ne.lat() - (y / mapHeight) * (ne.lat() - sw.lat())
+
+      longPressLatLng = new google.maps.LatLng(lat, lng)
+
+      // Start long-press timer (500ms)
+      longPressTimer = setTimeout(() => {
+        if (!touchMoved && longPressLatLng && userRef.current) {
+          console.log('📍 Long-press! Creating new pin at:', longPressLatLng.lat(), longPressLatLng.lng())
+
+          // Provide haptic feedback if available
+          if (navigator.vibrate) {
+            navigator.vibrate(50)
+          }
+
+          if (activeInfoWindowRef.current) {
+            activeInfoWindowRef.current.close()
+          }
+
+          setSelectedLocation({
+            lat: longPressLatLng.lat(),
+            lng: longPressLatLng.lng()
+          })
+          setShowPinModal(true)
+
+          onMapClick?.(longPressLatLng.lng(), longPressLatLng.lat())
+        }
+      }, 500)
+    }
+
+    const handleTouchMove = () => {
+      touchMoved = true
+      if (longPressTimer) {
+        clearTimeout(longPressTimer)
+        longPressTimer = null
+      }
+    }
+
+    const handleTouchEnd = () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer)
+        longPressTimer = null
+      }
+      longPressLatLng = null
+    }
+
+    // Add touch event listeners to the map div
+    const mapDiv = mapInstance.getDiv()
+    mapDiv.addEventListener('touchstart', handleTouchStart, { passive: true })
+    mapDiv.addEventListener('touchmove', handleTouchMove, { passive: true })
+    mapDiv.addEventListener('touchend', handleTouchEnd, { passive: true })
+    mapDiv.addEventListener('touchcancel', handleTouchEnd, { passive: true })
+
     setIsMapLoaded(true)
     console.log('✅ Google Map initialized')
 
@@ -1374,6 +1457,18 @@ function MapComponent({ onMapClick }: MapProps) {
       // Cleanup markers
       markersRef.current.forEach(marker => marker.setMap(null))
       markersRef.current = []
+
+      // Cleanup touch event listeners
+      const mapDiv = mapInstance.getDiv()
+      mapDiv.removeEventListener('touchstart', handleTouchStart)
+      mapDiv.removeEventListener('touchmove', handleTouchMove)
+      mapDiv.removeEventListener('touchend', handleTouchEnd)
+      mapDiv.removeEventListener('touchcancel', handleTouchEnd)
+
+      // Clear any pending long-press timer
+      if (longPressTimer) {
+        clearTimeout(longPressTimer)
+      }
     }
   }, [])
 
