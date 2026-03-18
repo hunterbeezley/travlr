@@ -429,6 +429,13 @@ export default function ProfilePage() {
             </button>
 
             <button
+              onClick={() => router.push('/feed')}
+              className="nav-link"
+            >
+              FEED
+            </button>
+
+            <button
               onClick={() => router.push('/profile')}
               className="nav-link active"
             >
