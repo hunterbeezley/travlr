@@ -1398,4 +1398,22 @@ a:focus-visible {
     grid-template-columns: 1fr !important;
     gap: 1.5rem !important;
   }
+
+  /* Collection hero mobile responsive */
+  .collection-hero {
+    height: 300px !important;
+  }
+
+  .collection-hero-overlay {
+    padding: 2rem 1.5rem !important;
+  }
+
+  .collection-hero-title {
+    font-size: 2rem !important;
+  }
+
+  .collection-hero-badge {
+    font-size: 0.75rem !important;
+    padding: 0.375rem 0.75rem !important;
+  }
 }

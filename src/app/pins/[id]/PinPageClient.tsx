@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Toast from '@/components/Toast'
@@ -56,7 +56,6 @@ interface PinPageClientProps {
   pin: Pin
   relatedPins: RelatedPin[]
   isOwner: boolean
-  currentUserId?: string
 }
 
 const categoryEmojis: Record<string, string> = {
@@ -75,8 +74,7 @@ const categoryEmojis: Record<string, string> = {
 export default function PinPageClient({
   pin,
   relatedPins,
-  isOwner,
-  currentUserId
+  isOwner
 }: PinPageClientProps) {
   const router = useRouter()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -103,7 +101,7 @@ export default function PinPageClient({
           text: pin.description || `Check out ${pin.title} on Travlr`,
           url: url
         })
-      } catch (err) {
+      } catch {
         console.log('Share cancelled')
       }
     } else {

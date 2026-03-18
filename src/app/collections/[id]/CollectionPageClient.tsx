@@ -42,7 +42,6 @@ interface CollectionPageClientProps {
   pins: Pin[]
   pinCount: number
   isOwner: boolean
-  currentUserId?: string
 }
 
 const categoryEmojis: Record<string, string> = {
@@ -62,8 +61,7 @@ export default function CollectionPageClient({
   collection,
   pins,
   pinCount,
-  isOwner,
-  currentUserId
+  isOwner
 }: CollectionPageClientProps) {
   const router = useRouter()
   const [showShareToast, setShowShareToast] = useState(false)
@@ -78,7 +76,7 @@ export default function CollectionPageClient({
           text: collection.description || `Check out ${collection.title} on Travlr`,
           url: url
         })
-      } catch (err) {
+      } catch {
         console.log('Share cancelled')
       }
     } else {
@@ -125,7 +123,181 @@ export default function CollectionPageClient({
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Image/Map Preview */}
+      {pins.length > 0 && (
+        <div className="collection-hero" style={{
+          width: '100%',
+          height: '400px',
+          position: 'relative',
+          overflow: 'hidden',
+          background: 'var(--muted)'
+        }}>
+          {(() => {
+            // Get first pin with image
+            const firstPinWithImage = pins.find(pin => pin.pin_images && pin.pin_images.length > 0)
+
+            if (firstPinWithImage) {
+              const firstImage = firstPinWithImage.pin_images.sort((a, b) => a.upload_order - b.upload_order)[0]
+
+              return (
+                <>
+                  <Image
+                    src={firstImage.image_url}
+                    alt={collection.title}
+                    fill
+                    style={{
+                      objectFit: 'cover',
+                      filter: 'brightness(0.7)'
+                    }}
+                    priority
+                    sizes="100vw"
+                  />
+                  {/* Overlay with collection info */}
+                  <div className="collection-hero-overlay" style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 50%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
+                    padding: '3rem'
+                  }}>
+                    <div style={{
+                      maxWidth: '1200px',
+                      width: '100%',
+                      margin: '0 auto'
+                    }}>
+                      <div className="collection-hero-badge" style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        background: `${collection.color}40`,
+                        border: `1px solid ${collection.color}`,
+                        borderRadius: 'var(--radius)',
+                        marginBottom: '1rem',
+                        backdropFilter: 'blur(10px)'
+                      }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: collection.color
+                        }} />
+                        <span style={{
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          color: 'white',
+                          fontFamily: 'var(--font-mono)',
+                          textTransform: 'uppercase'
+                        }}>
+                          {pinCount} {pinCount === 1 ? 'PIN' : 'PINS'}
+                        </span>
+                      </div>
+                      <h1 className="collection-hero-title" style={{
+                        fontSize: '3rem',
+                        fontWeight: '700',
+                        color: 'white',
+                        margin: 0,
+                        fontFamily: 'var(--font-display)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+                      }}>
+                        {collection.title}
+                      </h1>
+                    </div>
+                  </div>
+                </>
+              )
+            } else {
+              // Show map with all pins
+              const centerLat = pins.reduce((sum, pin) => sum + pin.latitude, 0) / pins.length
+              const centerLng = pins.reduce((sum, pin) => sum + pin.longitude, 0) / pins.length
+
+              // Create markers string for static map
+              const markers = pins.slice(0, 10).map(pin =>
+                `${pin.latitude},${pin.longitude}`
+              ).join('|')
+
+              const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${centerLat},${centerLng}&zoom=12&size=1200x800&markers=color:red%7C${markers}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&scale=2&style=feature:poi|visibility:off&style=feature:transit|visibility:off`
+
+              return (
+                <>
+                  <img
+                    src={mapUrl}
+                    alt={`Map of ${collection.title}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      filter: 'brightness(0.7)'
+                    }}
+                  />
+                  {/* Overlay with collection info */}
+                  <div className="collection-hero-overlay" style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 50%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
+                    padding: '3rem'
+                  }}>
+                    <div style={{
+                      maxWidth: '1200px',
+                      width: '100%',
+                      margin: '0 auto'
+                    }}>
+                      <div className="collection-hero-badge" style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        background: `${collection.color}40`,
+                        border: `1px solid ${collection.color}`,
+                        borderRadius: 'var(--radius)',
+                        marginBottom: '1rem',
+                        backdropFilter: 'blur(10px)'
+                      }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: collection.color
+                        }} />
+                        <span style={{
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          color: 'white',
+                          fontFamily: 'var(--font-mono)',
+                          textTransform: 'uppercase'
+                        }}>
+                          {pinCount} {pinCount === 1 ? 'PIN' : 'PINS'}
+                        </span>
+                      </div>
+                      <h1 className="collection-hero-title" style={{
+                        fontSize: '3rem',
+                        fontWeight: '700',
+                        color: 'white',
+                        margin: 0,
+                        fontFamily: 'var(--font-display)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
+                      }}>
+                        {collection.title}
+                      </h1>
+                    </div>
+                  </div>
+                </>
+              )
+            }
+          })()}
+        </div>
+      )}
+
+      {/* Content Section */}
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto',
@@ -148,26 +320,31 @@ export default function CollectionPageClient({
             flexWrap: 'wrap'
           }}>
             <div style={{ flex: 1, minWidth: '300px' }}>
-              {/* Color indicator */}
-              <div style={{
-                width: '60px',
-                height: '6px',
-                background: collection.color,
-                borderRadius: '3px',
-                marginBottom: '1.5rem'
-              }} />
+              {/* Only show title if no pins (no hero section) */}
+              {pins.length === 0 && (
+                <>
+                  {/* Color indicator */}
+                  <div style={{
+                    width: '60px',
+                    height: '6px',
+                    background: collection.color,
+                    borderRadius: '3px',
+                    marginBottom: '1.5rem'
+                  }} />
 
-              <h1 style={{
-                fontSize: '2.5rem',
-                fontWeight: '700',
-                color: 'var(--foreground)',
-                marginBottom: '1rem',
-                fontFamily: 'var(--font-display)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>
-                {collection.title}
-              </h1>
+                  <h1 style={{
+                    fontSize: '2.5rem',
+                    fontWeight: '700',
+                    color: 'var(--foreground)',
+                    marginBottom: '1rem',
+                    fontFamily: 'var(--font-display)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    {collection.title}
+                  </h1>
+                </>
+              )}
 
               {collection.description && (
                 <p style={{

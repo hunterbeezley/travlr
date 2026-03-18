@@ -15,7 +15,6 @@ export default function CollectionPage({ params }: PageProps) {
   const [collection, setCollection] = useState<any>(null)
   const [pins, setPins] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentUserId, setCurrentUserId] = useState<string | undefined>()
   const [isOwner, setIsOwner] = useState(false)
   const [notFoundError, setNotFoundError] = useState(false)
   const [collectionId, setCollectionId] = useState<string | null>(null)
@@ -35,7 +34,6 @@ export default function CollectionPage({ params }: PageProps) {
       try {
         // Get current user
         const { data: { user } } = await supabase.auth.getUser()
-        setCurrentUserId(user?.id)
 
         // Fetch collection data
         const { data: collectionData, error: collectionError } = await supabase
@@ -120,7 +118,6 @@ export default function CollectionPage({ params }: PageProps) {
       pins={pins}
       pinCount={pins.length}
       isOwner={isOwner}
-      currentUserId={currentUserId}
     />
   )
 }

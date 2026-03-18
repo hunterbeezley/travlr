@@ -15,7 +15,6 @@ export default function PinPage({ params }: PageProps) {
   const [pin, setPin] = useState<any>(null)
   const [relatedPins, setRelatedPins] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentUserId, setCurrentUserId] = useState<string | undefined>()
   const [isOwner, setIsOwner] = useState(false)
   const [notFoundError, setNotFoundError] = useState(false)
   const [pinId, setPinId] = useState<string | null>(null)
@@ -35,7 +34,6 @@ export default function PinPage({ params }: PageProps) {
       try {
         // Get current user
         const { data: { user } } = await supabase.auth.getUser()
-        setCurrentUserId(user?.id)
 
         // Fetch pin data
         const { data: pinData, error: pinError } = await supabase
@@ -130,7 +128,6 @@ export default function PinPage({ params }: PageProps) {
       pin={pin}
       relatedPins={relatedPins}
       isOwner={isOwner}
-      currentUserId={currentUserId}
     />
   )
 }
