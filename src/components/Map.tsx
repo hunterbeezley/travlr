@@ -2383,7 +2383,6 @@ function MapComponent({ onMapClick }: MapProps) {
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
             cursor: 'pointer',
             zIndex: 997,
-            display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '1.5rem',

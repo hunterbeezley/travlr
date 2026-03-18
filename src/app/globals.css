@@ -1254,7 +1254,7 @@ select option {
   }
 
   .mobile-only {
-    display: block !important;
+    display: flex !important;
   }
 
   /* Stack flex on mobile */
