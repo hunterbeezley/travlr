@@ -1186,9 +1186,9 @@ select option {
     display: none !important;
   }
 
-  /* Reposition map layers button to top-left on mobile */
+  /* Reposition map layers button below search bar on mobile */
   .map-style-selector {
-    top: 0.75rem !important;
+    top: 4.5rem !important;
     left: 1rem !important;
     right: auto !important;
     bottom: auto !important;
