@@ -2290,7 +2290,7 @@ function MapComponent({ onMapClick }: MapProps) {
           style={{
             position: 'fixed',
             bottom: '2rem',
-            right: '1rem',
+            left: '1rem',
             width: '56px',
             height: '56px',
             borderRadius: '50%',
