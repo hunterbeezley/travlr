@@ -1417,6 +1417,18 @@ function MapComponent({ onMapClick }: MapProps) {
                             Public
                           </span>
                         )}
+                        {collection.net_score !== undefined && collection.net_score !== 0 && (
+                          <span style={{
+                            backgroundColor: collection.net_score > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                            color: collection.net_score > 0 ? '#22c55e' : '#ef4444',
+                            padding: '0.125rem 0.375rem',
+                            borderRadius: 'var(--radius)',
+                            fontSize: '0.625rem',
+                            fontWeight: '700'
+                          }}>
+                            {collection.net_score > 0 ? '+' : ''}{collection.net_score}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -1611,10 +1623,23 @@ function MapComponent({ onMapClick }: MapProps) {
                       opacity: 0.8,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem'
+                      gap: '0.5rem',
+                      flexWrap: 'wrap'
                     }}>
                       <span>{collection.pin_count || 0} pins</span>
                       <span>by @{collection.username}</span>
+                      {collection.net_score !== undefined && collection.net_score !== 0 && (
+                        <span style={{
+                          backgroundColor: collection.net_score > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                          color: collection.net_score > 0 ? '#22c55e' : '#ef4444',
+                          padding: '0.125rem 0.375rem',
+                          borderRadius: 'var(--radius)',
+                          fontSize: '0.625rem',
+                          fontWeight: '700'
+                        }}>
+                          {collection.net_score > 0 ? '+' : ''}{collection.net_score}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1729,10 +1754,23 @@ function MapComponent({ onMapClick }: MapProps) {
                       opacity: 0.8,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem'
+                      gap: '0.5rem',
+                      flexWrap: 'wrap'
                     }}>
                       <span>{collection.pin_count || 0} pins</span>
                       <span>by @{collection.username}</span>
+                      {collection.net_score !== undefined && collection.net_score !== 0 && (
+                        <span style={{
+                          backgroundColor: collection.net_score > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                          color: collection.net_score > 0 ? '#22c55e' : '#ef4444',
+                          padding: '0.125rem 0.375rem',
+                          borderRadius: 'var(--radius)',
+                          fontSize: '0.625rem',
+                          fontWeight: '700'
+                        }}>
+                          {collection.net_score > 0 ? '+' : ''}{collection.net_score}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
