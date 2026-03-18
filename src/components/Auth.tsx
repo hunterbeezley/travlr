@@ -10,6 +10,7 @@ export default function Auth() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [dateOfBirth, setDateOfBirth] = useState('')
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
 
@@ -63,12 +64,37 @@ export default function Auth() {
       return
     }
 
+    // Age verification - must be 13 or older (COPPA compliance)
+    if (!dateOfBirth) {
+      setError('Please enter your date of birth')
+      setLoading(false)
+      return
+    }
+
+    const birthDate = new Date(dateOfBirth)
+    const today = new Date()
+    const age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    const dayDiff = today.getDate() - birthDate.getDate()
+
+    // Adjust age if birthday hasn't occurred this year
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age
+
+    if (actualAge < 13) {
+      setError('You must be at least 13 years old to create an account')
+      setLoading(false)
+      return
+    }
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            date_of_birth: dateOfBirth
+          }
         }
       })
 
@@ -322,6 +348,40 @@ export default function Auth() {
               autoComplete="new-password"
               minLength={6}
             />
+          </div>
+        )}
+
+        {/* Date of Birth Field - Only for signup */}
+        {mode === 'signup' && (
+          <div className="form-group">
+            <label style={{
+              display: 'block',
+              fontSize: '0.75rem',
+              fontWeight: '700',
+              marginBottom: '0.5rem',
+              fontFamily: 'var(--font-mono)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              color: 'var(--muted-foreground)'
+            }}>
+              Date of Birth
+            </label>
+            <input
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+              className="form-input"
+              required
+              disabled={loading}
+              max={new Date().toISOString().split('T')[0]}
+            />
+            <p style={{
+              fontSize: '0.75rem',
+              color: 'var(--muted-foreground)',
+              marginTop: '0.25rem'
+            }}>
+              You must be at least 13 years old
+            </p>
           </div>
         )}
 

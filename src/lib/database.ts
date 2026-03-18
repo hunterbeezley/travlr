@@ -1324,5 +1324,73 @@ export class DatabaseService {
     }
   }
 
+  /**
+   * Export all user data (GDPR Right to Data Portability)
+   */
+  static async exportUserData(): Promise<any> {
+    try {
+      const { data, error } = await supabase.rpc('export_user_data')
+
+      if (error) {
+        console.error('Error exporting user data:', error)
+        throw new Error(error.message)
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error in exportUserData:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Delete user account and all associated data (GDPR Right to Erasure)
+   */
+  static async deleteUserAccount(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data, error } = await supabase.rpc('delete_user_account')
+
+      if (error) {
+        console.error('Error deleting user account:', error)
+        return { success: false, error: error.message }
+      }
+
+      // Also sign out after deletion
+      await supabase.auth.signOut()
+
+      return data
+    } catch (error: any) {
+      console.error('Error in deleteUserAccount:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  /**
+   * Record user consent (GDPR compliance)
+   */
+  static async recordConsent(
+    consentType: 'cookies' | 'analytics' | 'data_collection',
+    consented: boolean,
+    sessionId?: string
+  ): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.rpc('record_user_consent', {
+        p_consent_type: consentType,
+        p_consented: consented,
+        p_session_id: sessionId || null
+      })
+
+      if (error) {
+        console.error('Error recording consent:', error)
+        return false
+      }
+
+      return data.success
+    } catch (error) {
+      console.error('Error in recordConsent:', error)
+      return false
+    }
+  }
+
 }
 
