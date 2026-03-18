@@ -156,68 +156,65 @@ export default function PinPageClient({
       </nav>
 
       {/* Mobile Map - Full Screen Below Navbar */}
-      <div className="mobile-only pin-mobile-map-container">
-        <iframe
-          width="100%"
-          height="100%"
-          style={{ border: 0, display: 'block' }}
-          loading="lazy"
-          allow="geolocation"
-          src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${pin.latitude},${pin.longitude}&zoom=15`}
-          title="Pin location map"
+      <div
+        className="mobile-only pin-mobile-map-container"
+        onClick={() => {
+          // Open directly in maps app on tap
+          const url = `https://www.google.com/maps/search/?api=1&query=${pin.latitude},${pin.longitude}`
+          window.open(url, '_blank')
+        }}
+        style={{ cursor: 'pointer' }}
+      >
+        {/* Static Map Image */}
+        <img
+          src={`https://maps.googleapis.com/maps/api/staticmap?center=${pin.latitude},${pin.longitude}&zoom=15&size=640x960&markers=color:red%7C${pin.latitude},${pin.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&scale=2`}
+          alt="Pin location on map"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
         />
 
-        {/* Map Overlay with Actions */}
+        {/* Tap Overlay */}
         <div style={{
           position: 'absolute',
-          top: '1rem',
-          left: '1rem',
-          right: '1rem',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.3)',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: '1rem',
-          pointerEvents: 'none',
-          zIndex: 10
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none'
         }}>
           <div style={{
             background: 'rgba(0, 0, 0, 0.8)',
             backdropFilter: 'blur(10px)',
-            padding: '0.75rem 1rem',
+            padding: '1.5rem 2rem',
             borderRadius: 'var(--radius)',
-            pointerEvents: 'auto'
+            textAlign: 'center',
+            color: 'white'
           }}>
             <div style={{
-              fontSize: '0.75rem',
-              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: '2rem',
+              marginBottom: '0.5rem'
+            }}>
+              📍
+            </div>
+            <div style={{
+              fontSize: '1rem',
+              fontWeight: '600',
               marginBottom: '0.25rem'
             }}>
-              Location
+              Tap to open in Maps
             </div>
             <div style={{
               fontSize: '0.875rem',
-              color: 'white',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: '600'
+              color: 'rgba(255, 255, 255, 0.7)',
+              fontFamily: 'var(--font-mono)'
             }}>
               {pin.latitude.toFixed(4)}, {pin.longitude.toFixed(4)}
             </div>
           </div>
-
-          <button
-            onClick={() => {
-              const url = `https://www.google.com/maps/search/?api=1&query=${pin.latitude},${pin.longitude}`
-              window.open(url, '_blank')
-            }}
-            className="btn btn-primary btn-small"
-            style={{
-              pointerEvents: 'auto',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-            }}
-            aria-label="Open in Google Maps app"
-          >
-            📍 OPEN
-          </button>
         </div>
       </div>
 
