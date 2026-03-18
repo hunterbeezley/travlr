@@ -1273,6 +1273,7 @@ function MapComponent({ onMapClick }: MapProps) {
       mapTypeControl: false,
       streetViewControl: false,
       clickableIcons: false, // Disable clicking on default POI markers
+      gestureHandling: 'greedy', // Enable single-finger navigation on mobile
       styles: mapStyle === 'dark' ? [] : HIDE_POI_STYLES // Hide POIs for non-dark modes
     })
 

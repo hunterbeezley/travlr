@@ -81,40 +81,10 @@ export default function PinPageClient({
   const router = useRouter()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [showCopyToast, setShowCopyToast] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
 
   const sortedImages = [...pin.pin_images].sort((a, b) => a.upload_order - b.upload_order)
   const emoji = categoryEmojis[pin.category || 'other'] || '📍'
   const displayName = pin.profiles.full_name || pin.profiles.username || 'Anonymous'
-
-  // Disable body scroll on mobile + capture debug info
-  useEffect(() => {
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
-    const isMobile = viewportWidth <= 767
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
-
-    const debug = {
-      viewportWidth,
-      viewportHeight,
-      isMobile: isMobile ? 'YES' : 'NO',
-      isTouchDevice: isTouchDevice ? 'YES' : 'NO',
-      mobileMapShouldShow: isMobile ? 'YES' : 'NO',
-      desktopContentShouldShow: isMobile ? 'NO' : 'YES',
-      userAgent: navigator.userAgent.slice(0, 50)
-    }
-
-    setDebugInfo(debug)
-    console.log('🔍 DEBUG Info:', debug)
-
-    if (isMobile) {
-      console.log('📱 Mobile detected - disabling body scroll')
-      document.body.style.overflow = 'hidden'
-      return () => {
-        document.body.style.overflow = 'auto'
-      }
-    }
-  }, [])
 
   const handleCopyCoordinates = async () => {
     const coords = `${pin.latitude}, ${pin.longitude}`
@@ -174,41 +144,10 @@ export default function PinPageClient({
         </div>
       </nav>
 
-      {/* DEBUG PANEL - Visible on screen */}
-      {debugInfo && (
-        <div style={{
-          position: 'fixed',
-          top: '80px',
-          right: '0',
-          background: 'rgba(230, 57, 70, 0.95)',
-          color: 'white',
-          padding: '1rem',
-          fontSize: '0.75rem',
-          fontFamily: 'monospace',
-          zIndex: 9999,
-          maxWidth: '300px',
-          borderLeft: '2px solid white'
-        }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>🔍 DEBUG INFO</div>
-          <div>Width: {debugInfo.viewportWidth}px</div>
-          <div>Height: {debugInfo.viewportHeight}px</div>
-          <div>Is Mobile (≤767px): {debugInfo.isMobile}</div>
-          <div>Is Touch Device: {debugInfo.isTouchDevice}</div>
-          <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid white' }}>
-            <div>Mobile Map Shows: {debugInfo.mobileMapShouldShow}</div>
-            <div>Desktop Content Shows: {debugInfo.desktopContentShouldShow}</div>
-          </div>
-          <div style={{ marginTop: '0.5rem', fontSize: '0.65rem', opacity: 0.8 }}>
-            {debugInfo.userAgent}
-          </div>
-        </div>
-      )}
-
       {/* Mobile Map - Full Screen Below Navbar */}
       <div
         className="pin-mobile-map-container"
         onClick={() => {
-          console.log('📍 Mobile map clicked - opening Maps app')
           // Open directly in maps app on tap
           const url = `https://www.google.com/maps/search/?api=1&query=${pin.latitude},${pin.longitude}`
           window.open(url, '_blank')
@@ -224,8 +163,6 @@ export default function PinPageClient({
             height: '100%',
             objectFit: 'cover'
           }}
-          onLoad={() => console.log('✅ Mobile static map image loaded successfully')}
-          onError={() => console.error('❌ Mobile static map image failed to load - check API key')}
         />
 
         {/* Tap Overlay */}
@@ -276,10 +213,6 @@ export default function PinPageClient({
         margin: '0 auto',
         padding: '2rem'
       }}>
-        {(() => {
-          console.log('💻 Desktop content section rendering')
-          return null
-        })()}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr',
@@ -702,17 +635,12 @@ export default function PinPageClient({
                 overflow: 'hidden',
                 marginBottom: '1rem'
               }}>
-                {(() => {
-                  console.log('🗺️ Desktop iframe map rendering')
-                  return null
-                })()}
                 <iframe
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
                   loading="lazy"
                   src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${pin.latitude},${pin.longitude}&zoom=15`}
-                  onLoad={() => console.log('✅ Desktop iframe map loaded')}
                 />
               </div>
 
