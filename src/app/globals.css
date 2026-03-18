@@ -1349,3 +1349,19 @@ a:focus-visible {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
+
+/* Mobile full-screen map */
+.pin-mobile-map {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .pin-mobile-map {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 80px); /* Full height minus navbar */
+    margin: 0 -2rem; /* Expand beyond padding to reach screen edges */
+    margin-bottom: 2rem;
+  }
+}
