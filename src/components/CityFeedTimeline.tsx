@@ -133,17 +133,17 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
     <div style={{
       maxWidth: '1200px',
       margin: '0 auto',
-      padding: '2rem',
+      padding: 'clamp(1rem, 5vw, 2rem)',
       minHeight: 'calc(100vh - 80px)'
     }}>
       {/* Header */}
       <header style={{
-        marginBottom: '2rem',
-        paddingBottom: '2rem',
+        marginBottom: 'clamp(1rem, 4vw, 2rem)',
+        paddingBottom: 'clamp(1rem, 4vw, 2rem)',
         borderBottom: '2px solid var(--border)'
       }}>
         <h1 style={{
-          fontSize: '2.5rem',
+          fontSize: 'clamp(1.5rem, 5vw, 2.5rem)',
           fontWeight: '700',
           marginBottom: '0.5rem',
           fontFamily: 'var(--font-mono)',
@@ -151,14 +151,15 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
           letterSpacing: '0.1em',
           display: 'flex',
           alignItems: 'center',
-          gap: '1rem'
+          gap: 'clamp(0.5rem, 2vw, 1rem)',
+          flexWrap: 'wrap'
         }}>
           <span>🌍</span>
           <span>Discover</span>
         </h1>
         <p style={{
           color: 'var(--muted-foreground)',
-          fontSize: '1rem',
+          fontSize: 'clamp(0.875rem, 2vw, 1rem)',
           fontFamily: 'var(--font-mono)'
         }}>
           Explore curated collections from cities around the world
@@ -344,8 +345,8 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-          gap: '1.5rem'
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))',
+          gap: 'clamp(1rem, 3vw, 1.5rem)'
         }}>
           {collections.map((collection) => (
             <article

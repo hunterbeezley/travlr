@@ -447,7 +447,10 @@ function MapComponent({ onMapClick }: MapProps) {
       const button = document.createElement('button')
       button.textContent = 'ADD TO COLLECTION'
       button.style.width = '100%'
-      button.style.padding = '10px'
+      // Mobile-optimized touch targets
+      const isMobile = window.innerWidth < 768
+      button.style.padding = isMobile ? '14px' : '10px'
+      button.style.minHeight = isMobile ? '44px' : 'auto'
       button.style.background = '#E63946'
       button.style.color = 'white'
       button.style.border = '1px solid #E63946'
@@ -455,7 +458,7 @@ function MapComponent({ onMapClick }: MapProps) {
       button.style.cursor = 'pointer'
       button.style.fontFamily = "'Share Tech Mono', monospace"
       button.style.fontWeight = '700'
-      button.style.fontSize = '11px'
+      button.style.fontSize = isMobile ? '13px' : '11px'
       button.style.letterSpacing = '0.1em'
       button.style.transition = 'all 0.15s ease'
       button.onmouseenter = () => {
@@ -829,12 +832,15 @@ function MapComponent({ onMapClick }: MapProps) {
 
         const viewButton = document.createElement('button')
         viewButton.textContent = 'VIEW'
+        // Mobile-optimized touch targets
+        const isMobile = window.innerWidth < 768
         viewButton.style.background = 'transparent'
         viewButton.style.color = '#F4F4F5'
         viewButton.style.border = '1px solid rgba(255, 255, 255, 0.3)'
-        viewButton.style.padding = '8px 12px'
+        viewButton.style.padding = isMobile ? '12px 14px' : '8px 12px'
+        viewButton.style.minHeight = isMobile ? '44px' : 'auto'
         viewButton.style.cursor = 'pointer'
-        viewButton.style.fontSize = '10px'
+        viewButton.style.fontSize = isMobile ? '12px' : '10px'
         viewButton.style.fontFamily = "'Share Tech Mono', monospace"
         viewButton.style.fontWeight = '700'
         viewButton.style.letterSpacing = '0.1em'
@@ -864,9 +870,10 @@ function MapComponent({ onMapClick }: MapProps) {
           editButton.style.background = '#E63946'
           editButton.style.color = 'white'
           editButton.style.border = '1px solid #E63946'
-          editButton.style.padding = '8px 12px'
+          editButton.style.padding = isMobile ? '12px 14px' : '8px 12px'
+          editButton.style.minHeight = isMobile ? '44px' : 'auto'
           editButton.style.cursor = 'pointer'
-          editButton.style.fontSize = '10px'
+          editButton.style.fontSize = isMobile ? '12px' : '10px'
           editButton.style.fontFamily = "'Share Tech Mono', monospace"
           editButton.style.fontWeight = '700'
           editButton.style.letterSpacing = '0.1em'

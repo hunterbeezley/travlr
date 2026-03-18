@@ -1116,6 +1116,47 @@ select option {
   }
 }
 
+/* =============================================================================
+   FEED PAGE RESPONSIVE OPTIMIZATIONS
+   ============================================================================= */
+
+/* Mobile feed adjustments */
+@media (max-width: 767px) {
+  /* Feed container */
+  .feed-container {
+    padding: 1rem !important;
+  }
+
+  /* Feed header */
+  .feed-header h1 {
+    font-size: 1.75rem !important;
+  }
+
+  /* Filter section - stack on mobile */
+  .feed-filters {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Collection cards - full width on mobile */
+  .feed-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure images don't break layout */
+  .feed-card-image {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Tablet feed adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .feed-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+  }
+}
+
 /* Utility Classes */
 .text-red {
   color: var(--color-red);
@@ -1159,6 +1200,44 @@ select option {
 
 .gap-sm {
   gap: var(--space-sm);
+}
+
+/* Mobile-specific utilities */
+.mobile-hidden {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+
+  /* Stack flex on mobile */
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+
+  /* Full width on mobile */
+  .mobile-full {
+    width: 100% !important;
+  }
+
+  /* Text sizing for mobile */
+  .mobile-text-sm {
+    font-size: 0.875rem !important;
+  }
+
+  .mobile-text-xs {
+    font-size: 0.75rem !important;
+  }
 }
 
 /* Animations */
