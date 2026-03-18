@@ -2201,13 +2201,12 @@ function MapComponent({ onMapClick }: MapProps) {
         </div>
       </div>
 
-      {/* Map Layers Button - Below collections FAB on mobile */}
+      {/* Map Layers Button - Bottom left on desktop, above collections FAB on mobile */}
       <button
         onClick={() => setShowMapLayersModal(true)}
-        className="map-style-selector mobile-only"
+        className="map-layers-button"
         style={{
           position: 'fixed',
-          bottom: '9rem',
           left: '1rem',
           width: '56px',
           height: '56px',
@@ -2218,7 +2217,6 @@ function MapComponent({ onMapClick }: MapProps) {
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
           cursor: 'pointer',
           zIndex: 997,
-          display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: '1.5rem',

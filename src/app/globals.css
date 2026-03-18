@@ -1277,6 +1277,18 @@ select option {
   }
 }
 
+/* Map Layers Button - Responsive positioning */
+.map-layers-button {
+  display: flex;
+  bottom: 2rem; /* Bottom left on desktop */
+}
+
+@media (max-width: 767px) {
+  .map-layers-button {
+    bottom: 9rem !important; /* Above collections FAB on mobile */
+  }
+}
+
 /* Animations */
 .slide-up {
   animation: slideUpSharp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
