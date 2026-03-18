@@ -36,6 +36,9 @@ export interface CollectionWithStats {
   like_count: number
   first_pin_image: string | null
   color: string
+  upvotes?: number
+  downvotes?: number
+  net_score?: number
 }
 
 export interface Pin {
@@ -169,6 +172,9 @@ export interface FriendsCollection {
   pin_count: number
   first_pin_image: string | null
   color: string
+  upvotes?: number
+  downvotes?: number
+  net_score?: number
 }
 
 // DiscoverCollection has the same structure as FriendsCollection

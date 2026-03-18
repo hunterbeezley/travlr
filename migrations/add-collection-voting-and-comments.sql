@@ -291,12 +291,198 @@ END;
 $$;
 
 -- =============================================================================
+-- 7. Update get_user_collections_with_stats to include vote counts
+-- =============================================================================
+DROP FUNCTION IF EXISTS get_user_collections_with_stats(UUID);
+CREATE OR REPLACE FUNCTION get_user_collections_with_stats(user_uuid UUID)
+RETURNS TABLE (
+  id UUID,
+  title TEXT,
+  description TEXT,
+  is_public BOOLEAN,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  pin_count BIGINT,
+  first_pin_image TEXT,
+  color TEXT,
+  upvotes INTEGER,
+  downvotes INTEGER,
+  net_score INTEGER
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    c.id,
+    c.title,
+    c.description,
+    c.is_public,
+    c.created_at,
+    c.updated_at,
+    COUNT(DISTINCT p.id) as pin_count,
+    (
+      SELECT pi.image_url
+      FROM pins p2
+      LEFT JOIN pin_images pi ON p2.id = pi.pin_id
+      WHERE p2.collection_id = c.id
+      ORDER BY p2.created_at DESC, pi.upload_order ASC
+      LIMIT 1
+    ) as first_pin_image,
+    c.color,
+    COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'up'), 0)::INTEGER AS upvotes,
+    COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'down'), 0)::INTEGER AS downvotes,
+    (COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'up'), 0) -
+     COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'down'), 0))::INTEGER AS net_score
+  FROM collections c
+  LEFT JOIN pins p ON c.id = p.collection_id
+  LEFT JOIN collection_votes cv ON cv.collection_id = c.id
+  WHERE c.user_id = user_uuid
+  GROUP BY c.id, c.title, c.description, c.is_public, c.created_at, c.updated_at, c.color
+  ORDER BY c.updated_at DESC;
+END;
+$$;
+
+-- =============================================================================
+-- 8. Update get_friends_public_collections to include vote counts
+-- =============================================================================
+DROP FUNCTION IF EXISTS get_friends_public_collections();
+CREATE OR REPLACE FUNCTION get_friends_public_collections()
+RETURNS TABLE (
+  id UUID,
+  title TEXT,
+  description TEXT,
+  is_public BOOLEAN,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  user_id UUID,
+  username TEXT,
+  user_profile_image TEXT,
+  pin_count BIGINT,
+  first_pin_image TEXT,
+  color TEXT,
+  upvotes INTEGER,
+  downvotes INTEGER,
+  net_score INTEGER
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    c.id,
+    c.title,
+    c.description,
+    c.is_public,
+    c.created_at,
+    c.updated_at,
+    c.user_id,
+    u.username,
+    u.profile_image as user_profile_image,
+    COUNT(DISTINCT p.id) as pin_count,
+    (
+      SELECT pi.image_url
+      FROM pins p2
+      LEFT JOIN pin_images pi ON p2.id = pi.pin_id
+      WHERE p2.collection_id = c.id
+      ORDER BY p2.created_at DESC, pi.upload_order ASC
+      LIMIT 1
+    ) as first_pin_image,
+    c.color,
+    COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'up'), 0)::INTEGER AS upvotes,
+    COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'down'), 0)::INTEGER AS downvotes,
+    (COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'up'), 0) -
+     COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'down'), 0))::INTEGER AS net_score
+  FROM collections c
+  INNER JOIN users u ON c.user_id = u.id
+  LEFT JOIN pins p ON p.collection_id = c.id
+  LEFT JOIN collection_votes cv ON cv.collection_id = c.id
+  WHERE c.is_public = true
+    AND c.user_id IN (
+      SELECT following_id
+      FROM follows
+      WHERE follower_id = auth.uid()
+    )
+  GROUP BY c.id, u.username, u.profile_image
+  ORDER BY c.created_at DESC;
+END;
+$$;
+
+-- =============================================================================
+-- 9. Update get_discover_collections to include vote counts
+-- =============================================================================
+DROP FUNCTION IF EXISTS get_discover_collections(INTEGER);
+CREATE OR REPLACE FUNCTION get_discover_collections(limit_count INTEGER DEFAULT 50)
+RETURNS TABLE (
+  id UUID,
+  title TEXT,
+  description TEXT,
+  is_public BOOLEAN,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  user_id UUID,
+  username TEXT,
+  user_profile_image TEXT,
+  pin_count BIGINT,
+  first_pin_image TEXT,
+  color TEXT,
+  upvotes INTEGER,
+  downvotes INTEGER,
+  net_score INTEGER
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    c.id,
+    c.title,
+    c.description,
+    c.is_public,
+    c.created_at,
+    c.updated_at,
+    c.user_id,
+    u.username,
+    u.profile_image as user_profile_image,
+    COUNT(DISTINCT p.id) as pin_count,
+    (
+      SELECT pi.image_url
+      FROM pins p2
+      LEFT JOIN pin_images pi ON p2.id = pi.pin_id
+      WHERE p2.collection_id = c.id
+      ORDER BY p2.created_at DESC, pi.upload_order ASC
+      LIMIT 1
+    ) as first_pin_image,
+    c.color,
+    COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'up'), 0)::INTEGER AS upvotes,
+    COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'down'), 0)::INTEGER AS downvotes,
+    (COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'up'), 0) -
+     COALESCE(COUNT(cv.id) FILTER (WHERE cv.vote_type = 'down'), 0))::INTEGER AS net_score
+  FROM collections c
+  INNER JOIN users u ON c.user_id = u.id
+  LEFT JOIN pins p ON p.collection_id = c.id
+  LEFT JOIN collection_votes cv ON cv.collection_id = c.id
+  WHERE c.is_public = true
+    AND c.user_id != COALESCE(auth.uid(), '00000000-0000-0000-0000-000000000000'::UUID)
+  GROUP BY c.id, u.username, u.profile_image
+  ORDER BY c.created_at DESC
+  LIMIT limit_count;
+END;
+$$;
+
+-- =============================================================================
 -- Grant permissions
 -- =============================================================================
 GRANT EXECUTE ON FUNCTION toggle_collection_vote(UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_collection_vote_counts(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_user_vote_on_collection(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_collections_with_vote_counts(UUID, BOOLEAN, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_user_collections_with_stats(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_friends_public_collections() TO authenticated;
+GRANT EXECUTE ON FUNCTION get_discover_collections(INTEGER) TO authenticated;
 
 -- =============================================================================
 -- Add comments
@@ -318,3 +504,12 @@ COMMENT ON FUNCTION get_user_vote_on_collection IS
 
 COMMENT ON FUNCTION get_collections_with_vote_counts IS
 'Gets collections with their vote counts included';
+
+COMMENT ON FUNCTION get_user_collections_with_stats IS
+'Efficiently fetches user collections with pin counts, color, and vote counts';
+
+COMMENT ON FUNCTION get_friends_public_collections IS
+'Gets public collections from followed users with vote counts';
+
+COMMENT ON FUNCTION get_discover_collections IS
+'Gets recent public collections from other users with vote counts';
