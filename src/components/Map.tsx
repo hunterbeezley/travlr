@@ -76,6 +76,9 @@ interface Collection {
   first_pin_image?: string | null
   user_id?: string
   color: string
+  upvotes?: number
+  downvotes?: number
+  net_score?: number
 }
 
 // Styles to hide default Google POI markers (for all map types)
