@@ -726,108 +726,71 @@ export default function CollectionPageClient({
               </div>
 
               {/* Voting */}
-              {user && !isOwner && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '1rem',
-                  background: 'var(--muted)',
-                  borderRadius: 'var(--radius)',
-                  marginTop: '1rem'
-                }}>
-                  <button
-                    onClick={() => handleVote('up')}
-                    disabled={votingInProgress}
-                    aria-label="Upvote collection"
-                    style={{
-                      background: userVote === 'up' ? 'var(--accent)' : 'var(--card)',
-                      border: `2px solid ${userVote === 'up' ? 'var(--accent)' : 'var(--border)'}`,
-                      borderRadius: 'var(--radius)',
-                      padding: '0.5rem 1rem',
-                      cursor: votingInProgress ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      fontSize: '1rem',
-                      fontWeight: '600',
-                      color: userVote === 'up' ? 'white' : 'var(--foreground)',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    👍 {voteCounts.upvotes}
-                  </button>
-
-                  <div style={{
-                    fontSize: '1.25rem',
-                    fontWeight: '700',
-                    color: voteCounts.net_score >= 0 ? 'var(--accent)' : 'var(--muted-foreground)'
-                  }}>
-                    {voteCounts.net_score >= 0 ? '+' : ''}{voteCounts.net_score}
-                  </div>
-
-                  <button
-                    onClick={() => handleVote('down')}
-                    disabled={votingInProgress}
-                    aria-label="Downvote collection"
-                    style={{
-                      background: userVote === 'down' ? '#ff6b6b' : 'var(--card)',
-                      border: `2px solid ${userVote === 'down' ? '#ff6b6b' : 'var(--border)'}`,
-                      borderRadius: 'var(--radius)',
-                      padding: '0.5rem 1rem',
-                      cursor: votingInProgress ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      fontSize: '1rem',
-                      fontWeight: '600',
-                      color: userVote === 'down' ? 'white' : 'var(--foreground)',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    👎 {voteCounts.downvotes}
-                  </button>
-                </div>
-              )}
-
-              {/* Vote counts display for non-logged-in users or owner */}
-              {(!user || isOwner) && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '1rem',
-                  background: 'var(--muted)',
-                  borderRadius: 'var(--radius)',
-                  marginTop: '1rem'
-                }}>
-                  <div style={{
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                padding: '1rem',
+                background: 'var(--muted)',
+                borderRadius: 'var(--radius)',
+                marginTop: '1rem'
+              }}>
+                <button
+                  onClick={() => handleVote('up')}
+                  disabled={!user || isOwner || votingInProgress}
+                  aria-label="Upvote collection"
+                  title={!user ? 'Log in to vote' : isOwner ? 'Cannot vote on your own collection' : 'Upvote this collection'}
+                  style={{
+                    background: userVote === 'up' ? 'var(--accent)' : 'var(--card)',
+                    border: `2px solid ${userVote === 'up' ? 'var(--accent)' : 'var(--border)'}`,
+                    borderRadius: 'var(--radius)',
+                    padding: '0.5rem 1rem',
+                    cursor: !user || isOwner || votingInProgress ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
                     fontSize: '1rem',
-                    color: 'var(--muted-foreground)'
-                  }}>
-                    👍 <strong style={{ color: 'var(--foreground)' }}>{voteCounts.upvotes}</strong>
-                  </div>
-                  <div style={{
-                    fontSize: '1.25rem',
-                    fontWeight: '700',
-                    color: voteCounts.net_score >= 0 ? 'var(--accent)' : 'var(--muted-foreground)'
-                  }}>
-                    {voteCounts.net_score >= 0 ? '+' : ''}{voteCounts.net_score}
-                  </div>
-                  <div style={{
+                    fontWeight: '600',
+                    color: userVote === 'up' ? 'white' : 'var(--foreground)',
+                    transition: 'all 0.2s ease',
+                    opacity: !user || isOwner ? 0.6 : 1
+                  }}
+                >
+                  👍 {voteCounts.upvotes}
+                </button>
+
+                <div style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '700',
+                  color: voteCounts.net_score >= 0 ? 'var(--accent)' : 'var(--muted-foreground)'
+                }}>
+                  {voteCounts.net_score >= 0 ? '+' : ''}{voteCounts.net_score}
+                </div>
+
+                <button
+                  onClick={() => handleVote('down')}
+                  disabled={!user || isOwner || votingInProgress}
+                  aria-label="Downvote collection"
+                  title={!user ? 'Log in to vote' : isOwner ? 'Cannot vote on your own collection' : 'Downvote this collection'}
+                  style={{
+                    background: userVote === 'down' ? '#ff6b6b' : 'var(--card)',
+                    border: `2px solid ${userVote === 'down' ? '#ff6b6b' : 'var(--border)'}`,
+                    borderRadius: 'var(--radius)',
+                    padding: '0.5rem 1rem',
+                    cursor: !user || isOwner || votingInProgress ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
                     fontSize: '1rem',
-                    color: 'var(--muted-foreground)'
-                  }}>
-                    👎 <strong style={{ color: 'var(--foreground)' }}>{voteCounts.downvotes}</strong>
-                  </div>
-                </div>
-              )}
+                    fontWeight: '600',
+                    color: userVote === 'down' ? 'white' : 'var(--foreground)',
+                    transition: 'all 0.2s ease',
+                    opacity: !user || isOwner ? 0.6 : 1
+                  }}
+                >
+                  👎 {voteCounts.downvotes}
+                </button>
+              </div>
             </div>
 
             {/* Actions */}
