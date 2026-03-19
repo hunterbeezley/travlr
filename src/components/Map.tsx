@@ -203,6 +203,7 @@ function MapComponent({ onMapClick }: MapProps) {
   const markersRef = useRef<google.maps.Marker[]>([])
   const activeInfoWindowRef = useRef<google.maps.InfoWindow | null>(null)
   const searchMarkerRef = useRef<google.maps.Marker | null>(null)
+  const isInfoWindowInteractionRef = useRef(false)
 
   const [lng, setLng] = useState(-122.6765)
   const [lat, setLat] = useState(45.5152)
@@ -873,6 +874,9 @@ function MapComponent({ onMapClick }: MapProps) {
       marker.addListener('click', () => {
         console.log('🖱️ Pin clicked:', pin.title)
 
+        // Set flag to prevent bounds_changed from refetching POIs
+        isInfoWindowInteractionRef.current = true
+
         // Close any open InfoWindow
         if (activeInfoWindowRef.current) {
           activeInfoWindowRef.current.close()
@@ -1056,6 +1060,16 @@ function MapComponent({ onMapClick }: MapProps) {
 
         infoWindow.open(map.current!, marker)
         activeInfoWindowRef.current = infoWindow
+
+        // Reset flag after InfoWindow fully opens (after bounds adjustment)
+        setTimeout(() => {
+          isInfoWindowInteractionRef.current = false
+        }, 1000)
+
+        // Reset flag when InfoWindow is closed
+        infoWindow.addListener('closeclick', () => {
+          isInfoWindowInteractionRef.current = false
+        })
       })
 
       markersRef.current.push(marker)
@@ -1096,6 +1110,9 @@ function MapComponent({ onMapClick }: MapProps) {
       // Create click handler for POI marker
       marker.addListener('click', () => {
         console.log('🖱️ POI clicked:', poi.name)
+
+        // Set flag to prevent bounds_changed from refetching POIs
+        isInfoWindowInteractionRef.current = true
 
         // Close any open InfoWindow
         if (activeInfoWindowRef.current) {
@@ -1192,6 +1209,16 @@ function MapComponent({ onMapClick }: MapProps) {
 
         infoWindow.open(map.current!, marker)
         activeInfoWindowRef.current = infoWindow
+
+        // Reset flag after InfoWindow fully opens (after bounds adjustment)
+        setTimeout(() => {
+          isInfoWindowInteractionRef.current = false
+        }, 1000)
+
+        // Reset flag when InfoWindow is closed
+        infoWindow.addListener('closeclick', () => {
+          isInfoWindowInteractionRef.current = false
+        })
       })
 
       poiMarkersRef.current.push(marker)
@@ -1207,6 +1234,12 @@ function MapComponent({ onMapClick }: MapProps) {
     let debounceTimer: NodeJS.Timeout
 
     const handleMapChange = () => {
+      // Ignore bounds changes caused by InfoWindow interactions
+      if (isInfoWindowInteractionRef.current) {
+        console.log('🚫 Ignoring bounds change caused by InfoWindow interaction')
+        return
+      }
+
       clearTimeout(debounceTimer)
       debounceTimer = setTimeout(() => {
         fetchNearbyPOIs()
@@ -1388,6 +1421,8 @@ function MapComponent({ onMapClick }: MapProps) {
       if (activeInfoWindowRef.current) {
         activeInfoWindowRef.current.close()
       }
+      // Reset flag when clicking elsewhere on map
+      isInfoWindowInteractionRef.current = false
     })
 
     // Handle right-click (desktop) for pin creation
