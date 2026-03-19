@@ -152,7 +152,7 @@ BEGIN
   END IF;
 
   -- Re-enable triggers
-  SET session_replication_role = 'default';
+  SET session_replication_role = 'origin';
 
   RAISE NOTICE '===========================================';
   RAISE NOTICE '✅ Data wipe completed successfully!';
