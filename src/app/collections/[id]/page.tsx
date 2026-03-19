@@ -56,7 +56,7 @@ export default function CollectionPage({ params }: PageProps) {
         let profileData = null
         if (collectionData && !collectionError) {
           const { data: profile } = await supabase
-            .from('profiles')
+            .from('users')
             .select('username, full_name, profile_image')
             .eq('id', collectionData.user_id)
             .single()

@@ -75,7 +75,7 @@ export default function PinPage({ params }: PageProps) {
         let profileData = null
         if (pinData.user_id) {
           const { data: profile } = await supabase
-            .from('profiles')
+            .from('users')
             .select('username, full_name, profile_image')
             .eq('id', pinData.user_id)
             .single()
