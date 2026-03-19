@@ -19,11 +19,15 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
 }
 
 body {
   line-height: 1.6;
   -webkit-text-size-adjust: 100%;
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
 }
 
 img,
