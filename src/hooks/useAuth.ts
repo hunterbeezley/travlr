@@ -53,11 +53,23 @@ export function useAuth(): AuthData {
 
       if (profileError) {
         console.log('Profile fetch error:', profileError.code, profileError.message)
+        console.log('Full profile error:', JSON.stringify(profileError, null, 2))
+        console.log('Attempted to fetch profile for user ID:', currentUser.id)
 
         if (profileError.code === 'PGRST116') {
           // User record doesn't exist - this shouldn't happen with the trigger
           // but handle gracefully by returning null and letting the app continue
           console.warn('No user profile found. Profile will be created on next signup or needs manual creation.')
+          console.log('Checking if user row exists in users table...')
+
+          // Try to check if the user exists
+          const { data: checkData, error: checkError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('id', currentUser.id)
+            .maybeSingle()
+
+          console.log('User exists check:', { exists: !!checkData, checkError })
           return null
         }
 
