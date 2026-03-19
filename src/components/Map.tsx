@@ -1,5 +1,6 @@
 'use client'
 import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { Wrapper } from '@googlemaps/react-wrapper'
 import { useAuth } from '@/hooks/useAuth'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
@@ -197,6 +198,7 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
 function MapComponent({ onMapClick }: MapProps) {
   const { user, profile, loading: authLoading } = useAuth()
   const { preferences, updatePreference } = useUserPreferences()
+  const router = useRouter()
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<google.maps.Map | null>(null)
   const markersRef = useRef<google.maps.Marker[]>([])
@@ -224,6 +226,15 @@ function MapComponent({ onMapClick }: MapProps) {
   // POI state
   const [pois, setPois] = useState<POI[]>([])
   const [showPOIs, setShowPOIs] = useState(true)
+  const [poiCategories, setPoiCategories] = useState<string[]>([
+    'restaurant',
+    'cafe',
+    'bar',
+    'museum',
+    'park',
+    'tourist_attraction',
+    'store'
+  ])
   const poiMarkersRef = useRef<google.maps.Marker[]>([])
 
   // Ref to track current user for event listeners
@@ -678,12 +689,18 @@ function MapComponent({ onMapClick }: MapProps) {
     const center = map.current.getCenter()
     if (!center) return
 
+    // If no categories selected, don't fetch POIs
+    if (poiCategories.length === 0) {
+      setPois([])
+      return
+    }
+
     try {
       const params = new URLSearchParams({
         lat: center.lat().toString(),
         lng: center.lng().toString(),
         radius: '1500', // 1.5km radius
-        types: 'restaurant,cafe,bar,museum,park,tourist_attraction,store'
+        types: poiCategories.join(',')
       })
 
       const response = await fetch(`/api/google-places/nearby?${params.toString()}`)
@@ -968,6 +985,42 @@ function MapComponent({ onMapClick }: MapProps) {
         }
         buttonContainer.appendChild(viewButton)
 
+        // Add "View Collection" button if pin belongs to a collection
+        if (pin.collection_id) {
+          const collectionButton = document.createElement('button')
+          collectionButton.textContent = 'COLLECTION'
+          collectionButton.style.background = 'transparent'
+          collectionButton.style.color = '#F4F4F5'
+          collectionButton.style.border = '1px solid rgba(255, 255, 255, 0.3)'
+          collectionButton.style.padding = isMobile ? '12px 14px' : '8px 12px'
+          collectionButton.style.minHeight = isMobile ? '44px' : 'auto'
+          collectionButton.style.cursor = 'pointer'
+          collectionButton.style.fontSize = isMobile ? '12px' : '10px'
+          collectionButton.style.fontFamily = "'Share Tech Mono', monospace"
+          collectionButton.style.fontWeight = '700'
+          collectionButton.style.letterSpacing = '0.1em'
+          collectionButton.style.flex = '1'
+          collectionButton.style.borderRadius = '4px'
+          collectionButton.style.transition = 'all 0.15s ease'
+          collectionButton.onmouseenter = () => {
+            collectionButton.style.background = 'rgba(230, 57, 70, 0.2)'
+            collectionButton.style.borderColor = '#E63946'
+            collectionButton.style.color = '#E63946'
+          }
+          collectionButton.onmouseleave = () => {
+            collectionButton.style.background = 'transparent'
+            collectionButton.style.borderColor = 'rgba(255, 255, 255, 0.3)'
+            collectionButton.style.color = '#F4F4F5'
+          }
+          collectionButton.onclick = () => {
+            router.push(`/collections/${pin.collection_id}`)
+            if (activeInfoWindowRef.current) {
+              activeInfoWindowRef.current.close()
+            }
+          }
+          buttonContainer.appendChild(collectionButton)
+        }
+
         if (isOwnPin) {
           const editButton = document.createElement('button')
           editButton.textContent = 'EDIT'
@@ -1177,7 +1230,7 @@ function MapComponent({ onMapClick }: MapProps) {
       google.maps.event.removeListener(zoomListener)
       google.maps.event.removeListener(boundsListener)
     }
-  }, [isMapLoaded, showPOIs])
+  }, [isMapLoaded, showPOIs, poiCategories])
 
   // Update POI markers when pois state changes
   useEffect(() => {
@@ -1934,11 +1987,25 @@ function MapComponent({ onMapClick }: MapProps) {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.75rem',
-                    position: 'relative',
-                    cursor: 'pointer'
+                    position: 'relative'
                   }}
-                  onClick={() => handleCollectionSelect(collection.id, true)}
                 >
+                  {/* Clickable area for selection */}
+                  <button
+                    onClick={() => handleCollectionSelect(collection.id, true)}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: '35px',
+                      bottom: 0,
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                    aria-label={`Select ${collection.title}`}
+                  />
                   {/* Thumbnail */}
                   {collection.first_pin_image ? (
                     <img
@@ -1948,7 +2015,8 @@ function MapComponent({ onMapClick }: MapProps) {
                         width: '48px',
                         height: '48px',
                         borderRadius: 'var(--radius)',
-                        objectFit: 'cover'
+                        objectFit: 'cover',
+                        pointerEvents: 'none'
                       }}
                     />
                   ) : (
@@ -1963,14 +2031,15 @@ function MapComponent({ onMapClick }: MapProps) {
                       fontSize: '1rem',
                       fontFamily: 'var(--font-mono)',
                       fontWeight: '700',
-                      color: 'var(--color-red)'
+                      color: 'var(--color-red)',
+                      pointerEvents: 'none'
                     }}>
                       [ ]
                     </div>
                   )}
 
                   {/* Collection Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1, minWidth: 0, pointerEvents: 'none' }}>
                     <div style={{
                       fontWeight: '500',
                       overflow: 'hidden',
@@ -2003,6 +2072,45 @@ function MapComponent({ onMapClick }: MapProps) {
                       )}
                     </div>
                   </div>
+
+                  {/* View Collection Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(`/collections/${collection.id}`)
+                    }}
+                    style={{
+                      position: 'relative',
+                      zIndex: 1,
+                      width: '24px',
+                      height: '24px',
+                      padding: 0,
+                      border: '1px solid var(--border)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--foreground)',
+                      borderRadius: 'var(--radius)',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'var(--transition)',
+                      flexShrink: 0
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--accent)'
+                      e.currentTarget.style.color = 'var(--accent)'
+                      e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border)'
+                      e.currentTarget.style.color = 'var(--foreground)'
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                    }}
+                    title={`View collection: ${collection.title}`}
+                  >
+                    →
+                  </button>
                 </div>
               ))}
 
@@ -2750,12 +2858,8 @@ function MapComponent({ onMapClick }: MapProps) {
                 gap: '0.5rem'
               }}>
                 {!loadingFriendsCollections && friendsCollections.map((collection) => (
-                  <button
+                  <div
                     key={`${collection.user_id}-${collection.id}`}
-                    onClick={() => {
-                      handleCollectionSelect(collection.id, true)
-                      setIsBottomSheetOpen(false)
-                    }}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
@@ -2763,15 +2867,34 @@ function MapComponent({ onMapClick }: MapProps) {
                       borderRadius: 'var(--radius)',
                       backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
                       color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
-                      textAlign: 'left',
-                      cursor: 'pointer',
                       transition: 'var(--transition)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.75rem'
+                      gap: '0.75rem',
+                      position: 'relative'
                     }}
                   >
-                    <div style={{ flex: 1 }}>
+                    {/* Clickable area for selection */}
+                    <button
+                      onClick={() => {
+                        handleCollectionSelect(collection.id, true)
+                        setIsBottomSheetOpen(false)
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: '40px',
+                        bottom: 0,
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                      aria-label={`Select ${collection.title}`}
+                    />
+
+                    <div style={{ flex: 1, pointerEvents: 'none' }}>
                       <div style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: '0.75rem',
@@ -2783,13 +2906,45 @@ function MapComponent({ onMapClick }: MapProps) {
                       </div>
                       <div style={{
                         fontSize: '0.625rem',
-                        color: 'var(--muted-foreground)',
+                        color: selectedCollectionId === collection.id ? 'rgba(255,255,255,0.8)' : 'var(--muted-foreground)',
                         fontFamily: 'var(--font-mono)'
                       }}>
                         by @{collection.username} • {collection.pin_count || 0} pins
                       </div>
                     </div>
-                  </button>
+
+                    {/* View Collection Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/collections/${collection.id}`)
+                        setIsBottomSheetOpen(false)
+                      }}
+                      style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        minWidth: '32px',
+                        height: '32px',
+                        padding: '0 0.5rem',
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'transparent',
+                        color: 'var(--foreground)',
+                        borderRadius: 'var(--radius)',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'var(--transition)',
+                        flexShrink: 0,
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: '700'
+                      }}
+                      title={`View collection: ${collection.title}`}
+                    >
+                      →
+                    </button>
+                  </div>
                 ))}
 
                 {loadingFriendsCollections && (
@@ -2825,6 +2980,10 @@ function MapComponent({ onMapClick }: MapProps) {
         onClose={() => setShowMapLayersModal(false)}
         currentStyle={mapStyle}
         onStyleSelect={handleMapStyleChange}
+        showPOIs={showPOIs}
+        onTogglePOIs={setShowPOIs}
+        poiCategories={poiCategories}
+        onCategoriesChange={setPoiCategories}
       />
     </div>
   )

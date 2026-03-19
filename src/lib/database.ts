@@ -217,7 +217,7 @@ export interface CityWithCollections {
 
 export interface Notification {
   id: string
-  type: 'new_follower' | 'friend_collection'
+  type: 'new_follower' | 'friend_collection' | 'collection_comment' | 'mention'
   title: string
   message: string
   actor_id: string | null

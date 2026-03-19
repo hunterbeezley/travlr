@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { DatabaseService, Notification } from '@/lib/database'
 
 interface NotificationBadgeProps {
@@ -7,6 +8,7 @@ interface NotificationBadgeProps {
 }
 
 export default function NotificationBadge({ userId }: NotificationBadgeProps) {
+  const router = useRouter()
   const [showModal, setShowModal] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -59,6 +61,24 @@ export default function NotificationBadge({ userId }: NotificationBadgeProps) {
     await DatabaseService.markAllNotificationsRead()
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
     setUnreadCount(0)
+  }
+
+  // Handle notification click to navigate to related content
+  const handleNotificationClick = async (notification: Notification) => {
+    // Mark as read if not already
+    if (!notification.is_read) {
+      await handleMarkRead(notification.id)
+    }
+
+    // Navigate based on notification type
+    if (notification.type === 'friend_collection' || notification.type === 'collection_comment' || notification.type === 'mention') {
+      // related_id contains the collection_id
+      if (notification.related_id) {
+        setShowModal(false)
+        router.push(`/collections/${notification.related_id}`)
+      }
+    }
+    // Could add more navigation cases for other notification types in the future
   }
 
   // Get time ago string
@@ -278,19 +298,19 @@ export default function NotificationBadge({ userId }: NotificationBadgeProps) {
                     marginTop: '0.5rem',
                     opacity: 0.7
                   }}>
-                    You'll be notified when someone follows you or when friends create new collections
+                    You'll be notified when someone follows you, mentions you, comments on your collections, or when friends create new collections
                   </div>
                 </div>
               ) : (
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    onClick={() => !notification.is_read && handleMarkRead(notification.id)}
+                    onClick={() => handleNotificationClick(notification)}
                     style={{
                       padding: '1rem 1.5rem',
                       borderBottom: '1px solid var(--border)',
                       background: notification.is_read ? 'transparent' : 'rgba(230, 57, 70, 0.05)',
-                      cursor: notification.is_read ? 'default' : 'pointer',
+                      cursor: 'pointer',
                       transition: 'var(--transition)',
                       display: 'flex',
                       gap: '0.75rem',
@@ -332,7 +352,7 @@ export default function NotificationBadge({ userId }: NotificationBadgeProps) {
                         justifyContent: 'center',
                         fontSize: '1.25rem'
                       }}>
-                        {notification.type === 'new_follower' ? '👤' : '📌'}
+                        {notification.type === 'new_follower' ? '👤' : notification.type === 'collection_comment' ? '💬' : notification.type === 'mention' ? '@' : '📌'}
                       </div>
                     )}
 
