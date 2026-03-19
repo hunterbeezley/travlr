@@ -497,8 +497,18 @@ export default function ProfilePage() {
                 onImageUploaded={async (url) => {
                   // Update the profile in the database
                   try {
-                    console.log('Uploading avatar, updating database with URL:', url)
-                    const { data, error } = await supabase
+                    console.log('=== Avatar Upload Start ===')
+                    console.log('User ID:', user.id)
+                    console.log('Image URL:', url)
+
+                    // Check session first
+                    const { data: { session } } = await supabase.auth.getSession()
+                    console.log('Session exists:', !!session)
+                    console.log('Session user ID:', session?.user?.id)
+                    console.log('User ID matches session:', user.id === session?.user?.id)
+
+                    // Try update without .single() first to see if any rows are affected
+                    const { data, error, count } = await supabase
                       .from('users')
                       .update({
                         profile_image: url,
@@ -506,14 +516,19 @@ export default function ProfilePage() {
                       })
                       .eq('id', user.id)
                       .select()
-                      .single()
 
-                    console.log('Avatar update result:', { data, error })
+                    console.log('Update result:', { data, error, count, rowCount: data?.length })
 
                     if (error) {
                       console.error('Error updating profile image:', error)
                       console.error('Error details:', JSON.stringify(error, null, 2))
                       alert(`Failed to update profile: ${error.message || 'Unknown error'}`)
+                      return
+                    }
+
+                    if (!data || data.length === 0) {
+                      console.error('Update returned 0 rows - RLS or user ID mismatch?')
+                      alert('Failed to update profile: No rows updated. Check console for details.')
                       return
                     }
 
