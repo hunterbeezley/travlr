@@ -1293,6 +1293,16 @@ select option {
   }
 }
 
+/* Map Search Bar - Avoid overlapping location button on mobile */
+@media (max-width: 767px) {
+  .map-search-bar-container {
+    max-width: calc(100% - 60px) !important; /* Leave space for location button */
+    padding: 0 0.5rem !important;
+    left: 0 !important;
+    transform: none !important;
+  }
+}
+
 /* Animations */
 .slide-up {
   animation: slideUpSharp 0.3s cubic-bezier(0.4, 0, 0.2, 1);

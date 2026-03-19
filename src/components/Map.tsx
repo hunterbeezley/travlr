@@ -2137,7 +2137,7 @@ function MapComponent({ onMapClick }: MapProps) {
       )}
 
       {/* Search Bar - Always Visible */}
-      <div style={{
+      <div className="map-search-bar-container" style={{
         position: 'absolute',
         top: '0.75rem',
         left: '50%',

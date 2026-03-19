@@ -63,25 +63,7 @@ export default function FeedbackButton() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        style={{
-          position: 'fixed',
-          bottom: '2rem',
-          right: '2rem',
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          background: 'var(--accent)',
-          color: 'white',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-          transition: 'var(--transition)',
-          zIndex: 999
-        }}
+        className="feedback-button"
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = 'scale(1.1)'
           e.currentTarget.style.boxShadow = '0 6px 20px rgba(230, 57, 70, 0.5)'
@@ -93,6 +75,36 @@ export default function FeedbackButton() {
         title="Send Feedback"
       >
         💬
+        <style jsx>{`
+          .feedback-button {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 56px;
+            height: 56px;
+            borderRadius: 50%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            cursor: pointer;
+            fontSize: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: var(--transition);
+            z-index: 999;
+          }
+
+          /* Mobile: Move to bottom-left to avoid map zoom controls */
+          @media (max-width: 767px) {
+            .feedback-button {
+              bottom: 2rem;
+              right: auto;
+              left: 1rem;
+            }
+          }
+        `}</style>
       </button>
     )
   }
