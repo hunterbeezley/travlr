@@ -108,11 +108,13 @@ export default function Auth() {
         if (data.user && data.user.identities && data.user.identities.length === 0) {
           // Email confirmation is required
           setSuccessMessage(
-            `Account created! Please check your email (${email}) for a confirmation link before signing in.`
+            `Account created! Please check your email (${email}) to verify your account before signing in.`
           )
         } else {
-          // No email confirmation required, can sign in immediately
-          setSuccessMessage('Account created! You can now sign in.')
+          // No email confirmation required in some cases, but still good practice to check email
+          setSuccessMessage(
+            `Account created! Please check your email (${email}) to verify your account, then you can sign in.`
+          )
           setMode('signin')
           setPassword('')
           setConfirmPassword('')
