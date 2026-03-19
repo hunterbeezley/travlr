@@ -62,38 +62,71 @@ export default function PinPage({ params }: PageProps) {
           .single()
 
         if (pinError || !pinData) {
-          console.error('Error fetching pin:', pinError)
+          console.error('Error fetching pin:', {
+            pinId,
+            error: pinError,
+            errorCode: pinError?.code,
+            errorMessage: pinError?.message,
+            errorDetails: pinError?.details,
+            errorHint: pinError?.hint
+          })
           setNotFoundError(true)
           setLoading(false)
           return
         }
 
+        console.log('Pin data fetched successfully:', { pinId, pinData })
+
         // Fetch pin images separately
-        const { data: pinImages } = await supabase
+        const { data: pinImages, error: imagesError } = await supabase
           .from('pin_images')
           .select('image_url, upload_order')
           .eq('pin_id', pinId)
           .order('upload_order', { ascending: true })
 
+        if (imagesError) {
+          console.error('Error fetching pin images:', {
+            pinId,
+            error: imagesError,
+            errorCode: imagesError?.code
+          })
+        }
+
         // Fetch owner profile separately
         let profileData = null
         if (pinData.user_id) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('users')
             .select('username, full_name, profile_image')
             .eq('id', pinData.user_id)
             .single()
+
+          if (profileError) {
+            console.error('Error fetching user profile:', {
+              userId: pinData.user_id,
+              error: profileError,
+              errorCode: profileError?.code
+            })
+          }
           profileData = profile
         }
 
         // Fetch collection separately
         let collectionData = null
         if (pinData.collection_id) {
-          const { data: collection } = await supabase
+          const { data: collection, error: collectionError } = await supabase
             .from('collections')
             .select('id, title, color')
             .eq('id', pinData.collection_id)
             .single()
+
+          if (collectionError) {
+            console.error('Error fetching collection:', {
+              collectionId: pinData.collection_id,
+              error: collectionError,
+              errorCode: collectionError?.code
+            })
+          }
           collectionData = collection
         }
 
