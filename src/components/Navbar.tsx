@@ -63,6 +63,13 @@ export default function Navbar() {
           </button>
 
           <button
+            onClick={() => router.push('/friends')}
+            className={`nav-link ${isActive('/friends') ? 'active' : ''}`}
+          >
+            FRIENDS
+          </button>
+
+          <button
             onClick={() => router.push('/saved')}
             className={`nav-link ${isActive('/saved') ? 'active' : ''}`}
           >

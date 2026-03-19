@@ -327,7 +327,7 @@ export default function FeedPage() {
               </p>
               {filter === 'friends' && followingCount === 0 && (
                 <Link
-                  href="/profile"
+                  href="/friends"
                   style={{
                     display: 'inline-block',
                     padding: '0.75rem 1.5rem',
