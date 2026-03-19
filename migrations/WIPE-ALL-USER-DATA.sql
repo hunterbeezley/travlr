@@ -20,7 +20,6 @@ SET session_replication_role = 'replica';
 
 -- Notifications (references multiple tables)
 DELETE FROM notifications;
-ALTER SEQUENCE notifications_id_seq RESTART WITH 1;
 
 -- Comment Reports
 DELETE FROM comment_reports;
