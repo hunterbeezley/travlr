@@ -96,10 +96,10 @@ export default function FeedbackButton() {
             z-index: 999;
           }
 
-          /* Mobile: Move to bottom-left to avoid map zoom controls */
+          /* Mobile: Move to left side above collections FAB, avoiding map zoom controls */
           @media (max-width: 767px) {
             .feedback-button {
-              bottom: 2rem;
+              bottom: 5.5rem;
               right: auto;
               left: 1rem;
             }
