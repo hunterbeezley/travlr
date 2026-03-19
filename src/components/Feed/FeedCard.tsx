@@ -152,7 +152,7 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
             e.currentTarget.style.opacity = '1'
           }}
           >
-            {target_data.name}
+            {target_data.title}
           </h3>
         </Link>
 
@@ -248,7 +248,7 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
         }}>
           <CollectionActions
             collectionId={target_data.id}
-            collectionName={target_data.name}
+            collectionName={target_data.title}
             stats={target_data.stats}
             currentUserId={currentUserId}
           />

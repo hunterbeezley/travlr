@@ -63,8 +63,8 @@ export default function FeedPage() {
 
       // Get user profile
       const { data: profile } = await supabase
-        .from('profiles')
-        .select('username, full_name, avatar_url')
+        .from('users')
+        .select('username, full_name, profile_image')
         .eq('id', user.id)
         .single()
 
@@ -95,13 +95,13 @@ export default function FeedPage() {
             user_id: user.id,
             username: profile?.username,
             full_name: profile?.full_name,
-            avatar_url: profile?.avatar_url,
+            avatar_url: profile?.profile_image,
             target_type: 'collection',
             target_id: collection.id,
             created_at: collection.created_at,
             target_data: {
               id: collection.id,
-              name: collection.name,
+              title: collection.title,
               description: collection.description,
               user_id: collection.user_id,
               created_at: collection.created_at,
@@ -164,7 +164,7 @@ export default function FeedPage() {
           if (activity.target_type === 'collection') {
             const { data: collection } = await supabase
               .from('collections')
-              .select('id, name, description, user_id, created_at')
+              .select('id, title, description, user_id, created_at')
               .eq('id', activity.target_id)
               .single()
 
