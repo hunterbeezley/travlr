@@ -10,8 +10,9 @@ import Auth from '@/components/Auth'
 
 interface UserSearchResult {
   id: string
-  username: string
+  username: string | null
   full_name: string | null
+  email: string
   bio: string | null
   profile_image: string | null
   location: string | null
@@ -50,11 +51,10 @@ export default function FriendsPage() {
       if (!rpcError && rpcData) {
         setSuggestions(rpcData)
       } else {
-        // Fallback: Get random public users
+        // Fallback: Get random public users (don't require username)
         const { data, error } = await supabase
           .from('users')
-          .select('id, username, full_name, bio, profile_image, location')
-          .not('username', 'is', null)
+          .select('id, username, full_name, bio, profile_image, location, email')
           .neq('id', user?.id || '')
           .limit(20)
 
@@ -77,13 +77,12 @@ export default function FriendsPage() {
     try {
       setLoading(true)
 
-      // Search for users by username or full name
+      // Search for users by username, full name, or email
       const { data, error } = await supabase
         .from('users')
-        .select('id, username, full_name, bio, profile_image, location')
-        .not('username', 'is', null)
+        .select('id, username, full_name, bio, profile_image, location, email')
         .neq('id', user?.id || '')
-        .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
+        .or(`username.ilike.%${query}%,full_name.ilike.%${query}%,email.ilike.%${query}%`)
         .limit(50)
 
       if (error) throw error
@@ -161,7 +160,7 @@ export default function FriendsPage() {
         >
           <UserAvatar
             profileImageUrl={user.profile_image}
-            email={user.username || ''}
+            email={user.email || user.username || ''}
             size="large"
           />
         </div>
@@ -179,14 +178,14 @@ export default function FriendsPage() {
               fontFamily: 'var(--font-mono)',
               textTransform: 'uppercase'
             }}>
-              {user.full_name || user.username}
+              {user.full_name || user.username || user.email}
             </h3>
             <p style={{
               fontSize: '0.875rem',
               color: 'var(--muted-foreground)',
               marginBottom: '0.5rem'
             }}>
-              @{user.username}
+              {user.username ? `@${user.username}` : user.email}
             </p>
           </div>
 
