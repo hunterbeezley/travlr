@@ -406,9 +406,10 @@ export default function ProfilePage() {
       {/* Profile Completion Modal */}
       {showProfileCompletion && (
         <ProfileCompletion
-          onComplete={() => {
+          onComplete={async () => {
+            // Wait for profile to refresh before closing modal
+            await refreshProfile()
             setShowProfileCompletion(false)
-            refreshProfile()
           }}
         />
       )}

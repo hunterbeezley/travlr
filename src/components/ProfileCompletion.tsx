@@ -144,6 +144,9 @@ const ProfileCompletion: React.FC<ProfileCompletionProps> = ({ onComplete }) => 
         if (error) throw error
       }
 
+      // Give database a moment to propagate the change
+      await new Promise(resolve => setTimeout(resolve, 300))
+
       onComplete()
     } catch (error: any) {
       console.error('Error updating profile:', error)

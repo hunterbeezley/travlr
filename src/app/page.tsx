@@ -235,11 +235,12 @@ export default function HomePage() {
   return (
     <div className="app">
       {showProfileCompletion && (
-        <ProfileCompletion 
-          onComplete={() => {
+        <ProfileCompletion
+          onComplete={async () => {
+            // Wait for profile to refresh before closing modal
+            await refreshProfile()
             setShowProfileCompletion(false)
-            refreshProfile()
-          }} 
+          }}
         />
       )}
 
