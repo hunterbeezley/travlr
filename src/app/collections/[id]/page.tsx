@@ -37,7 +37,7 @@ export default function CollectionPage({ params }: PageProps) {
         // Get current user
         const { data: { user } } = await supabase.auth.getUser()
 
-        // Fetch collection data with vote counts
+        // Fetch collection data
         const { data: collectionData, error: collectionError } = await supabase
           .from('collections')
           .select(`
@@ -47,15 +47,21 @@ export default function CollectionPage({ params }: PageProps) {
             is_public,
             color,
             created_at,
-            user_id,
-            profiles:user_id (
-              username,
-              full_name,
-              profile_image
-            )
+            user_id
           `)
           .eq('id', collectionId)
           .single()
+
+        // Fetch owner profile separately
+        let profileData = null
+        if (collectionData && !collectionError) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, full_name, profile_image')
+            .eq('id', collectionData.user_id)
+            .single()
+          profileData = profile
+        }
 
         // Get vote counts
         let voteCounts = { upvotes: 0, downvotes: 0, net_score: 0 }
@@ -91,7 +97,13 @@ export default function CollectionPage({ params }: PageProps) {
           return
         }
 
-        setCollection(collectionData)
+        // Merge profile data into collection
+        const collectionWithProfile = {
+          ...collectionData,
+          profiles: profileData
+        }
+
+        setCollection(collectionWithProfile)
 
         // Fetch pins in collection
         const { data: pinsData } = await supabase

@@ -57,16 +57,6 @@ export default function PinPage({ params }: PageProps) {
             created_at,
             collection_id,
             user_id,
-            profiles:user_id (
-              username,
-              full_name,
-              profile_image
-            ),
-            collections:collection_id (
-              id,
-              title,
-              color
-            ),
             pin_images (
               image_url,
               upload_order
@@ -81,7 +71,36 @@ export default function PinPage({ params }: PageProps) {
           return
         }
 
-        setPin(pinData)
+        // Fetch owner profile separately
+        let profileData = null
+        if (pinData.user_id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, full_name, profile_image')
+            .eq('id', pinData.user_id)
+            .single()
+          profileData = profile
+        }
+
+        // Fetch collection separately
+        let collectionData = null
+        if (pinData.collection_id) {
+          const { data: collection } = await supabase
+            .from('collections')
+            .select('id, title, color')
+            .eq('id', pinData.collection_id)
+            .single()
+          collectionData = collection
+        }
+
+        // Merge related data into pin
+        const pinWithRelations = {
+          ...pinData,
+          profiles: profileData,
+          collections: collectionData
+        }
+
+        setPin(pinWithRelations)
         setIsOwner(user?.id === pinData.user_id)
 
         // Fetch related pins from the same collection
