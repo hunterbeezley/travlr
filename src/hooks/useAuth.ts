@@ -113,6 +113,14 @@ export function useAuth(): AuthData {
             console.log('Clearing invalid session...')
             await supabase.auth.signOut()
           }
+
+          // Set loading to false even on error
+          if (mounted) {
+            setUser(null)
+            setProfile(null)
+            setLoading(false)
+          }
+          return
         }
 
         if (!mounted) return
@@ -120,31 +128,32 @@ export function useAuth(): AuthData {
         const currentUser = session?.user ?? null
         console.log('Current user:', currentUser?.id || 'none')
 
-        if (currentUser) {
-          // Fetch profile with a timeout to prevent hanging
-          const profilePromise = fetchUserProfile(currentUser)
-          const timeoutPromise = new Promise<UserProfile | null>((resolve) => {
-            setTimeout(() => {
-              console.warn('Profile fetch timeout after 3 seconds, continuing anyway')
-              resolve(null)
-            }, 3000)
-          })
-
-          const profileData = await Promise.race([profilePromise, timeoutPromise])
-
-          if (mounted) {
-            setUser(currentUser)
-            setProfile(profileData)
-            console.log('Setting loading to false - user and profile ready (or timed out)')
-            setLoading(false)
-          }
-        } else {
+        // If no session, immediately set loading to false
+        if (!currentUser) {
           if (mounted) {
             setUser(null)
             setProfile(null)
-            console.log('Setting loading to false - no user')
             setLoading(false)
           }
+          return
+        }
+
+        // Fetch profile with a timeout to prevent hanging
+        const profilePromise = fetchUserProfile(currentUser)
+        const timeoutPromise = new Promise<UserProfile | null>((resolve) => {
+          setTimeout(() => {
+            console.warn('Profile fetch timeout after 3 seconds, continuing anyway')
+            resolve(null)
+          }, 3000)
+        })
+
+        const profileData = await Promise.race([profilePromise, timeoutPromise])
+
+        if (mounted) {
+          setUser(currentUser)
+          setProfile(profileData)
+          console.log('Setting loading to false - user and profile ready (or timed out)')
+          setLoading(false)
         }
       } catch (error) {
         console.error('Error in getSession:', error)

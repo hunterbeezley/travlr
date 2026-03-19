@@ -39,6 +39,7 @@ export default function HomePage() {
   const [showProfileCompletion, setShowProfileCompletion] = useState(false)
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null)
   const [isDraggingPin, setIsDraggingPin] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
   
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -112,10 +113,37 @@ export default function HomePage() {
     }
   }
 
+  // Verify authentication state before showing Auth screen
+  // This prevents premature Auth display on page load
+  useEffect(() => {
+    const checkAuthState = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        console.log('Auth check - session exists:', !!session)
+
+        // Give useAuth hook a moment to initialize if session exists
+        if (session && !user && !loading) {
+          console.log('Session exists but user not loaded, waiting...')
+          // Wait a bit for useAuth to catch up
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+
+        setAuthChecked(true)
+      } catch (error) {
+        console.error('Error checking auth state:', error)
+        setAuthChecked(true)
+      }
+    }
+
+    if (!authChecked) {
+      checkAuthState()
+    }
+  }, [authChecked, user, loading])
+
   useEffect(() => {
     if (user && !loading) {
       fetchPins()
-      
+
       // Only check for profile completion after auth loading is complete
       // and we have confirmed the profile data
       if (profile !== null && !profile?.username) {
@@ -124,7 +152,8 @@ export default function HomePage() {
     }
   }, [user, profile, loading])
 
-  if (loading) {
+  // Show loading while checking auth or while useAuth is initializing
+  if (loading || !authChecked) {
     return (
       <div style={{
         display: 'flex',
@@ -153,7 +182,7 @@ export default function HomePage() {
     )
   }
 
-  // ← REPLACE THIS ENTIRE SECTION with the Auth component
+  // Only show Auth component after we've verified there's no valid session
   if (!user) {
     return (
       <div className="auth-page">
