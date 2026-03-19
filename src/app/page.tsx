@@ -40,6 +40,91 @@ export default function FeedPage() {
     loadFollowingCount()
   }, [user])
 
+  // Fallback: Load user's own collections as feed activity
+  const loadFallbackFeed = async (offset = 0) => {
+    if (!user) return
+
+    try {
+      // Get user's collections
+      const { data: userCollections, error } = await supabase
+        .from('collections')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + 19)
+
+      if (error) throw error
+      if (!userCollections || userCollections.length === 0) {
+        setActivities([])
+        setHasMore(false)
+        return
+      }
+
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, full_name, avatar_url')
+        .eq('id', user.id)
+        .single()
+
+      // Format as feed activities
+      const activities = await Promise.all(
+        userCollections.map(async (collection) => {
+          // Get stats
+          const { data: stats } = await supabase.rpc('get_collection_stats', {
+            p_collection_id: collection.id
+          })
+
+          // Get pin count and sample images
+          const { count: pinCount } = await supabase
+            .from('pins')
+            .select('id', { count: 'exact', head: true })
+            .eq('collection_id', collection.id)
+
+          const { data: samplePins } = await supabase
+            .from('pins')
+            .select('image_url')
+            .eq('collection_id', collection.id)
+            .not('image_url', 'is', null)
+            .limit(3)
+
+          return {
+            id: `collection-${collection.id}`,
+            activity_type: 'collection_created',
+            actor_id: user.id,
+            actor_username: profile?.username,
+            actor_full_name: profile?.full_name,
+            actor_avatar_url: profile?.avatar_url,
+            target_type: 'collection',
+            target_id: collection.id,
+            created_at: collection.created_at,
+            target_data: {
+              id: collection.id,
+              name: collection.name,
+              description: collection.description,
+              user_id: collection.user_id,
+              created_at: collection.created_at,
+              pin_count: pinCount || 0,
+              sample_images: samplePins?.map((p: any) => p.image_url).filter(Boolean) || [],
+              stats
+            }
+          }
+        })
+      )
+
+      if (offset === 0) {
+        setActivities(activities)
+      } else {
+        setActivities(prev => [...prev, ...activities])
+      }
+      setHasMore(activities.length === 20)
+    } catch (error) {
+      console.error('Error loading fallback feed:', error)
+      setActivities([])
+      setHasMore(false)
+    }
+  }
+
   // Load feed
   const loadFeed = async (offset = 0) => {
     if (!user) return
@@ -60,8 +145,17 @@ export default function FeedPage() {
         p_filter: filter
       })
 
-      if (error) throw error
-      if (!data) return
+      if (error) {
+        console.error('Feed RPC error:', error)
+        // Fallback: Show user's own collections as activity
+        await loadFallbackFeed(offset)
+        return
+      }
+      if (!data || data.length === 0) {
+        // Fallback: Show user's own collections as activity
+        await loadFallbackFeed(offset)
+        return
+      }
 
       // Enrich activities with collection/user data
       const enriched = await Promise.all(
@@ -131,7 +225,12 @@ export default function FeedPage() {
         p_offset: offset
       })
 
-      if (error) throw error
+      if (error || !data || data.length === 0) {
+        if (error) console.error('For You RPC error:', error)
+        // Fallback: Show featured/popular collections
+        await loadForYouFallback(offset)
+        return
+      }
 
       // Enrich with sample images
       const enriched = await Promise.all(
@@ -163,10 +262,85 @@ export default function FeedPage() {
       setHasMore(enriched.length === 20)
     } catch (error) {
       console.error('Error loading For You feed:', error)
+      await loadForYouFallback(offset)
     } finally {
       setLoading(false)
       setLoadingMore(false)
     }
+  }
+
+  // Fallback: Show featured collections from all users
+  const loadForYouFallback = async (offset = 0) => {
+    try {
+      const { data, error } = await supabase.rpc('get_featured_collections', {
+        p_limit: 20
+      })
+
+      if (error) throw error
+      if (!data || data.length === 0) {
+        // Final fallback: just get recent public collections
+        const { data: recentCollections } = await supabase
+          .from('collections')
+          .select('*')
+          .eq('is_public', true)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + 19)
+
+        if (recentCollections) {
+          const enriched = await enrichCollections(recentCollections)
+          setCollections(enriched)
+          setHasMore(enriched.length === 20)
+        }
+        return
+      }
+
+      const enriched = await enrichCollections(data)
+      if (offset === 0) {
+        setCollections(enriched)
+      } else {
+        setCollections(prev => [...prev, ...enriched])
+      }
+      setHasMore(enriched.length === 20)
+    } catch (error) {
+      console.error('Error loading For You fallback:', error)
+      setCollections([])
+      setHasMore(false)
+    }
+  }
+
+  // Helper to enrich collections
+  const enrichCollections = async (collections: any[]) => {
+    return Promise.all(
+      collections.map(async (collection: any) => {
+        const collectionId = collection.collection_id || collection.id
+
+        const { data: samplePins } = await supabase
+          .from('pins')
+          .select('image_url')
+          .eq('collection_id', collectionId)
+          .not('image_url', 'is', null)
+          .limit(3)
+
+        const { data: stats } = await supabase.rpc('get_collection_stats', {
+          p_collection_id: collectionId
+        })
+
+        const { count: pinCount } = await supabase
+          .from('pins')
+          .select('id', { count: 'exact', head: true })
+          .eq('collection_id', collectionId)
+
+        return {
+          ...collection,
+          collection_id: collectionId,
+          collection_name: collection.collection_name || collection.name,
+          collection_description: collection.collection_description || collection.description,
+          pin_count: pinCount || 0,
+          sample_images: samplePins?.map((p: any) => p.image_url).filter(Boolean) || [],
+          stats
+        }
+      })
+    )
   }
 
   useEffect(() => {
