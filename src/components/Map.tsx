@@ -11,7 +11,6 @@ import PinEditModal from './PinEditModal'
 import PinImageViewerModal from './PinImageViewerModal'
 import PinProfileModal from './PinProfileModal'
 import FollowButton from './FollowButton'
-import CollectionDetailsModal from './CollectionDetailsModal'
 import AddSearchLocationModal from './AddSearchLocationModal'
 import BottomSheet from './BottomSheet'
 import MapLayersModal from './MapLayersModal'
@@ -274,10 +273,6 @@ function MapComponent({ onMapClick }: MapProps) {
   const [friendsCollections, setFriendsCollections] = useState<FriendsCollection[]>([])
   const [loadingFriendsCollections, setLoadingFriendsCollections] = useState(false)
   const [friendsPins, setFriendsPins] = useState<Pin[]>([])
-
-  // Collection details modal state
-  const [showCollectionDetails, setShowCollectionDetails] = useState(false)
-  const [selectedCollectionForDetails, setSelectedCollectionForDetails] = useState<Collection | null>(null)
 
   // Search location state
   const [selectedSearchLocation, setSelectedSearchLocation] = useState<SearchResult | null>(null)
@@ -1850,8 +1845,7 @@ function MapComponent({ onMapClick }: MapProps) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        setSelectedCollectionForDetails({ ...collection, user_id: user?.id })
-                        setShowCollectionDetails(true)
+                        router.push(`/collections/${collection.id}`)
                       }}
                       style={{
                         position: 'relative',
@@ -2531,21 +2525,6 @@ function MapComponent({ onMapClick }: MapProps) {
         />
       )}
 
-      {showCollectionDetails && selectedCollectionForDetails && user && (
-        <CollectionDetailsModal
-          collection={selectedCollectionForDetails}
-          onClose={() => {
-            setShowCollectionDetails(false)
-            setSelectedCollectionForDetails(null)
-          }}
-          onUpdate={() => {
-            loadCollections()
-            loadFriendsCollections()
-          }}
-          userId={user.id}
-        />
-      )}
-
       {showAddLocationModal && selectedSearchLocation && user && (
         <AddSearchLocationModal
           isOpen={showAddLocationModal}
@@ -2832,8 +2811,7 @@ function MapComponent({ onMapClick }: MapProps) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        setSelectedCollectionForDetails({ ...collection, user_id: user?.id })
-                        setShowCollectionDetails(true)
+                        router.push(`/collections/${collection.id}`)
                         setIsBottomSheetOpen(false)
                       }}
                       style={{
