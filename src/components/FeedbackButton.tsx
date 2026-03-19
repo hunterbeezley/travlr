@@ -78,8 +78,8 @@ export default function FeedbackButton() {
         <style jsx>{`
           .feedback-button {
             position: fixed;
-            bottom: 2rem;
-            right: 2rem;
+            top: 5rem;
+            right: 1rem;
             width: 56px;
             height: 56px;
             borderRadius: 50%;
@@ -96,12 +96,11 @@ export default function FeedbackButton() {
             z-index: 999;
           }
 
-          /* Mobile: Move to left side above collections FAB, avoiding map zoom controls */
+          /* Mobile: Adjust for smaller screen, still avoiding zoom controls */
           @media (max-width: 767px) {
             .feedback-button {
-              bottom: 5.5rem;
-              right: auto;
-              left: 1rem;
+              top: 5rem;
+              right: 1rem;
             }
           }
         `}</style>
