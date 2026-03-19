@@ -47,13 +47,6 @@ export default function PinPage({ params }: PageProps) {
             category,
             place_id,
             place_name,
-            place_rating,
-            place_user_ratings_total,
-            place_business_status,
-            place_website,
-            place_phone,
-            place_price_level,
-            place_opening_hours,
             created_at,
             collection_id,
             user_id
