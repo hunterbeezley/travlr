@@ -146,7 +146,11 @@ export default function PinPageClient({
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto',
-        padding: '1rem'
+        padding: '1rem',
+        background: 'var(--background)',
+        position: 'relative',
+        zIndex: 1,
+        minHeight: '100vh'
       }}>
         <div style={{
           display: 'grid',

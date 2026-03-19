@@ -739,7 +739,11 @@ export default function CollectionPageClient({
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto',
-        padding: '2rem'
+        padding: '2rem',
+        background: 'var(--background)',
+        position: 'relative',
+        zIndex: 1,
+        minHeight: '100vh'
       }}>
         <div style={{
           background: 'var(--card)',
