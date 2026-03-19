@@ -6,6 +6,7 @@ import UserAvatar from '@/components/UserAvatar'
 import ProfileCompletion from '@/components/ProfileCompletion'
 import Auth from '@/components/Auth'
 import ProfilePictureUpload from '@/components/ProfilePictureUpload'
+import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
 import { DatabaseService } from '@/lib/database'
 
@@ -415,57 +416,7 @@ export default function ProfilePage() {
       )}
 
       {/* Navigation Bar */}
-      <nav className="navbar">
-        <div className="navbar-content">
-          {/* Logo */}
-          <div className="navbar-brand" style={{ cursor: 'default' }}>
-            <svg width="32" height="32" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
-              <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
-              <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
-              <circle cx="24" cy="24" r="6" fill="var(--color-red)"/>
-              <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-            </svg>
-            Travlr
-          </div>
-          
-          {/* Navigation Menu */}
-          <div className="navbar-nav">
-            <button
-              onClick={() => router.push('/')}
-              className="nav-link"
-            >
-              MAP
-            </button>
-
-            <button
-              onClick={() => router.push('/')}
-              className="nav-link"
-            >
-              FEED
-            </button>
-          </div>
-
-          {!loading && user && (
-            <div className="navbar-user">
-              <UserAvatar
-                profileImageUrl={profile?.profile_image}
-                email={user.email || ''}
-                size="medium"
-              />
-              <button
-                onClick={handleSignOut}
-                className="btn btn-destructive btn-small"
-                title="Sign out"
-              >
-                LOGOUT
-              </button>
-            </div>
-          )}
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Main Profile Content */}
       <main style={{

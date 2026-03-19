@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Toast from '@/components/Toast'
 import ReportCommentModal from '@/components/ReportCommentModal'
+import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -536,30 +537,23 @@ export default function CollectionPageClient({
       paddingTop: '80px'
     }}>
       {/* Navigation Bar */}
-      <nav className="navbar">
-        <div className="navbar-content">
-          <div className="navbar-brand" style={{ cursor: 'pointer' }} onClick={() => router.push('/')}>
-            <svg width="32" height="32" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
-              <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
-              <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
-              <circle cx="24" cy="24" r="6" fill="var(--color-red)"/>
-              <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-            </svg>
-            Travlr
-          </div>
+      <Navbar />
 
-          <button
-            onClick={() => router.back()}
-            className="btn btn-secondary btn-small"
-            aria-label="Go back to previous page"
-          >
-            ← BACK
-          </button>
-        </div>
-      </nav>
+      {/* Back Button */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '0 1rem'
+      }}>
+        <button
+          onClick={() => router.back()}
+          className="btn btn-secondary btn-small"
+          aria-label="Go back to previous page"
+          style={{ marginBottom: '1rem' }}
+        >
+          ← BACK
+        </button>
+      </div>
 
       {/* Hero Image/Map Preview */}
       {pins.length > 0 && (
