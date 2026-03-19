@@ -3,6 +3,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import UserAvatar from '@/components/UserAvatar'
 import { supabase } from '@/lib/supabase'
+import MobileNav from './MobileNav'
 
 export default function Navbar() {
   const router = useRouter()
@@ -19,28 +20,29 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="navbar">
-      <div className="navbar-content">
-        {/* Logo */}
-        <div
-          className="navbar-brand"
-          style={{ cursor: 'pointer' }}
-          onClick={() => router.push('/')}
-        >
-          <svg width="32" height="32" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
-            <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
-            <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
-            <circle cx="24" cy="24" r="6" fill="var(--color-red)"/>
-            <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-            <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-            <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-            <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-          </svg>
-          Travlr
-        </div>
+    <>
+      <nav className="navbar">
+        <div className="navbar-content">
+          {/* Logo */}
+          <div
+            className="navbar-brand"
+            style={{ cursor: 'pointer' }}
+            onClick={() => router.push('/')}
+          >
+            <svg width="32" height="32" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+              <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
+              <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
+              <circle cx="24" cy="24" r="6" fill="var(--color-red)"/>
+              <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
+              <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
+              <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
+              <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
+            </svg>
+            Travlr
+          </div>
 
-        {/* Navigation Menu */}
-        <div className="navbar-nav">
+          {/* Navigation Menu - Hidden on mobile */}
+          <div className="navbar-nav navbar-nav-desktop">
           <button
             onClick={() => router.push('/')}
             className={`nav-link ${isActive('/') ? 'active' : ''}`}
@@ -101,14 +103,18 @@ export default function Navbar() {
             </div>
             <button
               onClick={handleSignOut}
-              className="btn btn-destructive btn-small"
+              className="btn btn-destructive btn-small navbar-logout-desktop"
               title="Sign out"
             >
               LOGOUT
             </button>
           </div>
         )}
-      </div>
-    </nav>
+        </div>
+      </nav>
+
+      {/* Mobile Navigation - Shown on mobile only */}
+      {user && <MobileNav />}
+    </>
   )
 }
