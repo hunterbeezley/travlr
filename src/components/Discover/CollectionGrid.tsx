@@ -37,7 +37,6 @@ export default function CollectionGrid({ collections, currentUserId }: Collectio
         const showTrendingBadge = isTrending(collection)
         const showPopularBadge = isPopular(collection)
         const showNewBadge = isNew(collection.created_at)
-        const netScore = collection.net_score || 0
 
         return (
           <div
@@ -93,30 +92,6 @@ export default function CollectionGrid({ collections, currentUserId }: Collectio
                       />
                     </div>
                   ))}
-
-                  {/* Vote Score Overlay */}
-                  {netScore !== 0 && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '0.5rem',
-                      right: '0.5rem',
-                      padding: '0.25rem 0.5rem',
-                      background: netScore > 0
-                        ? 'rgba(34, 197, 94, 0.9)'
-                        : 'rgba(239, 68, 68, 0.9)',
-                      color: 'white',
-                      borderRadius: 'var(--radius)',
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      fontFamily: 'var(--font-mono)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem'
-                    }}>
-                      <span>{netScore > 0 ? '↑' : '↓'}</span>
-                      <span>{Math.abs(netScore)}</span>
-                    </div>
-                  )}
                 </div>
               </Link>
             )}

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import ReportCommentModal from './ReportCommentModal'
+import CollectionActions from './Collection/CollectionActions'
 
 interface Collection {
   id: string

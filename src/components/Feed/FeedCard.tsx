@@ -127,46 +127,65 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
       </div>
 
       {/* Collection Content */}
-      <Link
-        href={`/collections/${target_data.id}`}
-        style={{
-          display: 'block',
-          textDecoration: 'none',
-          color: 'inherit'
-        }}
-      >
-        <div style={{ padding: '1rem' }}>
+      <div style={{ padding: '1rem' }}>
+        {/* Collection Name - Clickable */}
+        <Link
+          href={`/collections/${target_data.id}`}
+          style={{
+            display: 'block',
+            textDecoration: 'none',
+            marginBottom: '0.75rem'
+          }}
+        >
           <h3 style={{
-            fontSize: '1.125rem',
+            fontSize: '1.25rem',
             fontWeight: '700',
-            marginBottom: '0.5rem',
             fontFamily: 'var(--font-mono)',
-            color: 'var(--foreground)'
-          }}>
+            color: 'var(--accent)',
+            transition: 'var(--transition)',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '0.8'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '1'
+          }}
+          >
             {target_data.name}
           </h3>
-          {target_data.description && (
-            <p style={{
-              color: 'var(--muted-foreground)',
-              fontSize: '0.875rem',
-              marginBottom: '1rem',
-              lineHeight: '1.5'
-            }}>
-              {target_data.description.length > 150
-                ? target_data.description.substring(0, 150) + '...'
-                : target_data.description}
-            </p>
-          )}
+        </Link>
 
-          {/* Image Grid */}
-          {target_data.sample_images && target_data.sample_images.length > 0 && (
+        {target_data.description && (
+          <p style={{
+            color: 'var(--muted-foreground)',
+            fontSize: '0.875rem',
+            marginBottom: '1rem',
+            lineHeight: '1.5'
+          }}>
+            {target_data.description.length > 150
+              ? target_data.description.substring(0, 150) + '...'
+              : target_data.description}
+          </p>
+        )}
+
+        {/* Image Grid - Clickable */}
+        {target_data.sample_images && target_data.sample_images.length > 0 && (
+          <Link
+            href={`/collections/${target_data.id}`}
+            style={{
+              display: 'block',
+              textDecoration: 'none',
+              marginBottom: '1rem'
+            }}
+          >
             <div style={{
               display: 'grid',
               gridTemplateColumns: target_data.sample_images.length === 1
                 ? '1fr'
                 : 'repeat(3, 1fr)',
               gap: '0.5rem',
-              marginBottom: '1rem'
+              cursor: 'pointer'
             }}>
               {target_data.sample_images.slice(0, 3).map((url: string, idx: number) => (
                 <div
@@ -175,7 +194,14 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
                     aspectRatio: '1',
                     background: 'var(--muted)',
                     borderRadius: 'var(--radius)',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    transition: 'var(--transition)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.02)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)'
                   }}
                 >
                   <img
@@ -190,29 +216,29 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
                 </div>
               ))}
             </div>
-          )}
+          </Link>
+        )}
 
-          {/* Collection Stats */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-            fontSize: '0.75rem',
-            color: 'var(--muted-foreground)',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
-          }}>
-            <span>📍 {target_data.pin_count} pins</span>
-            {target_data.stats && (
-              <>
-                <span>❤️ {target_data.stats.likes_count}</span>
-                <span>💾 {target_data.stats.saves_count}</span>
-              </>
-            )}
-          </div>
+        {/* Collection Stats */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          fontSize: '0.75rem',
+          color: 'var(--muted-foreground)',
+          fontFamily: 'var(--font-mono)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em'
+        }}>
+          <span>📍 {target_data.pin_count} pins</span>
+          {target_data.stats && (
+            <>
+              <span>❤️ {target_data.stats.likes_count || 0}</span>
+              <span>💾 {target_data.stats.saves_count || 0}</span>
+            </>
+          )}
         </div>
-      </Link>
+      </div>
 
       {/* Actions */}
       {target_data.stats && (
