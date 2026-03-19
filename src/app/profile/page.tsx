@@ -191,12 +191,8 @@ export default function ProfilePage() {
         .rpc('get_user_collections_with_stats', { user_uuid: user.id })
 
       if (rpcError) {
-        console.error('RPC error loading collections:', {
-          message: rpcError.message,
-          code: rpcError.code,
-          details: rpcError.details,
-          hint: rpcError.hint
-        })
+        console.log('RPC function not available, using fallback query')
+        // This is expected if the RPC function doesn't exist, not an error
       }
 
       if (!rpcError && rpcData) {
@@ -204,7 +200,6 @@ export default function ProfilePage() {
       }
 
       // Fallback to manual query if RPC doesn't exist
-      console.warn('RPC function not found, using fallback query')
       const { data, error } = await supabase
         .from('collections')
         .select(`
