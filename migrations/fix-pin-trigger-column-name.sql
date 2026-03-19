@@ -38,15 +38,15 @@ RETURNS TRIGGER AS $$
 DECLARE
   collection_owner_id UUID;
   collection_name TEXT;
-  is_public BOOLEAN;
+  collection_is_public BOOLEAN;
 BEGIN
-  -- Get collection details (FIXED: changed 'name' to 'title')
-  SELECT user_id, title, is_public INTO collection_owner_id, collection_name, is_public
+  -- Get collection details (FIXED: changed 'name' to 'title' and qualified is_public)
+  SELECT user_id, title, collections.is_public INTO collection_owner_id, collection_name, collection_is_public
   FROM collections
   WHERE id = NEW.collection_id;
 
   -- Only create activity if collection is public
-  IF is_public THEN
+  IF collection_is_public THEN
     INSERT INTO feed_activities (
       user_id,
       activity_type,
