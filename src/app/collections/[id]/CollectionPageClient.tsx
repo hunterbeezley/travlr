@@ -1,8 +1,9 @@
 'use client'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Toast from '@/components/Toast'
+import ReportCommentModal from '@/components/ReportCommentModal'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -77,6 +78,49 @@ const categoryEmojis: Record<string, string> = {
   other: '📍'
 }
 
+// Helper function to render comment text with styled @ mentions
+function renderCommentWithMentions(text: string) {
+  // Regex to match @username (letters, numbers, underscores)
+  const mentionRegex = /@([a-zA-Z0-9_]+)/g
+  const parts: (string | React.ReactElement)[] = []
+  let lastIndex = 0
+  let match
+
+  while ((match = mentionRegex.exec(text)) !== null) {
+    // Add text before the mention
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index))
+    }
+
+    // Add the styled mention
+    parts.push(
+      <span
+        key={`mention-${match.index}`}
+        style={{
+          color: 'var(--accent)',
+          fontWeight: '600',
+          cursor: 'pointer'
+        }}
+        onClick={(e) => {
+          e.stopPropagation()
+          // Could add navigation to user profile in the future
+        }}
+      >
+        {match[0]}
+      </span>
+    )
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // Add remaining text after the last mention
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex))
+  }
+
+  return parts.length > 0 ? parts : text
+}
+
 export default function CollectionPageClient({
   collection,
   pins,
@@ -101,6 +145,11 @@ export default function CollectionPageClient({
   const [postingComment, setPostingComment] = useState(false)
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [editingCommentText, setEditingCommentText] = useState('')
+  const [reportingCommentId, setReportingCommentId] = useState<string | null>(null)
+  const [commentsPage, setCommentsPage] = useState(0)
+  const [hasMoreComments, setHasMoreComments] = useState(true)
+  const [loadingMoreComments, setLoadingMoreComments] = useState(false)
+  const COMMENTS_PER_PAGE = 20
 
   const handleShare = async () => {
     const url = window.location.href
@@ -127,7 +176,7 @@ export default function CollectionPageClient({
                       collection.profiles.username ||
                       'Anonymous'
 
-  // Load comments
+  // Load initial comments
   useEffect(() => {
     const loadComments = async () => {
       try {
@@ -143,6 +192,7 @@ export default function CollectionPageClient({
           `)
           .eq('collection_id', collection.id)
           .order('created_at', { ascending: true })
+          .range(0, COMMENTS_PER_PAGE - 1)
 
         if (commentsError) throw commentsError
 
@@ -160,6 +210,8 @@ export default function CollectionPageClient({
         }))
 
         setComments(transformedComments)
+        setHasMoreComments((commentsData || []).length === COMMENTS_PER_PAGE)
+        setCommentsPage(1)
       } catch (err) {
         console.error('Error loading comments:', err)
       } finally {
@@ -169,6 +221,55 @@ export default function CollectionPageClient({
 
     loadComments()
   }, [collection.id])
+
+  // Load more comments
+  const loadMoreComments = async () => {
+    if (loadingMoreComments || !hasMoreComments) return
+
+    setLoadingMoreComments(true)
+
+    try {
+      const startRange = commentsPage * COMMENTS_PER_PAGE
+      const endRange = startRange + COMMENTS_PER_PAGE - 1
+
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('collection_comments')
+        .select(`
+          *,
+          users:user_id (
+            username,
+            full_name,
+            profile_image
+          )
+        `)
+        .eq('collection_id', collection.id)
+        .order('created_at', { ascending: true })
+        .range(startRange, endRange)
+
+      if (commentsError) throw commentsError
+
+      // Transform data to flatten user info
+      const transformedComments = (commentsData || []).map((comment: any) => ({
+        id: comment.id,
+        collection_id: comment.collection_id,
+        user_id: comment.user_id,
+        comment_text: comment.comment_text,
+        created_at: comment.created_at,
+        updated_at: comment.updated_at,
+        username: comment.users?.username,
+        full_name: comment.users?.full_name,
+        profile_image: comment.users?.profile_image
+      }))
+
+      setComments(prev => [...prev, ...transformedComments])
+      setHasMoreComments((commentsData || []).length === COMMENTS_PER_PAGE)
+      setCommentsPage(prev => prev + 1)
+    } catch (err) {
+      console.error('Error loading more comments:', err)
+    } finally {
+      setLoadingMoreComments(false)
+    }
+  }
 
   const handleVote = async (voteType: 'up' | 'down') => {
     if (!user) {
@@ -1201,39 +1302,66 @@ export default function CollectionPageClient({
                       </div>
 
                       {/* Comment Actions */}
-                      {isCommentOwner && !isEditing && (
+                      {!isEditing && (
                         <div style={{
                           display: 'flex',
                           gap: '0.5rem'
                         }}>
-                          <button
-                            onClick={() => startEditComment(comment)}
-                            style={{
-                              padding: '0.25rem 0.75rem',
-                              background: 'var(--muted)',
-                              border: '1px solid var(--border)',
-                              borderRadius: 'var(--radius)',
-                              fontSize: '0.75rem',
-                              color: 'var(--foreground)',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteComment(comment.id)}
-                            style={{
-                              padding: '0.25rem 0.75rem',
-                              background: '#ff6b6b',
-                              border: 'none',
-                              borderRadius: 'var(--radius)',
-                              fontSize: '0.75rem',
-                              color: 'white',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Delete
-                          </button>
+                          {isCommentOwner ? (
+                            <>
+                              <button
+                                onClick={() => startEditComment(comment)}
+                                style={{
+                                  padding: '0.25rem 0.75rem',
+                                  background: 'var(--muted)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: 'var(--radius)',
+                                  fontSize: '0.75rem',
+                                  color: 'var(--foreground)',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteComment(comment.id)}
+                                style={{
+                                  padding: '0.25rem 0.75rem',
+                                  background: '#ff6b6b',
+                                  border: 'none',
+                                  borderRadius: 'var(--radius)',
+                                  fontSize: '0.75rem',
+                                  color: 'white',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Delete
+                              </button>
+                            </>
+                          ) : user && (
+                            <button
+                              onClick={() => setReportingCommentId(comment.id)}
+                              style={{
+                                padding: '0.25rem 0.75rem',
+                                background: 'transparent',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius)',
+                                fontSize: '0.75rem',
+                                color: 'var(--muted-foreground)',
+                                cursor: 'pointer'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = '#ef4444'
+                                e.currentTarget.style.color = '#ef4444'
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--border)'
+                                e.currentTarget.style.color = 'var(--muted-foreground)'
+                              }}
+                            >
+                              Report
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1290,12 +1418,54 @@ export default function CollectionPageClient({
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'break-word'
                       }}>
-                        {comment.comment_text}
+                        {renderCommentWithMentions(comment.comment_text)}
                       </p>
                     )}
                   </div>
                 )
               })}
+
+              {/* Load More Button */}
+              {hasMoreComments && !loadingComments && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  padding: '1.5rem 0'
+                }}>
+                  <button
+                    onClick={loadMoreComments}
+                    disabled={loadingMoreComments}
+                    style={{
+                      padding: '0.75rem 2rem',
+                      background: loadingMoreComments ? 'var(--muted)' : 'var(--card)',
+                      border: '2px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      color: 'var(--foreground)',
+                      fontSize: '0.875rem',
+                      fontWeight: '600',
+                      cursor: loadingMoreComments ? 'not-allowed' : 'pointer',
+                      fontFamily: 'var(--font-mono)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!loadingMoreComments) {
+                        e.currentTarget.style.borderColor = 'var(--accent)'
+                        e.currentTarget.style.color = 'var(--accent)'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!loadingMoreComments) {
+                        e.currentTarget.style.borderColor = 'var(--border)'
+                        e.currentTarget.style.color = 'var(--foreground)'
+                      }
+                    }}
+                  >
+                    {loadingMoreComments ? 'Loading...' : `Load More Comments (${comments.length} shown)`}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1307,6 +1477,17 @@ export default function CollectionPageClient({
           message="Link copied to clipboard!"
           icon="🔗"
           onClose={() => setShowShareToast(false)}
+        />
+      )}
+
+      {/* Report Comment Modal */}
+      {reportingCommentId && (
+        <ReportCommentModal
+          commentId={reportingCommentId}
+          onClose={() => setReportingCommentId(null)}
+          onReported={() => {
+            alert('Thank you for your report. We will review it shortly.')
+          }}
         />
       )}
     </div>

@@ -31,6 +31,9 @@ interface Collection {
   updated_at: string
   pin_count?: number
   first_pin_image?: string | null
+  upvotes?: number
+  downvotes?: number
+  net_score?: number
 }
 
 interface Pin {
@@ -1101,6 +1104,14 @@ export default function ProfilePage() {
                             color: 'var(--muted-foreground)'
                           }}>
                             <span>📌 {collection.pin_count || 0} pins</span>
+                            {collection.net_score !== undefined && collection.net_score !== 0 && (
+                              <span style={{
+                                color: collection.net_score > 0 ? '#22c55e' : '#ef4444',
+                                fontWeight: '600'
+                              }}>
+                                {collection.net_score > 0 ? '👍' : '👎'} {collection.net_score > 0 ? '+' : ''}{collection.net_score}
+                              </span>
+                            )}
                             <span>📅 {new Date(collection.created_at).toLocaleDateString()}</span>
                           </div>
                         </div>
