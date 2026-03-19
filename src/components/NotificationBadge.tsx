@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { DatabaseService, Notification } from '@/lib/database'
@@ -27,7 +28,7 @@ export default function NotificationBadge({ userId }: NotificationBadgeProps) {
       const data = await DatabaseService.getUserNotifications(50)
       setNotifications(data)
     } catch (error) {
-      console.error('Error loading notifications:', error)
+      logger.error('Error loading notifications:', error)
     } finally {
       setLoading(false)
     }

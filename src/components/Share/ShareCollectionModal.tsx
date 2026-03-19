@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
@@ -24,7 +25,7 @@ export default function ShareCollectionModal({
         p_share_method: method
       })
     } catch (error) {
-      console.error('Error tracking share:', error)
+      logger.error('Error tracking share:', error)
     }
   }
 
@@ -35,7 +36,7 @@ export default function ShareCollectionModal({
       await trackShare('link')
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
-      console.error('Error copying link:', error)
+      logger.error('Error copying link:', error)
     }
   }
 

@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DatabaseService } from '@/lib/database'
@@ -30,7 +31,7 @@ export default function SettingsPage() {
 
       alert('Your data has been exported successfully!')
     } catch (err: any) {
-      console.error('Export error:', err)
+      logger.error('Export error:', err)
       setError(err.message || 'Failed to export data')
     } finally {
       setLoading(false)
@@ -56,7 +57,7 @@ export default function SettingsPage() {
         setError(result.error || 'Failed to delete account')
       }
     } catch (err: any) {
-      console.error('Delete account error:', err)
+      logger.error('Delete account error:', err)
       setError(err.message || 'Failed to delete account')
     } finally {
       setLoading(false)

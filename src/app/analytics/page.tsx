@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -24,7 +25,7 @@ export default function AnalyticsPage() {
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
-        console.error('No session found')
+        logger.error('No session found')
         setLoading(false)
         return
       }
@@ -36,7 +37,7 @@ export default function AnalyticsPage() {
       if (error) throw error
       setAnalytics(data)
     } catch (error) {
-      console.error('Error loading analytics:', error)
+      logger.error('Error loading analytics:', error)
     } finally {
       setLoading(false)
     }

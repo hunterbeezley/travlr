@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
@@ -119,7 +120,7 @@ export default function FeedPage() {
       }
       setHasMore(activities.length === 20)
     } catch (error) {
-      console.error('Error loading fallback feed:', error)
+      logger.error('Error loading fallback feed:', error)
       setActivities([])
       setHasMore(false)
     }
@@ -134,7 +135,7 @@ export default function FeedPage() {
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
-        console.error('No session found')
+        logger.error('No session found')
         setLoading(false)
         return
       }
@@ -146,7 +147,7 @@ export default function FeedPage() {
       })
 
       if (error) {
-        console.error('Feed RPC error:', error)
+        logger.error('Feed RPC error:', error)
         // Fallback: Show user's own collections as activity
         await loadFallbackFeed(offset)
         return
@@ -208,7 +209,7 @@ export default function FeedPage() {
       }
       setHasMore(enriched.length === 20)
     } catch (error) {
-      console.error('Error loading feed:', error)
+      logger.error('Error loading feed:', error)
     } finally {
       setLoading(false)
       setLoadingMore(false)
@@ -226,7 +227,7 @@ export default function FeedPage() {
       })
 
       if (error || !data || data.length === 0) {
-        if (error) console.error('For You RPC error:', error)
+        if (error) logger.error('For You RPC error:', error)
         // Fallback: Show featured/popular collections
         await loadForYouFallback(offset)
         return
@@ -261,7 +262,7 @@ export default function FeedPage() {
       }
       setHasMore(enriched.length === 20)
     } catch (error) {
-      console.error('Error loading For You feed:', error)
+      logger.error('Error loading For You feed:', error)
       await loadForYouFallback(offset)
     } finally {
       setLoading(false)
@@ -302,7 +303,7 @@ export default function FeedPage() {
       }
       setHasMore(enriched.length === 20)
     } catch (error) {
-      console.error('Error loading For You fallback:', error)
+      logger.error('Error loading For You fallback:', error)
       setCollections([])
       setHasMore(false)
     }

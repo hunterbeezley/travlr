@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
@@ -26,7 +27,7 @@ class TestImageUploadService {
       const fileName = `${folder}/${timestamp}.${fileExt}`
       const filePath = `${userId}/${fileName}`
 
-      console.log('Uploading to path:', filePath)
+      logger.log('Uploading to path:', filePath)
 
       // Upload file
       const { data, error } = await supabase.storage
@@ -37,11 +38,11 @@ class TestImageUploadService {
         })
 
       if (error) {
-        console.error('Upload error:', error)
+        logger.error('Upload error:', error)
         return { success: false, error: error.message }
       }
 
-      console.log('Upload successful:', data)
+      logger.log('Upload successful:', data)
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -54,7 +55,7 @@ class TestImageUploadService {
         path: filePath
       }
     } catch (error) {
-      console.error('Upload service error:', error)
+      logger.error('Upload service error:', error)
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Upload failed' 
@@ -70,7 +71,7 @@ class TestImageUploadService {
 
       return !error
     } catch (error) {
-      console.error('Delete service error:', error)
+      logger.error('Delete service error:', error)
       return false
     }
   }

@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { DatabaseService } from '@/lib/database'
 
@@ -30,7 +31,7 @@ export default function ConsentBanner() {
       try {
         await DatabaseService.recordConsent('data_collection', consented, sessionId)
       } catch (dbError) {
-        console.warn('Could not record consent in database (migration may not be run):', dbError)
+        logger.warn('Could not record consent in database (migration may not be run):', dbError)
         // Continue anyway - local storage is enough for now
       }
 
@@ -41,7 +42,7 @@ export default function ConsentBanner() {
       // Hide banner
       setShowBanner(false)
     } catch (error) {
-      console.error('Error handling consent:', error)
+      logger.error('Error handling consent:', error)
       // Still hide banner and store locally even if everything fails
       localStorage.setItem('gdpr_consent', consented ? 'accepted' : 'declined')
       setShowBanner(false)

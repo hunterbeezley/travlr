@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { supabase } from './supabase'
 
 export interface ImageUploadResult {
@@ -33,7 +34,7 @@ export class ImageUploadService {
       const fileName = `${folder}/${timestamp}.${fileExt}`
       const filePath = `${userId}/${fileName}`
 
-      console.log('Uploading to path:', filePath)
+      logger.log('Uploading to path:', filePath)
 
       // Upload file
       const { data, error } = await supabase.storage
@@ -44,11 +45,11 @@ export class ImageUploadService {
         })
 
       if (error) {
-        console.error('Upload error:', error)
+        logger.error('Upload error:', error)
         return { success: false, error: error.message }
       }
 
-      console.log('Upload successful:', data)
+      logger.log('Upload successful:', data)
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -61,7 +62,7 @@ export class ImageUploadService {
         path: filePath
       }
     } catch (error) {
-      console.error('Upload service error:', error)
+      logger.error('Upload service error:', error)
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Upload failed' 
@@ -79,13 +80,13 @@ export class ImageUploadService {
         .remove([imagePath])
 
       if (error) {
-        console.error('Delete error:', error)
+        logger.error('Delete error:', error)
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Delete service error:', error)
+      logger.error('Delete service error:', error)
       return false
     }
   }

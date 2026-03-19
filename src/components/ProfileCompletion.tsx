@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -45,7 +46,7 @@ const ProfileCompletion: React.FC<ProfileCompletionProps> = ({ onComplete }) => 
         .single()
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('Error checking profile:', error)
+        logger.error('Error checking profile:', error)
         return
       }
 
@@ -63,7 +64,7 @@ const ProfileCompletion: React.FC<ProfileCompletionProps> = ({ onComplete }) => 
         bio: data?.bio || ''
       })
     } catch (error) {
-      console.error('Error checking profile:', error)
+      logger.error('Error checking profile:', error)
     } finally {
       setCheckingProfile(false)
     }
@@ -149,7 +150,7 @@ const ProfileCompletion: React.FC<ProfileCompletionProps> = ({ onComplete }) => 
 
       onComplete()
     } catch (error: any) {
-      console.error('Error updating profile:', error)
+      logger.error('Error updating profile:', error)
       setErrors({ general: error.message || 'Failed to update profile' })
     } finally {
       setLoading(false)
@@ -312,7 +313,7 @@ export const useProfileCompletion = () => {
           .single()
 
         if (error && error.code !== 'PGRST116') {
-          console.error('Error checking profile:', error)
+          logger.error('Error checking profile:', error)
           setNeedsCompletion(false)
           return
         }
@@ -320,7 +321,7 @@ export const useProfileCompletion = () => {
         // Needs completion if no username
         setNeedsCompletion(!data?.username)
       } catch (error) {
-        console.error('Error checking profile completion:', error)
+        logger.error('Error checking profile completion:', error)
         setNeedsCompletion(false)
       } finally {
         setLoading(false)

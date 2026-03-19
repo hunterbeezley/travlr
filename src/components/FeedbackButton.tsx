@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePathname } from 'next/navigation'
@@ -52,7 +53,7 @@ export default function FeedbackButton() {
         setSubmitStatus('idle')
       }, 2000)
     } catch (error) {
-      console.error('Error submitting feedback:', error)
+      logger.error('Error submitting feedback:', error)
       setSubmitStatus('error')
     } finally {
       setIsSubmitting(false)

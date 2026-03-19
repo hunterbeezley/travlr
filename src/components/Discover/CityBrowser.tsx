@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
@@ -19,7 +20,7 @@ export default function CityBrowser({ onSelect, selected }: CityBrowserProps) {
         const { data: { session } } = await supabase.auth.getSession()
 
         if (!session) {
-          console.error('No session found')
+          logger.error('No session found')
           setLoading(false)
           return
         }
@@ -31,7 +32,7 @@ export default function CityBrowser({ onSelect, selected }: CityBrowserProps) {
         if (error) throw error
         setCities(data || [])
       } catch (error) {
-        console.error('Error loading cities:', error)
+        logger.error('Error loading cities:', error)
       } finally {
         setLoading(false)
       }

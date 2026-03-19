@@ -9,6 +9,7 @@ import ProfilePictureUpload from '@/components/ProfilePictureUpload'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
 import { DatabaseService } from '@/lib/database'
+import { logger } from '@/lib/logger'
 
 interface UserProfile {
   id: string
@@ -126,13 +127,13 @@ export default function ProfilePage() {
     if (!user) return
 
     const refreshInterval = setInterval(async () => {
-      console.log('Refreshing session to prevent expiration...')
+      logger.log('Refreshing session to prevent expiration...')
       const { error } = await supabase.auth.refreshSession()
 
       if (error) {
-        console.error('Session refresh failed:', error)
+        logger.error('Session refresh failed:', error)
       } else {
-        console.log('Session refreshed successfully')
+        logger.log('Session refreshed successfully')
       }
     }, 5 * 60 * 1000) // 5 minutes
 
@@ -156,7 +157,7 @@ export default function ProfilePage() {
       setCollections(collectionsResult || [])
       setPins(pinsResult || [])
     } catch (error) {
-      console.error('Error fetching user data:', error)
+      logger.error('Error fetching user data:', error)
     } finally {
       setLoadingCollections(false)
       setLoadingPins(false)
@@ -171,11 +172,11 @@ export default function ProfilePage() {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
       if (sessionError || !session) {
-        console.error('Session invalid, attempting refresh...')
+        logger.error('Session invalid, attempting refresh...')
         const { error: refreshError } = await supabase.auth.refreshSession()
 
         if (refreshError) {
-          console.error('Session refresh failed:', {
+          logger.error('Session refresh failed:', {
             message: refreshError.message,
             status: refreshError.status
           })
@@ -192,7 +193,7 @@ export default function ProfilePage() {
         .rpc('get_user_collections_with_stats', { user_uuid: user.id })
 
       if (rpcError) {
-        console.log('RPC function not available, using fallback query')
+        logger.log('RPC function not available, using fallback query')
         // This is expected if the RPC function doesn't exist, not an error
       }
 
@@ -216,7 +217,7 @@ export default function ProfilePage() {
         .order('updated_at', { ascending: false })
 
       if (error) {
-        console.error('Error loading collections:', {
+        logger.error('Error loading collections:', {
           message: error.message,
           code: error.code,
           details: error.details,
@@ -232,7 +233,7 @@ export default function ProfilePage() {
         first_pin_image: null
       }))
     } catch (error: any) {
-      console.error('Error loading collections:', {
+      logger.error('Error loading collections:', {
         message: error?.message,
         code: error?.code,
         details: error?.details,
@@ -249,7 +250,7 @@ export default function ProfilePage() {
       const pinsData = await DatabaseService.getUserPins(user.id)
       return pinsData || []
     } catch (error) {
-      console.error('Error fetching pins:', error)
+      logger.error('Error fetching pins:', error)
       return []
     } finally {
       setLoadingPins(false)
@@ -274,10 +275,10 @@ export default function ProfilePage() {
         setNewCollectionForm({ title: '', description: '', is_public: false })
         fetchCollections() // Refresh collections
       } else {
-        console.error('Failed to create collection:', result.error)
+        logger.error('Failed to create collection:', result.error)
       }
     } catch (error) {
-      console.error('Error creating collection:', error)
+      logger.error('Error creating collection:', error)
     } finally {
       setCreateCollectionLoading(false)
     }
@@ -291,7 +292,7 @@ export default function ProfilePage() {
     setUpdateError('')
 
     try {
-      console.log('Updating profile with data:', {
+      logger.log('Updating profile with data:', {
         username: editForm.username.trim(),
         full_name: editForm.full_name.trim() || null,
         bio: editForm.bio.trim() || null,
@@ -312,16 +313,16 @@ export default function ProfilePage() {
         .eq('id', user.id)
         .select()
 
-      console.log('Update result:', { data, error })
+      logger.log('Update result:', { data, error })
 
       if (error) throw error
 
-      console.log('Refreshing profile...')
+      logger.log('Refreshing profile...')
       await refreshProfile()
-      console.log('Profile refreshed, closing edit mode')
+      logger.log('Profile refreshed, closing edit mode')
       setIsEditing(false)
     } catch (error: any) {
-      console.error('Error updating profile:', error)
+      logger.error('Error updating profile:', error)
       setUpdateError(error.message || 'Failed to update profile')
     } finally {
       setUpdateLoading(false)
@@ -449,15 +450,15 @@ export default function ProfilePage() {
                 onImageUploaded={async (url) => {
                   // Update the profile in the database
                   try {
-                    console.log('=== Avatar Upload Start ===')
-                    console.log('User ID:', user.id)
-                    console.log('Image URL:', url)
+                    logger.log('=== Avatar Upload Start ===')
+                    logger.log('User ID:', user.id)
+                    logger.log('Image URL:', url)
 
                     // Check session first
                     const { data: { session } } = await supabase.auth.getSession()
-                    console.log('Session exists:', !!session)
-                    console.log('Session user ID:', session?.user?.id)
-                    console.log('User ID matches session:', user.id === session?.user?.id)
+                    logger.log('Session exists:', !!session)
+                    logger.log('Session user ID:', session?.user?.id)
+                    logger.log('User ID matches session:', user.id === session?.user?.id)
 
                     // Try update without .single() first to see if any rows are affected
                     const { data, error, count } = await supabase
@@ -469,33 +470,33 @@ export default function ProfilePage() {
                       .eq('id', user.id)
                       .select()
 
-                    console.log('Update result:', { data, error, count, rowCount: data?.length })
+                    logger.log('Update result:', { data, error, count, rowCount: data?.length })
 
                     if (error) {
-                      console.error('Error updating profile image:', error)
-                      console.error('Error details:', JSON.stringify(error, null, 2))
+                      logger.error('Error updating profile image:', error)
+                      logger.error('Error details:', JSON.stringify(error, null, 2))
                       alert(`Failed to update profile: ${error.message || 'Unknown error'}`)
                       return
                     }
 
                     if (!data || data.length === 0) {
-                      console.error('Update returned 0 rows - RLS or user ID mismatch?')
+                      logger.error('Update returned 0 rows - RLS or user ID mismatch?')
                       alert('Failed to update profile: No rows updated. Check console for details.')
                       return
                     }
 
-                    console.log('Avatar updated successfully, refreshing profile...')
+                    logger.log('Avatar updated successfully, refreshing profile...')
                     await refreshProfile()
-                    console.log('Profile refreshed')
+                    logger.log('Profile refreshed')
                   } catch (error) {
-                    console.error('Error updating profile image:', error)
+                    logger.error('Error updating profile image:', error)
                     alert('Failed to update profile')
                   }
                 }}
                 onImageDeleted={async () => {
                   // Remove the profile image from the database
                   try {
-                    console.log('Deleting avatar from database...')
+                    logger.log('Deleting avatar from database...')
                     const { data, error } = await supabase
                       .from('users')
                       .update({
@@ -506,20 +507,20 @@ export default function ProfilePage() {
                       .select()
                       .single()
 
-                    console.log('Avatar delete result:', { data, error })
+                    logger.log('Avatar delete result:', { data, error })
 
                     if (error) {
-                      console.error('Error deleting profile image:', error)
-                      console.error('Error details:', JSON.stringify(error, null, 2))
+                      logger.error('Error deleting profile image:', error)
+                      logger.error('Error details:', JSON.stringify(error, null, 2))
                       alert(`Failed to delete profile: ${error.message || 'Unknown error'}`)
                       return
                     }
 
-                    console.log('Avatar deleted successfully, refreshing profile...')
+                    logger.log('Avatar deleted successfully, refreshing profile...')
                     await refreshProfile()
-                    console.log('Profile refreshed')
+                    logger.log('Profile refreshed')
                   } catch (error) {
-                    console.error('Error deleting profile image:', error)
+                    logger.error('Error deleting profile image:', error)
                     alert('Failed to delete profile')
                   }
                 }}

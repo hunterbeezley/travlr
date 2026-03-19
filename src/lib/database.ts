@@ -1,6 +1,7 @@
 // src/lib/database.ts
 import { supabase } from './supabase'
 import { convertPriceLevel } from './placeHelpers'
+import { logger } from './logger'
 
 export interface UserStats {
   collections_count: number
@@ -246,7 +247,7 @@ export class DatabaseService {
     country?: string | null,
     countryCode?: string | null
   ) {
-    console.log('🔧 DatabaseService.createPin called with:', {
+    logger.log('🔧 DatabaseService.createPin called with:', {
       userId,
       collectionId,
       title,
@@ -282,14 +283,14 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('❌ Database error creating pin:', error)
+        logger.error('❌ Database error creating pin:', error)
         return { success: false, error: error.message }
       }
 
-      console.log('✅ Pin created successfully:', data)
+      logger.log('✅ Pin created successfully:', data)
       return { success: true, data }
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return { success: false, error: 'Failed to create pin' }
     }
   }
@@ -307,7 +308,7 @@ export class DatabaseService {
       image_url?: string
     }
   ) {
-    console.log('🔧 DatabaseService.updatePin called with:', {
+    logger.log('🔧 DatabaseService.updatePin called with:', {
       pinId,
       userId,
       updates
@@ -322,12 +323,12 @@ export class DatabaseService {
         .single()
 
       if (fetchError) {
-        console.error('❌ Error fetching pin for ownership check:', fetchError)
+        logger.error('❌ Error fetching pin for ownership check:', fetchError)
         return { success: false, error: 'Pin not found' }
       }
 
       if (existingPin.user_id !== userId) {
-        console.error('❌ User does not own this pin')
+        logger.error('❌ User does not own this pin')
         return { success: false, error: 'You can only edit your own pins' }
       }
 
@@ -341,14 +342,14 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('❌ Database error updating pin:', error)
+        logger.error('❌ Database error updating pin:', error)
         return { success: false, error: error.message }
       }
 
-      console.log('✅ Pin updated successfully:', data)
+      logger.log('✅ Pin updated successfully:', data)
       return { success: true, data }
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return { success: false, error: 'Failed to update pin' }
     }
   }
@@ -357,7 +358,7 @@ export class DatabaseService {
    * Delete a pin (bonus method for complete CRUD)
    */
   static async deletePin(pinId: string, userId: string) {
-    console.log('🔧 DatabaseService.deletePin called with:', { pinId, userId })
+    logger.log('🔧 DatabaseService.deletePin called with:', { pinId, userId })
 
     try {
       // First verify the user owns this pin
@@ -368,21 +369,21 @@ export class DatabaseService {
         .single()
 
       if (fetchError) {
-        console.error('❌ Error fetching pin for ownership check:', fetchError)
+        logger.error('❌ Error fetching pin for ownership check:', fetchError)
         return { success: false, error: 'Pin not found' }
       }
 
       if (existingPin.user_id !== userId) {
-        console.error('❌ User does not own this pin')
+        logger.error('❌ User does not own this pin')
         return { success: false, error: 'You can only delete your own pins' }
       }
 
-      console.log('✅ Pin ownership verified, proceeding with deletion')
+      logger.log('✅ Pin ownership verified, proceeding with deletion')
 
       // Delete pin images first (to maintain referential integrity)
       const imageCleanupResult = await this.deletePinImages(pinId, userId)
       if (!imageCleanupResult.success) {
-        console.warn('⚠️ Failed to clean up pin images, but continuing with pin deletion')
+        logger.warn('⚠️ Failed to clean up pin images, but continuing with pin deletion')
       }
 
       // Now delete the pin from the database
@@ -393,21 +394,21 @@ export class DatabaseService {
         .eq('user_id', userId)
 
       if (deleteError) {
-        console.error('❌ Database error deleting pin:', deleteError)
+        logger.error('❌ Database error deleting pin:', deleteError)
         return { success: false, error: deleteError.message }
       }
 
       // Verify deletion occurred
       if (count === 0) {
-        console.error('❌ No rows were deleted - pin may not exist or user lacks permission')
+        logger.error('❌ No rows were deleted - pin may not exist or user lacks permission')
         return { success: false, error: 'Pin could not be deleted' }
       }
 
-      console.log('✅ Pin deleted successfully, rows affected:', count)
+      logger.log('✅ Pin deleted successfully, rows affected:', count)
       return { success: true, deletedPinId: pinId }
 
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return { success: false, error: 'Failed to delete pin' }
     }
   }
@@ -422,13 +423,13 @@ export class DatabaseService {
       })
 
       if (error) {
-        console.error('Error getting user stats:', error)
+        logger.error('Error getting user stats:', error)
         return null
       }
 
       return data as UserStats
     } catch (error) {
-      console.error('DatabaseService error:', error)
+      logger.error('DatabaseService error:', error)
       return null
     }
   }
@@ -443,13 +444,13 @@ export class DatabaseService {
       })
 
       if (error) {
-        console.error('Error getting collection:', error)
+        logger.error('Error getting collection:', error)
         return null
       }
 
       return data as CollectionWithPins
     } catch (error) {
-      console.error('DatabaseService error:', error)
+      logger.error('DatabaseService error:', error)
       return null
     }
   }
@@ -465,13 +466,13 @@ export class DatabaseService {
       })
 
       if (error) {
-        console.error('Error checking follow status:', error)
+        logger.error('Error checking follow status:', error)
         return false
       }
 
       return data as boolean
     } catch (error) {
-      console.error('DatabaseService error:', error)
+      logger.error('DatabaseService error:', error)
       return false
     }
   }
@@ -484,13 +485,13 @@ export class DatabaseService {
       const { data, error } = await supabase.rpc('get_public_collections_with_details')
 
       if (error) {
-        console.error('Error getting public collections:', error)
+        logger.error('Error getting public collections:', error)
         return []
       }
 
       return data as CollectionWithDetails[]
     } catch (error) {
-      console.error('DatabaseService error:', error)
+      logger.error('DatabaseService error:', error)
       return []
     }
   }
@@ -504,7 +505,7 @@ export class DatabaseService {
     description?: string,
     isPublic: boolean = false
   ) {
-    console.log('🔧 DatabaseService.createCollection called with:', {
+    logger.log('🔧 DatabaseService.createCollection called with:', {
       userId,
       title,
       description,
@@ -524,14 +525,14 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('❌ Database error creating collection:', error)
+        logger.error('❌ Database error creating collection:', error)
         return { success: false, error: error.message }
       }
 
-      console.log('✅ Collection created successfully:', data)
+      logger.log('✅ Collection created successfully:', data)
       return { success: true, data }
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return { success: false, error: 'Failed to create collection' }
     }
   }
@@ -540,7 +541,7 @@ export class DatabaseService {
    * Delete a collection (and all its pins via CASCADE)
    */
   static async deleteCollection(collectionId: string, userId: string) {
-    console.log('🔧 DatabaseService.deleteCollection called with:', {
+    logger.log('🔧 DatabaseService.deleteCollection called with:', {
       collectionId,
       userId
     })
@@ -554,12 +555,12 @@ export class DatabaseService {
         .single()
 
       if (fetchError) {
-        console.error('❌ Error fetching collection:', fetchError)
+        logger.error('❌ Error fetching collection:', fetchError)
         return { success: false, error: fetchError.message }
       }
 
       if (collection.user_id !== userId) {
-        console.error('❌ User does not own this collection')
+        logger.error('❌ User does not own this collection')
         return { success: false, error: 'Unauthorized' }
       }
 
@@ -570,14 +571,14 @@ export class DatabaseService {
         .eq('id', collectionId)
 
       if (error) {
-        console.error('❌ Database error deleting collection:', error)
+        logger.error('❌ Database error deleting collection:', error)
         return { success: false, error: error.message }
       }
 
-      console.log('✅ Collection deleted successfully')
+      logger.log('✅ Collection deleted successfully')
       return { success: true }
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return { success: false, error: 'Failed to delete collection' }
     }
   }
@@ -594,13 +595,13 @@ export class DatabaseService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error getting user collections:', error)
+        logger.error('Error getting user collections:', error)
         return { success: false, error: error.message }
       }
 
       return { success: true, data }
     } catch (error) {
-      console.error('DatabaseService error:', error)
+      logger.error('DatabaseService error:', error)
       return { success: false, error: 'Failed to get collections' }
     }
   }
@@ -617,13 +618,13 @@ export class DatabaseService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error getting user pins:', error)
+        logger.error('Error getting user pins:', error)
         return []
       }
 
       return data as Pin[]
     } catch (error) {
-      console.error('DatabaseService error:', error)
+      logger.error('DatabaseService error:', error)
       return []
     }
   }
@@ -640,13 +641,13 @@ export class DatabaseService {
         .single()
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error getting user profile:', error)
+        logger.error('Error getting user profile:', error)
         return null
       }
 
       return data as UserProfile
     } catch (error) {
-      console.error('DatabaseService error:', error)
+      logger.error('DatabaseService error:', error)
       return null
     }
   }
@@ -667,13 +668,13 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('Error updating profile:', error)
+        logger.error('Error updating profile:', error)
         return { success: false, error: error.message }
       }
 
       return { success: true, data }
     } catch (error) {
-      console.error('DatabaseService error:', error)
+      logger.error('DatabaseService error:', error)
       return { success: false, error: 'Failed to update profile' }
     }
   }
@@ -685,10 +686,10 @@ export class DatabaseService {
     userId: string,
     images: { image_url: string; image_path: string; upload_order: number }[]
   ) {
-    console.log('🔧 DatabaseService.savePinImages called with:', { pinId, userId, imageCount: images.length })
+    logger.log('🔧 DatabaseService.savePinImages called with:', { pinId, userId, imageCount: images.length })
 
     if (images.length === 0) {
-      console.log('✅ No images to save')
+      logger.log('✅ No images to save')
       return { success: true, data: [] }
     }
 
@@ -708,14 +709,14 @@ export class DatabaseService {
         .select()
 
       if (error) {
-        console.error('❌ Database error saving pin images:', error)
+        logger.error('❌ Database error saving pin images:', error)
         return { success: false, error: error.message }
       }
 
-      console.log('✅ Pin images saved successfully:', data)
+      logger.log('✅ Pin images saved successfully:', data)
       return { success: true, data }
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return { success: false, error: 'Failed to save pin images' }
     }
   }
@@ -724,7 +725,7 @@ export class DatabaseService {
    * Get all images for a specific pin
    */
   static async getPinImages(pinId: string): Promise<PinImage[]> {
-    console.log('🔧 DatabaseService.getPinImages called for pin:', pinId)
+    logger.log('🔧 DatabaseService.getPinImages called for pin:', pinId)
 
     try {
       const { data, error } = await supabase
@@ -734,14 +735,14 @@ export class DatabaseService {
         .order('upload_order', { ascending: true })
 
       if (error) {
-        console.error('❌ Error fetching pin images:', error)
+        logger.error('❌ Error fetching pin images:', error)
         return []
       }
 
-      console.log('✅ Found pin images:', data?.length || 0)
+      logger.log('✅ Found pin images:', data?.length || 0)
       return data || []
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return []
     }
   }
@@ -765,7 +766,7 @@ export class DatabaseService {
 
       return data.image_url
     } catch (error) {
-      console.error('Error getting first pin image:', error)
+      logger.error('Error getting first pin image:', error)
       return null
     }
   }
@@ -774,7 +775,7 @@ export class DatabaseService {
    * Delete all images for a pin (used when deleting a pin)
    */
   static async deletePinImages(pinId: string, userId: string) {
-    console.log('🔧 DatabaseService.deletePinImages called for pin:', pinId)
+    logger.log('🔧 DatabaseService.deletePinImages called for pin:', pinId)
 
     try {
       // First get the image paths so we can delete from storage
@@ -792,7 +793,7 @@ export class DatabaseService {
         .eq('user_id', userId)
 
       if (error) {
-        console.error('❌ Error deleting pin images from database:', error)
+        logger.error('❌ Error deleting pin images from database:', error)
         return { success: false, error: error.message }
       }
 
@@ -804,15 +805,15 @@ export class DatabaseService {
               .from('travlr-images')
               .remove([img.image_path])
           } catch (storageError) {
-            console.warn('Failed to delete image from storage:', storageError)
+            logger.warn('Failed to delete image from storage:', storageError)
           }
         })
       }
 
-      console.log('✅ Pin images deleted successfully')
+      logger.log('✅ Pin images deleted successfully')
       return { success: true }
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return { success: false, error: 'Failed to delete pin images' }
     }
   }
@@ -841,7 +842,7 @@ export class DatabaseService {
       // Username found = not available
       return false
     } catch (error) {
-      console.error('Error checking username availability:', error)
+      logger.error('Error checking username availability:', error)
       return false
     }
   }
@@ -850,7 +851,7 @@ export class DatabaseService {
    * Get pin creator information
    */
   static async getPinCreator(pinId: string): Promise<PinCreator | null> {
-    console.log('🔧 DatabaseService.getPinCreator called for pin:', pinId)
+    logger.log('🔧 DatabaseService.getPinCreator called for pin:', pinId)
 
     try {
       // First get the pin to find the user_id
@@ -861,7 +862,7 @@ export class DatabaseService {
         .single()
 
       if (pinError || !pinData) {
-        console.error('❌ Error fetching pin:', pinError)
+        logger.error('❌ Error fetching pin:', pinError)
         return null
       }
 
@@ -873,7 +874,7 @@ export class DatabaseService {
         .single()
 
       if (userError) {
-        console.error('❌ Error fetching user data:', userError)
+        logger.error('❌ Error fetching user data:', userError)
         return null
       }
 
@@ -883,7 +884,7 @@ export class DatabaseService {
         profile_image: userData?.profile_image || null
       }
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return null
     }
   }
@@ -892,7 +893,7 @@ export class DatabaseService {
    * Get pin collection information
    */
   static async getPinCollection(collectionId: string): Promise<PinCollection | null> {
-    console.log('🔧 DatabaseService.getPinCollection called for collection:', collectionId)
+    logger.log('🔧 DatabaseService.getPinCollection called for collection:', collectionId)
 
     try {
       const { data, error } = await supabase
@@ -902,12 +903,12 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('❌ Error fetching collection:', error)
+        logger.error('❌ Error fetching collection:', error)
         return null
       }
 
       if (!data) {
-        console.log('❌ Collection not found')
+        logger.log('❌ Collection not found')
         return null
       }
 
@@ -918,7 +919,7 @@ export class DatabaseService {
         collection_color: data.color
       }
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return null
     }
   }
@@ -928,7 +929,7 @@ export class DatabaseService {
    * Fetches all pin profile information using separate queries
    */
   static async getCompletePinData(pinId: string): Promise<CompletePinData | null> {
-    console.log('🔧 DatabaseService.getCompletePinData called for pin:', pinId)
+    logger.log('🔧 DatabaseService.getCompletePinData called for pin:', pinId)
 
     try {
       // Fetch basic pin data
@@ -939,7 +940,7 @@ export class DatabaseService {
         .single()
 
       if (pinError || !pinData) {
-        console.error('❌ Error fetching pin data:', pinError)
+        logger.error('❌ Error fetching pin data:', pinError)
         return null
       }
 
@@ -951,7 +952,7 @@ export class DatabaseService {
         .single()
 
       if (userError) {
-        console.warn('⚠️ Error fetching user data:', userError)
+        logger.warn('⚠️ Error fetching user data:', userError)
       }
 
       // Fetch collection info
@@ -962,7 +963,7 @@ export class DatabaseService {
         .single()
 
       if (collectionError) {
-        console.warn('⚠️ Error fetching collection data:', collectionError)
+        logger.warn('⚠️ Error fetching collection data:', collectionError)
       }
 
       // Fetch pin images
@@ -993,10 +994,10 @@ export class DatabaseService {
         images: images
       }
 
-      console.log('✅ Complete pin data fetched successfully')
+      logger.log('✅ Complete pin data fetched successfully')
       return completePinData
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return null
     }
   }
@@ -1005,7 +1006,7 @@ export class DatabaseService {
    * Follow a user
    */
   static async followUser(followingId: string): Promise<boolean> {
-    console.log('🔧 DatabaseService.followUser called for user:', followingId)
+    logger.log('🔧 DatabaseService.followUser called for user:', followingId)
 
     try {
       const { data, error } = await supabase.rpc('follow_user', {
@@ -1013,14 +1014,14 @@ export class DatabaseService {
       })
 
       if (error) {
-        console.error('❌ Error following user:', error)
+        logger.error('❌ Error following user:', error)
         return false
       }
 
-      console.log('✅ User followed successfully')
+      logger.log('✅ User followed successfully')
       return data as boolean
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return false
     }
   }
@@ -1029,7 +1030,7 @@ export class DatabaseService {
    * Unfollow a user
    */
   static async unfollowUser(followingId: string): Promise<boolean> {
-    console.log('🔧 DatabaseService.unfollowUser called for user:', followingId)
+    logger.log('🔧 DatabaseService.unfollowUser called for user:', followingId)
 
     try {
       const { data, error } = await supabase.rpc('unfollow_user', {
@@ -1037,14 +1038,14 @@ export class DatabaseService {
       })
 
       if (error) {
-        console.error('❌ Error unfollowing user:', error)
+        logger.error('❌ Error unfollowing user:', error)
         return false
       }
 
-      console.log('✅ User unfollowed successfully')
+      logger.log('✅ User unfollowed successfully')
       return data as boolean
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return false
     }
   }
@@ -1053,20 +1054,20 @@ export class DatabaseService {
    * Get list of users the current user follows
    */
   static async getFollowingUsers(): Promise<FollowingUser[]> {
-    console.log('🔧 DatabaseService.getFollowingUsers called')
+    logger.log('🔧 DatabaseService.getFollowingUsers called')
 
     try {
       const { data, error } = await supabase.rpc('get_following_users')
 
       if (error) {
-        console.error('❌ Error getting following users:', error)
+        logger.error('❌ Error getting following users:', error)
         return []
       }
 
-      console.log('✅ Following users fetched:', data?.length || 0)
+      logger.log('✅ Following users fetched:', data?.length || 0)
       return data as FollowingUser[]
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return []
     }
   }
@@ -1075,20 +1076,20 @@ export class DatabaseService {
    * Get friends' public collections for Friends tab
    */
   static async getFriendsPublicCollections(): Promise<FriendsCollection[]> {
-    console.log('🔧 DatabaseService.getFriendsPublicCollections called')
+    logger.log('🔧 DatabaseService.getFriendsPublicCollections called')
 
     try {
       const { data, error } = await supabase.rpc('get_friends_public_collections')
 
       if (error) {
-        console.error('❌ Error getting friends collections:', error)
+        logger.error('❌ Error getting friends collections:', error)
         return []
       }
 
-      console.log('✅ Friends collections fetched:', data?.length || 0)
+      logger.log('✅ Friends collections fetched:', data?.length || 0)
       return data as FriendsCollection[]
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return []
     }
   }
@@ -1097,20 +1098,20 @@ export class DatabaseService {
    * Get recently created public collections from other users for Discover tab
    */
   static async getDiscoverCollections(limit: number = 50): Promise<DiscoverCollection[]> {
-    console.log('🔧 DatabaseService.getDiscoverCollections called')
+    logger.log('🔧 DatabaseService.getDiscoverCollections called')
 
     try {
       const { data, error } = await supabase.rpc('get_discover_collections', { limit_count: limit })
 
       if (error) {
-        console.error('❌ Error getting discover collections:', error)
+        logger.error('❌ Error getting discover collections:', error)
         return []
       }
 
-      console.log('✅ Discover collections fetched:', data?.length || 0)
+      logger.log('✅ Discover collections fetched:', data?.length || 0)
       return data as DiscoverCollection[]
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return []
     }
   }
@@ -1120,14 +1121,14 @@ export class DatabaseService {
    * Used for city selector in feed
    */
   static async getCitiesWithCollections(): Promise<CityWithCollections[]> {
-    console.log('🔧 DatabaseService.getCitiesWithCollections called')
+    logger.log('🔧 DatabaseService.getCitiesWithCollections called')
 
     try {
       const { data, error } = await supabase.rpc('get_cities_with_collections')
 
       if (error) {
-        console.error('❌ Error getting cities with collections:', error)
-        console.error('Error details:', {
+        logger.error('❌ Error getting cities with collections:', error)
+        logger.error('Error details:', {
           message: error.message,
           details: error.details,
           hint: error.hint,
@@ -1136,10 +1137,10 @@ export class DatabaseService {
         return []
       }
 
-      console.log('✅ Cities fetched:', data?.length || 0)
+      logger.log('✅ Cities fetched:', data?.length || 0)
       return data as CityWithCollections[]
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return []
     }
   }
@@ -1159,7 +1160,7 @@ export class DatabaseService {
     offset: number = 0,
     friendsOnly: boolean = false
   ): Promise<CityFeedCollection[]> {
-    console.log('🔧 DatabaseService.getCollectionsByCity called', { city, sortBy, limit, offset, friendsOnly })
+    logger.log('🔧 DatabaseService.getCollectionsByCity called', { city, sortBy, limit, offset, friendsOnly })
 
     try {
       const { data, error } = await supabase.rpc('get_collections_by_city', {
@@ -1171,8 +1172,8 @@ export class DatabaseService {
       })
 
       if (error) {
-        console.error('❌ Error getting collections by city:', error)
-        console.error('Error details:', {
+        logger.error('❌ Error getting collections by city:', error)
+        logger.error('Error details:', {
           message: error.message,
           details: error.details,
           hint: error.hint,
@@ -1181,10 +1182,10 @@ export class DatabaseService {
         return []
       }
 
-      console.log('✅ Collections by city fetched:', data?.length || 0)
+      logger.log('✅ Collections by city fetched:', data?.length || 0)
       return data as CityFeedCollection[]
     } catch (error) {
-      console.error('💥 DatabaseService error:', error)
+      logger.error('💥 DatabaseService error:', error)
       return []
     }
   }
@@ -1193,7 +1194,7 @@ export class DatabaseService {
    * Refresh place data for a pin from Google Places API
    */
   static async refreshPlaceData(pinId: string): Promise<{ success: boolean; error?: string }> {
-    console.log('🔧 DatabaseService.refreshPlaceData called for pin:', pinId)
+    logger.log('🔧 DatabaseService.refreshPlaceData called for pin:', pinId)
 
     try {
       // First get the pin to verify it has a place_id
@@ -1204,12 +1205,12 @@ export class DatabaseService {
         .single()
 
       if (fetchError || !pin) {
-        console.error('❌ Error fetching pin:', fetchError)
+        logger.error('❌ Error fetching pin:', fetchError)
         return { success: false, error: 'Pin not found' }
       }
 
       if (!pin.place_id) {
-        console.log('⚠️ Pin has no place_id, skipping refresh')
+        logger.log('⚠️ Pin has no place_id, skipping refresh')
         return { success: false, error: 'Pin has no place_id (manual pin)' }
       }
 
@@ -1218,7 +1219,7 @@ export class DatabaseService {
       const data = await response.json()
 
       if (data.error || !data.result) {
-        console.error('❌ Error fetching place details:', data.error)
+        logger.error('❌ Error fetching place details:', data.error)
         return { success: false, error: data.error || 'Failed to fetch place details' }
       }
 
@@ -1242,15 +1243,15 @@ export class DatabaseService {
         .eq('id', pinId)
 
       if (updateError) {
-        console.error('❌ Error updating pin with fresh data:', updateError)
+        logger.error('❌ Error updating pin with fresh data:', updateError)
         return { success: false, error: updateError.message }
       }
 
-      console.log('✅ Place data refreshed successfully')
+      logger.log('✅ Place data refreshed successfully')
       return { success: true }
 
     } catch (error) {
-      console.error('💥 DatabaseService.refreshPlaceData error:', error)
+      logger.error('💥 DatabaseService.refreshPlaceData error:', error)
       return { success: false, error: 'Failed to refresh place data' }
     }
   }
@@ -1263,7 +1264,7 @@ export class DatabaseService {
     userId: string,
     newImages: { image_url: string; image_path: string; upload_order: number }[]
   ) {
-    console.log('🔧 DatabaseService.updatePinImages called with:', { pinId, imageCount: newImages.length })
+    logger.log('🔧 DatabaseService.updatePinImages called with:', { pinId, imageCount: newImages.length })
 
     try {
       // 1. Get existing images
@@ -1276,7 +1277,7 @@ export class DatabaseService {
 
       // 3. Delete removed images
       if (imagesToDelete.length > 0) {
-        console.log(`🗑️ Deleting ${imagesToDelete.length} removed images`)
+        logger.log(`🗑️ Deleting ${imagesToDelete.length} removed images`)
 
         // Delete from DB
         const { error: deleteError } = await supabase
@@ -1285,7 +1286,7 @@ export class DatabaseService {
           .in('id', imagesToDelete.map(img => img.id))
 
         if (deleteError) {
-          console.error('❌ Error deleting removed images:', deleteError)
+          logger.error('❌ Error deleting removed images:', deleteError)
           return { success: false, error: deleteError.message }
         }
 
@@ -1296,7 +1297,7 @@ export class DatabaseService {
               .from('travlr-images')
               .remove([img.image_path])
           } catch (e) {
-            console.warn('Failed to delete image from storage:', e)
+            logger.warn('Failed to delete image from storage:', e)
           }
         })
       }
@@ -1327,26 +1328,26 @@ export class DatabaseService {
 
       // Perform updates
       if (imagesToUpdate.length > 0) {
-        console.log(`🔄 Updating order for ${imagesToUpdate.length} images`)
+        logger.log(`🔄 Updating order for ${imagesToUpdate.length} images`)
         for (const update of imagesToUpdate) {
           const { error } = await supabase
             .from('pin_images')
             .update({ upload_order: update.upload_order })
             .eq('id', update.id)
 
-          if (error) console.error('Error updating image order:', error)
+          if (error) logger.error('Error updating image order:', error)
         }
       }
 
       // Perform inserts
       if (imagesToInsert.length > 0) {
-        console.log(`➕ Inserting ${imagesToInsert.length} new images`)
+        logger.log(`➕ Inserting ${imagesToInsert.length} new images`)
         const { error } = await supabase
           .from('pin_images')
           .insert(imagesToInsert)
 
         if (error) {
-          console.error('Error inserting new images:', error)
+          logger.error('Error inserting new images:', error)
           return { success: false, error: error.message }
         }
       }
@@ -1354,7 +1355,7 @@ export class DatabaseService {
       return { success: true }
 
     } catch (error) {
-      console.error('💥 DatabaseService.updatePinImages error:', error)
+      logger.error('💥 DatabaseService.updatePinImages error:', error)
       return { success: false, error: 'Failed to update pin images' }
     }
   }
@@ -1369,13 +1370,13 @@ export class DatabaseService {
       })
 
       if (error) {
-        console.error('Error fetching notifications:', error)
+        logger.error('Error fetching notifications:', error)
         return []
       }
 
       return data || []
     } catch (error) {
-      console.error('Error in getUserNotifications:', error)
+      logger.error('Error in getUserNotifications:', error)
       return []
     }
   }
@@ -1388,13 +1389,13 @@ export class DatabaseService {
       const { data, error } = await supabase.rpc('get_unread_notification_count')
 
       if (error) {
-        console.error('Error fetching unread count:', error)
+        logger.error('Error fetching unread count:', error)
         return 0
       }
 
       return data || 0
     } catch (error) {
-      console.error('Error in getUnreadNotificationCount:', error)
+      logger.error('Error in getUnreadNotificationCount:', error)
       return 0
     }
   }
@@ -1410,13 +1411,13 @@ export class DatabaseService {
         .eq('id', notificationId)
 
       if (error) {
-        console.error('Error marking notification as read:', error)
+        logger.error('Error marking notification as read:', error)
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Error in markNotificationRead:', error)
+      logger.error('Error in markNotificationRead:', error)
       return false
     }
   }
@@ -1429,7 +1430,7 @@ export class DatabaseService {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
-        console.error('No authenticated user')
+        logger.error('No authenticated user')
         return false
       }
 
@@ -1440,13 +1441,13 @@ export class DatabaseService {
         .eq('is_read', false)
 
       if (error) {
-        console.error('Error marking all notifications as read:', error)
+        logger.error('Error marking all notifications as read:', error)
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Error in markAllNotificationsRead:', error)
+      logger.error('Error in markAllNotificationsRead:', error)
       return false
     }
   }
@@ -1459,13 +1460,13 @@ export class DatabaseService {
       const { data, error } = await supabase.rpc('export_user_data')
 
       if (error) {
-        console.error('Error exporting user data:', error)
+        logger.error('Error exporting user data:', error)
         throw new Error(error.message)
       }
 
       return data
     } catch (error) {
-      console.error('Error in exportUserData:', error)
+      logger.error('Error in exportUserData:', error)
       throw error
     }
   }
@@ -1478,7 +1479,7 @@ export class DatabaseService {
       const { data, error } = await supabase.rpc('delete_user_account')
 
       if (error) {
-        console.error('Error deleting user account:', error)
+        logger.error('Error deleting user account:', error)
         return { success: false, error: error.message }
       }
 
@@ -1487,7 +1488,7 @@ export class DatabaseService {
 
       return data
     } catch (error: any) {
-      console.error('Error in deleteUserAccount:', error)
+      logger.error('Error in deleteUserAccount:', error)
       return { success: false, error: error.message }
     }
   }
@@ -1508,13 +1509,13 @@ export class DatabaseService {
       })
 
       if (error) {
-        console.error('Error recording consent:', error)
+        logger.error('Error recording consent:', error)
         return false
       }
 
       return data.success
     } catch (error) {
-      console.error('Error in recordConsent:', error)
+      logger.error('Error in recordConsent:', error)
       return false
     }
   }

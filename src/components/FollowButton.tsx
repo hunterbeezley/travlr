@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { DatabaseService } from '@/lib/database'
 import { useAuth } from '@/hooks/useAuth'
@@ -57,7 +58,7 @@ export default function FollowButton({
         }
       }
     } catch (error) {
-      console.error('Error toggling follow:', error)
+      logger.error('Error toggling follow:', error)
     } finally {
       setLoading(false)
     }

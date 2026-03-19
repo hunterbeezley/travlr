@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
@@ -104,13 +105,13 @@ export default function HomePage() {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching pins:', error)
+        logger.error('Error fetching pins:', error)
         return
       }
 
       setPins(data || [])
     } catch (error) {
-      console.error('Error fetching pins:', error)
+      logger.error('Error fetching pins:', error)
     }
   }
 
@@ -120,18 +121,18 @@ export default function HomePage() {
     const checkAuthState = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
-        console.log('Auth check - session exists:', !!session)
+        logger.log('Auth check - session exists:', !!session)
 
         // Give useAuth hook a moment to initialize if session exists
         if (session && !user && !loading) {
-          console.log('Session exists but user not loaded, waiting...')
+          logger.log('Session exists but user not loaded, waiting...')
           // Wait a bit for useAuth to catch up
           await new Promise(resolve => setTimeout(resolve, 500))
         }
 
         setAuthChecked(true)
       } catch (error) {
-        console.error('Error checking auth state:', error)
+        logger.error('Error checking auth state:', error)
         setAuthChecked(true)
       }
     }

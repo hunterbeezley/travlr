@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -90,7 +91,7 @@ export default function CityDetailPage() {
           setTotalPins(pins)
         }
       } catch (error) {
-        console.error('Error loading city collections:', error)
+        logger.error('Error loading city collections:', error)
       } finally {
         setLoading(false)
       }

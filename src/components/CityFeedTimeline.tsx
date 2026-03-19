@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { DatabaseService, CityFeedCollection, CityWithCollections } from '@/lib/database'
 import CollectionDetailsModal from './CollectionDetailsModal'
@@ -31,7 +32,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
           setSelectedCity(citiesData[0].city)
         }
       } catch (err) {
-        console.error('Error loading cities:', err)
+        logger.error('Error loading cities:', err)
       } finally {
         setLoading(false)
       }
@@ -56,7 +57,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
         )
         setCollections(collectionsData)
       } catch (err) {
-        console.error('Error loading collections:', err)
+        logger.error('Error loading collections:', err)
       } finally {
         setLoadingCollections(false)
       }

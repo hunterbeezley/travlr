@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -103,7 +104,7 @@ export default function PinPageClient({
           url: url
         })
       } catch {
-        console.log('Share cancelled')
+        logger.log('Share cancelled')
       }
     } else {
       await navigator.clipboard.writeText(url)

@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { notFound } from 'next/navigation'
@@ -62,7 +63,7 @@ export default function CollectionPage({ params }: PageProps) {
             .single()
 
           if (profileError) {
-            console.error('Error fetching profile:', profileError)
+            logger.error('Error fetching profile:', profileError)
           }
           profileData = profile
         }
@@ -140,7 +141,7 @@ export default function CollectionPage({ params }: PageProps) {
         setUserVote(userVote)
         setLoading(false)
       } catch (error) {
-        console.error('Error loading collection:', error)
+        logger.error('Error loading collection:', error)
         setNotFoundError(true)
         setLoading(false)
       }

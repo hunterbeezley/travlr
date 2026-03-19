@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
@@ -61,7 +62,7 @@ export default function FriendsPage() {
         setSuggestions(data || [])
       }
     } catch (error) {
-      console.error('Error loading suggestions:', error)
+      logger.error('Error loading suggestions:', error)
     } finally {
       setLoadingSuggestions(false)
     }
@@ -89,7 +90,7 @@ export default function FriendsPage() {
 
       setSearchResults(data || [])
     } catch (error) {
-      console.error('Error searching users:', error)
+      logger.error('Error searching users:', error)
       setSearchResults([])
     } finally {
       setLoading(false)
@@ -116,7 +117,7 @@ export default function FriendsPage() {
 
       setFollowing(prev => new Set(prev).add(userId))
     } catch (error) {
-      console.error('Error following user:', error)
+      logger.error('Error following user:', error)
     }
   }
 
@@ -133,7 +134,7 @@ export default function FriendsPage() {
         return newSet
       })
     } catch (error) {
-      console.error('Error unfollowing user:', error)
+      logger.error('Error unfollowing user:', error)
     }
   }
 

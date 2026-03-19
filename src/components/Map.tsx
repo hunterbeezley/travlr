@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { supabase } from '@/lib/supabase'
 import { DatabaseService, FriendsCollection } from '@/lib/database'
+import { logger } from '@/lib/logger'
 import PinCreationModal from './PinCreationModal'
 import PinEditModal from './PinEditModal'
 import PinImageViewerModal from './PinImageViewerModal'
@@ -419,14 +420,14 @@ function MapComponent({ onMapClick }: MapProps) {
           radius: '50000'
         })
 
-        console.log('🔍 Searching for:', query)
+        logger.log('🔍 Searching for:', query)
         const response = await fetch(`/api/google-places/autocomplete?${params.toString()}`)
         const data = await response.json()
 
-        console.log('🔍 Search response:', data)
+        logger.log('🔍 Search response:', data)
 
         if (data.error) {
-          console.error('Google Places API error:', data.error)
+          logger.error('Google Places API error:', data.error)
           setSearchResults([])
           setHasSearched(true)
           return
@@ -444,11 +445,11 @@ function MapComponent({ onMapClick }: MapProps) {
             }
           }))
 
-        console.log('🔍 Transformed results:', transformedResults)
+        logger.log('🔍 Transformed results:', transformedResults)
         setSearchResults(transformedResults)
         setHasSearched(true)
       } catch (error) {
-        console.error('Search error:', error)
+        logger.error('Search error:', error)
         setSearchResults([])
         setHasSearched(true)
       } finally {
@@ -464,7 +465,7 @@ function MapComponent({ onMapClick }: MapProps) {
       const response = await fetch(`/api/google-places/details?place_id=${result.id}`)
 
       if (!response.ok) {
-        console.error('Failed to fetch place details: HTTP', response.status)
+        logger.error('Failed to fetch place details: HTTP', response.status)
         alert('Failed to load place details. Please try again.')
         return
       }
@@ -472,7 +473,7 @@ function MapComponent({ onMapClick }: MapProps) {
       const data = await response.json()
 
       if (data.error || !data.result) {
-        console.error('Failed to fetch place details:', data.error)
+        logger.error('Failed to fetch place details:', data.error)
         alert('Failed to load place details. Please try again.')
         return
       }
@@ -481,7 +482,7 @@ function MapComponent({ onMapClick }: MapProps) {
       const location = placeDetails.geometry?.location
 
       if (!location) {
-        console.error('No location found in place details')
+        logger.error('No location found in place details')
         return
       }
 
@@ -615,7 +616,7 @@ function MapComponent({ onMapClick }: MapProps) {
       setShowSearch(false)
 
     } catch (error) {
-      console.error('Error selecting search result:', error)
+      logger.error('Error selecting search result:', error)
       alert('An error occurred while loading the place. Please try again.')
     }
   }
@@ -637,13 +638,13 @@ function MapComponent({ onMapClick }: MapProps) {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error loading pins:', error)
+        logger.error('Error loading pins:', error)
         return
       }
 
       setAllPins(data || [])
     } catch (error) {
-      console.error('Error loading pins:', error)
+      logger.error('Error loading pins:', error)
     } finally {
       setLoadingPins(false)
     }
@@ -659,13 +660,13 @@ function MapComponent({ onMapClick }: MapProps) {
         .rpc('get_user_collections_with_stats', { user_uuid: user.id })
 
       if (error) {
-        console.error('Error loading collections:', error)
+        logger.error('Error loading collections:', error)
         return
       }
 
       setCollections(data || [])
     } catch (error) {
-      console.error('Error loading collections:', error)
+      logger.error('Error loading collections:', error)
     } finally {
       setLoadingCollections(false)
     }
@@ -703,13 +704,13 @@ function MapComponent({ onMapClick }: MapProps) {
       const data = await response.json()
 
       if (data.error) {
-        console.error('POI fetch error:', data.error)
+        logger.error('POI fetch error:', data.error)
         return
       }
 
       setPois(data.results || [])
     } catch (error) {
-      console.error('Error fetching nearby POIs:', error)
+      logger.error('Error fetching nearby POIs:', error)
     }
   }
 
@@ -722,7 +723,7 @@ function MapComponent({ onMapClick }: MapProps) {
       const data = await DatabaseService.getFriendsPublicCollections()
       setFriendsCollections(data || [])
     } catch (error) {
-      console.error('Error loading friends collections:', error)
+      logger.error('Error loading friends collections:', error)
     } finally {
       setLoadingFriendsCollections(false)
     }
@@ -738,7 +739,7 @@ function MapComponent({ onMapClick }: MapProps) {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error loading friend collection pins:', error)
+        logger.error('Error loading friend collection pins:', error)
         return
       }
 
@@ -747,7 +748,7 @@ function MapComponent({ onMapClick }: MapProps) {
       setPins(friendPins)
       fitMapToPins(friendPins)
     } catch (error) {
-      console.error('Error loading friend collection pins:', error)
+      logger.error('Error loading friend collection pins:', error)
     }
   }
 
@@ -824,12 +825,12 @@ function MapComponent({ onMapClick }: MapProps) {
         loadCollections()
         loadPins()
 
-        console.log('✅ Collection deleted successfully')
+        logger.log('✅ Collection deleted successfully')
       } else {
         alert(`Failed to delete collection: ${result.error}`)
       }
     } catch (error) {
-      console.error('Error deleting collection:', error)
+      logger.error('Error deleting collection:', error)
       alert('Failed to delete collection. Please try again.')
     }
   }
@@ -837,18 +838,18 @@ function MapComponent({ onMapClick }: MapProps) {
   // Add pins to map as individual markers
   const addPinsToMap = useCallback(() => {
     if (!map.current || !isMapLoaded) {
-      console.warn('⚠️ Cannot add pins: map not initialized or loaded')
+      logger.warn('⚠️ Cannot add pins: map not initialized or loaded')
       return
     }
 
-    console.log('🔧 Adding pins to map:', pins.length, 'pins')
+    logger.log('🔧 Adding pins to map:', pins.length, 'pins')
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null))
     markersRef.current = []
 
     if (pins.length === 0) {
-      console.log('⚠️ No pins to display')
+      logger.log('⚠️ No pins to display')
       return
     }
 
@@ -872,7 +873,7 @@ function MapComponent({ onMapClick }: MapProps) {
 
       // Create click handler for marker
       marker.addListener('click', () => {
-        console.log('🖱️ Pin clicked:', pin.title)
+        logger.log('🖱️ Pin clicked:', pin.title)
 
         // Set flag to prevent bounds_changed from refetching POIs
         isInfoWindowInteractionRef.current = true
@@ -1075,7 +1076,7 @@ function MapComponent({ onMapClick }: MapProps) {
       markersRef.current.push(marker)
     })
 
-    console.log('🎯 Pin display setup complete')
+    logger.log('🎯 Pin display setup complete')
   }, [pins, isMapLoaded, user, collections])
 
   // Add POIs to map as markers
@@ -1095,7 +1096,7 @@ function MapComponent({ onMapClick }: MapProps) {
       return
     }
 
-    console.log('📍 Adding POIs to map:', pois.length, 'places')
+    logger.log('📍 Adding POIs to map:', pois.length, 'places')
 
     // Create markers for each POI
     pois.forEach(poi => {
@@ -1109,7 +1110,7 @@ function MapComponent({ onMapClick }: MapProps) {
 
       // Create click handler for POI marker
       marker.addListener('click', () => {
-        console.log('🖱️ POI clicked:', poi.name)
+        logger.log('🖱️ POI clicked:', poi.name)
 
         // Set flag to prevent bounds_changed from refetching POIs
         isInfoWindowInteractionRef.current = true
@@ -1224,7 +1225,7 @@ function MapComponent({ onMapClick }: MapProps) {
       poiMarkersRef.current.push(marker)
     })
 
-    console.log('📍 POI display setup complete')
+    logger.log('📍 POI display setup complete')
   }, [pois, isMapLoaded, showPOIs, user])
 
   // Fetch POIs when map moves or zoom changes (with debouncing)
@@ -1236,7 +1237,7 @@ function MapComponent({ onMapClick }: MapProps) {
     const handleMapChange = () => {
       // Ignore bounds changes caused by InfoWindow interactions
       if (isInfoWindowInteractionRef.current) {
-        console.log('🚫 Ignoring bounds change caused by InfoWindow interaction')
+        logger.log('🚫 Ignoring bounds change caused by InfoWindow interaction')
         return
       }
 
@@ -1279,7 +1280,7 @@ function MapComponent({ onMapClick }: MapProps) {
   // Load saved map style from preferences
   useEffect(() => {
     if (preferences.map_style && preferences.map_style !== mapStyle) {
-      console.log('📍 Loading saved map style:', preferences.map_style)
+      logger.log('📍 Loading saved map style:', preferences.map_style)
       setMapStyle(preferences.map_style)
 
       // Apply the style to the map if it's already initialized
@@ -1299,7 +1300,7 @@ function MapComponent({ onMapClick }: MapProps) {
 
   // Handler to change map style and save preference
   const handleMapStyleChange = (newStyle: string) => {
-    console.log('🎨 Changing map style to:', newStyle)
+    logger.log('🎨 Changing map style to:', newStyle)
     setMapStyle(newStyle)
 
     if (user) {
@@ -1434,7 +1435,7 @@ function MapComponent({ onMapClick }: MapProps) {
       }
 
       if (e.latLng) {
-        console.log('📍 Right-clicked! Creating new pin at:', e.latLng.lat(), e.latLng.lng())
+        logger.log('📍 Right-clicked! Creating new pin at:', e.latLng.lat(), e.latLng.lng())
 
         if (activeInfoWindowRef.current) {
           activeInfoWindowRef.current.close()
@@ -1488,7 +1489,7 @@ function MapComponent({ onMapClick }: MapProps) {
       // Start long-press timer (500ms)
       longPressTimer = setTimeout(() => {
         if (!touchMoved && longPressLatLng && userRef.current) {
-          console.log('📍 Long-press! Creating new pin at:', longPressLatLng.lat(), longPressLatLng.lng())
+          logger.log('📍 Long-press! Creating new pin at:', longPressLatLng.lat(), longPressLatLng.lng())
 
           // Provide haptic feedback if available
           if (navigator.vibrate) {
@@ -1534,7 +1535,7 @@ function MapComponent({ onMapClick }: MapProps) {
     mapDiv.addEventListener('touchcancel', handleTouchEnd, { passive: true })
 
     setIsMapLoaded(true)
-    console.log('✅ Google Map initialized')
+    logger.log('✅ Google Map initialized')
 
     return () => {
       // Cleanup markers
@@ -1583,7 +1584,7 @@ function MapComponent({ onMapClick }: MapProps) {
 
   // Handle pin deletion
   const handlePinDeleted = (pinId: string) => {
-    console.log('🗑️ Map: handlePinDeleted called for pin:', pinId)
+    logger.log('🗑️ Map: handlePinDeleted called for pin:', pinId)
 
     setAllPins(prev => prev.filter(pin => pin.id !== pinId))
     setPins(prev => prev.filter(pin => pin.id !== pinId))
@@ -1600,7 +1601,7 @@ function MapComponent({ onMapClick }: MapProps) {
       setSelectedPinForImages(null)
     }
 
-    console.log('✅ Pin deletion handling complete')
+    logger.log('✅ Pin deletion handling complete')
   }
 
   return (

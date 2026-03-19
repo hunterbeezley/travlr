@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useRef } from 'react'
 import { ImageUploadService } from '@/lib/imageUpload'
 
@@ -58,7 +59,7 @@ export default function SingleImageUpload({
         setPreviewUrl(currentImageUrl || null)
       }
     } catch (error) {
-      console.error('Upload error:', error)
+      logger.error('Upload error:', error)
       setError('Upload failed')
       setPreviewUrl(currentImageUrl || null)
     } finally {
@@ -159,7 +160,7 @@ export default function SingleImageUpload({
               objectFit: 'cover'
             }}
             onError={(e) => {
-              console.error('Image load error')
+              logger.error('Image load error')
               e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y5ZmFmYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjk3Mjc4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgZXJyb3I8L3RleHQ+PC9zdmc+'
             }}
           />

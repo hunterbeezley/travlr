@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { DatabaseService, CompletePinData, Pin } from '@/lib/database'
 import ImageSlideshow from './ImageSlideshow'
@@ -76,7 +77,7 @@ export default function PinProfileModal({
       setCurrentImageIndex(0)
 
       try {
-        console.log('📍 Loading pin profile for:', pinId)
+        logger.log('📍 Loading pin profile for:', pinId)
 
         // Fetch complete pin data
         const data = await DatabaseService.getCompletePinData(pinId)
@@ -87,18 +88,18 @@ export default function PinProfileModal({
         }
 
         setPinData(data)
-        console.log('✅ Pin data loaded:', data)
+        logger.log('✅ Pin data loaded:', data)
 
         // Fetch address (parallel, non-blocking)
         fetchAddress(data.latitude, data.longitude)
 
         // Auto-refresh place data if stale (>30 days old)
         if ((data as any).place_id && isPlaceDataStale((data as any).last_place_refresh, 30)) {
-          console.log('📅 Place data is stale, refreshing in background...')
+          logger.log('📅 Place data is stale, refreshing in background...')
           refreshPlaceDataInBackground(pinId)
         }
       } catch (err) {
-        console.error('💥 Error loading pin profile:', err)
+        logger.error('💥 Error loading pin profile:', err)
         setError('Failed to load pin details')
       } finally {
         setLoading(false)
@@ -113,17 +114,17 @@ export default function PinProfileModal({
     try {
       const result = await DatabaseService.refreshPlaceData(pinId)
       if (result.success) {
-        console.log('✅ Place data refreshed successfully')
+        logger.log('✅ Place data refreshed successfully')
         // Optionally reload pin data to show updated info
         const refreshedData = await DatabaseService.getCompletePinData(pinId)
         if (refreshedData) {
           setPinData(refreshedData)
         }
       } else {
-        console.warn('⚠️ Failed to refresh place data:', result.error)
+        logger.warn('⚠️ Failed to refresh place data:', result.error)
       }
     } catch (error) {
-      console.error('💥 Error refreshing place data:', error)
+      logger.error('💥 Error refreshing place data:', error)
     }
   }
 
@@ -142,7 +143,7 @@ export default function PinProfileModal({
         setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
       }
     } catch (error) {
-      console.error('Error fetching address:', error)
+      logger.error('Error fetching address:', error)
       setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
     } finally {
       setAddressLoading(false)
@@ -192,7 +193,7 @@ export default function PinProfileModal({
         setTimeout(() => setShowShareToast(false), 3000)
       }
     } catch (err) {
-      console.error('Share failed:', err)
+      logger.error('Share failed:', err)
     }
   }
 

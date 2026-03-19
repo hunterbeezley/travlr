@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import ReportCommentModal from './ReportCommentModal'
@@ -202,7 +203,7 @@ export default function CollectionDetailsModal({
         setHasMoreComments((commentsData || []).length === COMMENTS_PER_PAGE)
         setCommentsPage(1)
       } catch (err) {
-        console.error('Error loading data:', err)
+        logger.error('Error loading data:', err)
       } finally {
         setLoadingImages(false)
         setLoadingComments(false)
@@ -253,7 +254,7 @@ export default function CollectionDetailsModal({
       setHasMoreComments((commentsData || []).length === COMMENTS_PER_PAGE)
       setCommentsPage(prev => prev + 1)
     } catch (err) {
-      console.error('Error loading more comments:', err)
+      logger.error('Error loading more comments:', err)
     } finally {
       setLoadingMoreComments(false)
     }
@@ -286,7 +287,7 @@ export default function CollectionDetailsModal({
       setIsEditing(false)
       onUpdate()
     } catch (err: any) {
-      console.error('Error updating collection:', err)
+      logger.error('Error updating collection:', err)
       setError(err.message || 'Failed to update collection')
     } finally {
       setLoading(false)
@@ -369,7 +370,7 @@ export default function CollectionDetailsModal({
       setUserVote(voteData as 'up' | 'down' | null)
 
     } catch (err: any) {
-      console.error('Error voting:', err)
+      logger.error('Error voting:', err)
       setError('Failed to record vote. Please try again.')
       // Note: Optimistic update already happened, real data will sync on next load
     } finally {
@@ -419,7 +420,7 @@ export default function CollectionDetailsModal({
       setComments(prev => [...prev, transformedComment])
       setNewComment('')
     } catch (err: any) {
-      console.error('Error posting comment:', err)
+      logger.error('Error posting comment:', err)
       setError('Failed to post comment. Please try again.')
     } finally {
       setPostingComment(false)
@@ -439,7 +440,7 @@ export default function CollectionDetailsModal({
       // Remove from local state
       setComments(prev => prev.filter(c => c.id !== commentId))
     } catch (err: any) {
-      console.error('Error deleting comment:', err)
+      logger.error('Error deleting comment:', err)
       setError('Failed to delete comment. Please try again.')
     }
   }
@@ -479,7 +480,7 @@ export default function CollectionDetailsModal({
       setEditingCommentId(null)
       setEditingCommentText('')
     } catch (err: any) {
-      console.error('Error updating comment:', err)
+      logger.error('Error updating comment:', err)
       setError('Failed to update comment. Please try again.')
     }
   }

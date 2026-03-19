@@ -1,9 +1,10 @@
+'use client'
 // Profile Picture Upload Component
 // Save as: src/components/ProfilePictureUpload.tsx
 
-'use client'
 import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 interface ProfilePictureUploadProps {
   currentImageUrl?: string | null
@@ -42,7 +43,7 @@ class ProfileImageUploadService {
       const fileName = `profiles/${timestamp}.${fileExt}`
       const filePath = `${userId}/${fileName}`
 
-      console.log('Uploading profile picture to:', filePath)
+      logger.log('Uploading profile picture to:', filePath)
 
       // Upload file
       const { data, error } = await supabase.storage
@@ -53,8 +54,8 @@ class ProfileImageUploadService {
         })
 
       if (error) {
-        console.error('Upload error:', error)
-        console.error('Error details:', JSON.stringify(error, null, 2))
+        logger.error('Upload error:', error)
+        logger.error('Error details:', JSON.stringify(error, null, 2))
 
         // Better error messages for common issues
         let errorMessage = error.message || 'Upload failed'
@@ -81,7 +82,7 @@ class ProfileImageUploadService {
         path: filePath
       }
     } catch (error) {
-      console.error('Upload service error:', error)
+      logger.error('Upload service error:', error)
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Upload failed' 
@@ -97,7 +98,7 @@ class ProfileImageUploadService {
 
       return !error
     } catch (error) {
-      console.error('Delete service error:', error)
+      logger.error('Delete service error:', error)
       return false
     }
   }
@@ -175,7 +176,7 @@ export default function ProfilePictureUpload({
         setPreviewUrl(currentImageUrl || null)
       }
     } catch (error) {
-      console.error('Upload error:', error)
+      logger.error('Upload error:', error)
       alert('Upload failed')
       setPreviewUrl(currentImageUrl || null)
     } finally {
@@ -205,7 +206,7 @@ export default function ProfilePictureUpload({
       setShowDeleteConfirm(false)
       onImageDeleted?.()
     } catch (error) {
-      console.error('Delete error:', error)
+      logger.error('Delete error:', error)
       alert('Failed to delete image')
     }
   }

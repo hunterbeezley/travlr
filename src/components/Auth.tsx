@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
@@ -35,11 +36,11 @@ export default function Auth() {
           setError(error.message)
         }
       } else {
-        console.log('✅ Signed in successfully:', data.user?.email)
+        logger.log('✅ Signed in successfully:', data.user?.email)
         // Auth state change will redirect automatically via useAuth
       }
     } catch (err: any) {
-      console.error('Sign in error:', err)
+      logger.error('Sign in error:', err)
       setError(err.message || 'An unexpected error occurred')
     } finally {
       setLoading(false)
@@ -101,8 +102,8 @@ export default function Auth() {
       if (error) {
         setError(error.message)
       } else {
-        console.log('✅ Signed up successfully:', data.user?.email)
-        console.log('User confirmation required:', data.user?.identities?.length === 0)
+        logger.log('✅ Signed up successfully:', data.user?.email)
+        logger.log('User confirmation required:', data.user?.identities?.length === 0)
 
         // Check if email confirmation is required
         if (data.user && data.user.identities && data.user.identities.length === 0) {
@@ -121,7 +122,7 @@ export default function Auth() {
         }
       }
     } catch (err: any) {
-      console.error('Sign up error:', err)
+      logger.error('Sign up error:', err)
       setError(err.message || 'An unexpected error occurred')
     } finally {
       setLoading(false)
@@ -148,7 +149,7 @@ export default function Auth() {
         }, 3000)
       }
     } catch (err: any) {
-      console.error('Password reset error:', err)
+      logger.error('Password reset error:', err)
       setError(err.message || 'An unexpected error occurred')
     } finally {
       setLoading(false)

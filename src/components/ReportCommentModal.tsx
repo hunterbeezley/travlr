@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import React, { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
@@ -45,7 +46,7 @@ export default function ReportCommentModal({
       onReported()
       onClose()
     } catch (err) {
-      console.error('Error reporting comment:', err)
+      logger.error('Error reporting comment:', err)
       setError('Failed to submit report. Please try again.')
     } finally {
       setSubmitting(false)

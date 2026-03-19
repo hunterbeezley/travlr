@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     // Validate API key
     const apiKey = process.env.GOOGLE_PLACES_API_KEY
     if (!apiKey) {
-      console.error('GOOGLE_PLACES_API_KEY not configured')
+      logger.error('GOOGLE_PLACES_API_KEY not configured')
       return NextResponse.json(
         { error: 'Google Places API not configured' },
         { status: 500 }
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
       'places.businessStatus'
     ].join(',')
 
-    console.log('📍 Google Places Nearby Search:', { lat, lng, radius, types })
+    logger.log('📍 Google Places Nearby Search:', { lat, lng, radius, types })
 
     const response = await fetch(googleUrl, {
       method: 'POST',
@@ -99,7 +100,7 @@ export async function GET(request: NextRequest) {
 
     // Check for API errors
     if (!response.ok) {
-      console.error('Google Places API error:', response.status, data)
+      logger.error('Google Places API error:', response.status, data)
       return NextResponse.json(
         { error: data.error?.message || 'Failed to search nearby places' },
         { status: response.status }
@@ -132,7 +133,7 @@ export async function GET(request: NextRequest) {
       business_status: place.businessStatus || ''
     }))
 
-    console.log(`✅ Found ${places.length} nearby places`)
+    logger.log(`✅ Found ${places.length} nearby places`)
 
     return NextResponse.json({
       results: places,
@@ -140,7 +141,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Nearby Search API error:', error)
+    logger.error('Nearby Search API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

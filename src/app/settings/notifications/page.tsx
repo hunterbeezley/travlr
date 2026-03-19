@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -50,7 +51,7 @@ export default function NotificationSettingsPage() {
         setPreferences(data[0])
       }
     } catch (error) {
-      console.error('Error loading preferences:', error)
+      logger.error('Error loading preferences:', error)
     } finally {
       setLoading(false)
     }
@@ -77,7 +78,7 @@ export default function NotificationSettingsPage() {
       setMessage('Preferences saved successfully!')
       setTimeout(() => setMessage(''), 3000)
     } catch (error) {
-      console.error('Error saving preferences:', error)
+      logger.error('Error saving preferences:', error)
       setMessage('Failed to save preferences')
     } finally {
       setSaving(false)

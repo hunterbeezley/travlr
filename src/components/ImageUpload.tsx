@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useRef } from 'react'
 import { ImageUploadService } from '@/lib/imageUpload'
 
@@ -50,7 +51,7 @@ export default function ImageUpload({
         setPreviewUrl(currentImageUrl || null)
       }
     } catch (error) {
-      console.error('Upload error:', error)
+      logger.error('Upload error:', error)
       alert('Upload failed')
       setPreviewUrl(currentImageUrl || null)
     } finally {

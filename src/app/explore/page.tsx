@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -33,7 +34,7 @@ export default function ExplorePage() {
           })
         },
         (error) => {
-          console.log('Location access denied:', error)
+          logger.log('Location access denied:', error)
           setLoadingNearby(false)
         }
       )
@@ -61,7 +62,7 @@ export default function ExplorePage() {
         if (error) throw error
         setCities(data || [])
       } catch (error) {
-        console.error('Error loading cities:', error)
+        logger.error('Error loading cities:', error)
       } finally {
         setLoadingCities(false)
       }
@@ -93,7 +94,7 @@ export default function ExplorePage() {
           setTrendingCollections(enriched)
         }
       } catch (error) {
-        console.error('Error loading trending:', error)
+        logger.error('Error loading trending:', error)
       } finally {
         setLoadingTrending(false)
       }
@@ -127,7 +128,7 @@ export default function ExplorePage() {
           setNearbyCollections(enriched)
         }
       } catch (error) {
-        console.error('Error loading nearby:', error)
+        logger.error('Error loading nearby:', error)
       } finally {
         setLoadingNearby(false)
       }

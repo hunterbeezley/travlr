@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -26,7 +27,7 @@ export default function SavedCollectionsPage() {
         const { data: { session } } = await supabase.auth.getSession()
 
         if (!session) {
-          console.error('No session found')
+          logger.error('No session found')
           return
         }
 
@@ -41,7 +42,7 @@ export default function SavedCollectionsPage() {
           ...(data || [])
         ])
       } catch (error) {
-        console.error('Error loading folders:', error)
+        logger.error('Error loading folders:', error)
       }
     }
 
@@ -59,7 +60,7 @@ export default function SavedCollectionsPage() {
         const { data: { session } } = await supabase.auth.getSession()
 
         if (!session) {
-          console.error('No session found')
+          logger.error('No session found')
           setLoading(false)
           return
         }
@@ -134,7 +135,7 @@ export default function SavedCollectionsPage() {
           totalCreators: creators.size
         })
       } catch (error) {
-        console.error('Error loading collections:', error)
+        logger.error('Error loading collections:', error)
       } finally {
         setLoading(false)
       }
@@ -156,7 +157,7 @@ export default function SavedCollectionsPage() {
       setOrganizingCollection(null)
       window.location.reload()
     } catch (error) {
-      console.error('Error organizing collection:', error)
+      logger.error('Error organizing collection:', error)
     }
   }
 
@@ -181,7 +182,7 @@ export default function SavedCollectionsPage() {
           : f
       ))
     } catch (error) {
-      console.error('Error unsaving collection:', error)
+      logger.error('Error unsaving collection:', error)
       alert('Failed to unsave collection')
     }
   }
@@ -196,7 +197,7 @@ export default function SavedCollectionsPage() {
           url: url
         })
       } catch {
-        console.log('Share cancelled')
+        logger.log('Share cancelled')
       }
     } else {
       // Fallback: copy to clipboard

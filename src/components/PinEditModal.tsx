@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { DatabaseService } from '@/lib/database'
@@ -113,7 +114,7 @@ export default function PinEditModal({
         isTemp: false
       })))
     } catch (error) {
-      console.error('Error loading pin images:', error)
+      logger.error('Error loading pin images:', error)
     }
   }
 
@@ -128,14 +129,14 @@ export default function PinEditModal({
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching collections:', error)
+        logger.error('Error fetching collections:', error)
         setError('Failed to load collections')
         return
       }
 
       setCollections(data || [])
     } catch (error) {
-      console.error('Error fetching collections:', error)
+      logger.error('Error fetching collections:', error)
       setError('Failed to load collections')
     }
   }
@@ -178,7 +179,7 @@ export default function PinEditModal({
           .eq('user_id', user.id)
 
         if (moveError) {
-          console.error('Error moving pin to new collection:', moveError)
+          logger.error('Error moving pin to new collection:', moveError)
           setError('Failed to move pin to new collection')
           setLoading(false)
           return
@@ -215,19 +216,19 @@ export default function PinEditModal({
         )
 
         if (imagesResult.success) {
-          console.log('✅ Pin images updated successfully')
+          logger.log('✅ Pin images updated successfully')
         } else {
-          console.error('⚠️ Failed to update pin images:', imagesResult.error)
+          logger.error('⚠️ Failed to update pin images:', imagesResult.error)
         }
 
-        console.log('✅ Pin updated successfully:', result.data)
+        logger.log('✅ Pin updated successfully:', result.data)
         onPinUpdated?.({ ...result.data, collection_id: formData.collectionId })
         onClose()
       } else {
         setError(result.error || 'Failed to update pin')
       }
     } catch (error) {
-      console.error('💥 Unexpected error updating pin:', error)
+      logger.error('💥 Unexpected error updating pin:', error)
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)
@@ -236,27 +237,27 @@ export default function PinEditModal({
 
   const handleDelete = async () => {
     if (!user || !pin) {
-      console.error('❌ Cannot delete: missing user or pin')
+      logger.error('❌ Cannot delete: missing user or pin')
       return
     }
 
-    console.log('🗑️ Starting pin deletion process for pin:', pin.id)
+    logger.log('🗑️ Starting pin deletion process for pin:', pin.id)
     setDeleteLoading(true)
     setError(null)
 
     try {
       const result = await DatabaseService.deletePin(pin.id, user.id)
-      console.log('🔧 Delete result:', result)
+      logger.log('🔧 Delete result:', result)
 
       if (result.success) {
-        console.log('✅ Pin deleted successfully from database')
+        logger.log('✅ Pin deleted successfully from database')
 
         // Call the parent callback to update the UI
         if (onPinDeleted) {
-          console.log('📤 Calling onPinDeleted callback with pin ID:', pin.id)
+          logger.log('📤 Calling onPinDeleted callback with pin ID:', pin.id)
           onPinDeleted(pin.id)
         } else {
-          console.warn('⚠️ onPinDeleted callback not provided')
+          logger.warn('⚠️ onPinDeleted callback not provided')
         }
 
         // Close the modal
@@ -266,11 +267,11 @@ export default function PinEditModal({
         // setTimeout(() => window.location.reload(), 500)
 
       } else {
-        console.error('❌ Pin deletion failed:', result.error)
+        logger.error('❌ Pin deletion failed:', result.error)
         setError(result.error || 'Failed to delete pin')
       }
     } catch (error) {
-      console.error('💥 Unexpected error deleting pin:', error)
+      logger.error('💥 Unexpected error deleting pin:', error)
       setError('An unexpected error occurred while deleting the pin')
     } finally {
       setDeleteLoading(false)

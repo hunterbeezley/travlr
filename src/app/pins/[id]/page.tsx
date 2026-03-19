@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { notFound } from 'next/navigation'
@@ -55,7 +56,7 @@ export default function PinPage({ params }: PageProps) {
           .single()
 
         if (pinError || !pinData) {
-          console.error('Error fetching pin:', {
+          logger.error('Error fetching pin:', {
             pinId,
             error: pinError,
             errorCode: pinError?.code,
@@ -68,7 +69,7 @@ export default function PinPage({ params }: PageProps) {
           return
         }
 
-        console.log('Pin data fetched successfully:', { pinId, pinData })
+        logger.log('Pin data fetched successfully:', { pinId, pinData })
 
         // Fetch pin images separately
         const { data: pinImages, error: imagesError } = await supabase
@@ -78,7 +79,7 @@ export default function PinPage({ params }: PageProps) {
           .order('upload_order', { ascending: true })
 
         if (imagesError) {
-          console.error('Error fetching pin images:', {
+          logger.error('Error fetching pin images:', {
             pinId,
             error: imagesError,
             errorCode: imagesError?.code
@@ -95,7 +96,7 @@ export default function PinPage({ params }: PageProps) {
             .single()
 
           if (profileError) {
-            console.error('Error fetching user profile:', {
+            logger.error('Error fetching user profile:', {
               userId: pinData.user_id,
               error: profileError,
               errorCode: profileError?.code
@@ -114,7 +115,7 @@ export default function PinPage({ params }: PageProps) {
             .single()
 
           if (collectionError) {
-            console.error('Error fetching collection:', {
+            logger.error('Error fetching collection:', {
               collectionId: pinData.collection_id,
               error: collectionError,
               errorCode: collectionError?.code
@@ -167,7 +168,7 @@ export default function PinPage({ params }: PageProps) {
 
         setLoading(false)
       } catch (error) {
-        console.error('Error loading pin:', error)
+        logger.error('Error loading pin:', error)
         setNotFoundError(true)
         setLoading(false)
       }

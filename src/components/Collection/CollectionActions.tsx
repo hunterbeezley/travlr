@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import ShareCollectionModal from '../Share/ShareCollectionModal'
@@ -47,7 +48,7 @@ export default function CollectionActions({
         user_liked: !prev.user_liked
       }))
     } catch (error) {
-      console.error('Error toggling like:', error)
+      logger.error('Error toggling like:', error)
     } finally {
       setLoading(false)
     }
@@ -72,7 +73,7 @@ export default function CollectionActions({
         user_saved: !prev.user_saved
       }))
     } catch (error) {
-      console.error('Error toggling save:', error)
+      logger.error('Error toggling save:', error)
     } finally {
       setLoading(false)
     }

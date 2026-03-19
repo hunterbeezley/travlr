@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { DatabaseService } from '@/lib/database'
@@ -118,12 +119,12 @@ export default function PinCreationModal({
 
   const fetchCollections = async () => {
     if (!user) {
-      console.log('❌ fetchCollections: No user found')
+      logger.log('❌ fetchCollections: No user found')
       setLoadingCollections(false)
       return
     }
 
-    console.log('🔍 fetchCollections: Starting fetch for user:', user.id)
+    logger.log('🔍 fetchCollections: Starting fetch for user:', user.id)
 
     try {
       setLoadingCollections(true)
@@ -133,26 +134,26 @@ export default function PinCreationModal({
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      console.log('📥 fetchCollections result:', { data, error })
+      logger.log('📥 fetchCollections result:', { data, error })
 
       if (error) {
-        console.error('❌ fetchCollections error:', error)
+        logger.error('❌ fetchCollections error:', error)
         setError(`Failed to load collections: ${error.message}`)
         return
       }
 
-      console.log(`✅ fetchCollections: Found ${data?.length || 0} collections:`, data)
+      logger.log(`✅ fetchCollections: Found ${data?.length || 0} collections:`, data)
       setCollections(data || [])
 
       // Auto-select first collection if available
       if (data && data.length > 0 && !formData.collectionId) {
-        console.log('🎯 Auto-selecting first collection:', data[0].id)
+        logger.log('🎯 Auto-selecting first collection:', data[0].id)
         setFormData(prev => ({ ...prev, collectionId: data[0].id }))
       } else {
-        console.log('⚠️ No collections to auto-select or collection already selected')
+        logger.log('⚠️ No collections to auto-select or collection already selected')
       }
     } catch (error) {
-      console.error('💥 fetchCollections exception:', error)
+      logger.error('💥 fetchCollections exception:', error)
       setError('Failed to load collections')
     } finally {
       setLoadingCollections(false)
@@ -234,7 +235,7 @@ export default function PinCreationModal({
           }
         }
 
-        console.log('📍 Extracted location data:', { city, state, country, countryCode })
+        logger.log('📍 Extracted location data:', { city, state, country, countryCode })
 
         setLocationData({
           city,
@@ -246,7 +247,7 @@ export default function PinCreationModal({
         setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
       }
     } catch (error) {
-      console.error('Error fetching address:', error)
+      logger.error('Error fetching address:', error)
       setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
     } finally {
       setLoadingAddress(false)
@@ -256,28 +257,28 @@ export default function PinCreationModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    console.log('🚀 Pin creation started')
-    console.log('User:', user)
-    console.log('Form data:', formData)
-    console.log('Image mode:', useMultipleImages ? 'multiple' : 'single')
-    console.log('Single image data:', imageData)
-    console.log('Multiple images data:', multipleImages)
-    console.log('Location:', { latitude, longitude })
+    logger.log('🚀 Pin creation started')
+    logger.log('User:', user)
+    logger.log('Form data:', formData)
+    logger.log('Image mode:', useMultipleImages ? 'multiple' : 'single')
+    logger.log('Single image data:', imageData)
+    logger.log('Multiple images data:', multipleImages)
+    logger.log('Location:', { latitude, longitude })
 
     if (!user) {
-      console.error('❌ No user found')
+      logger.error('❌ No user found')
       setError('You must be logged in to create pins')
       return
     }
 
     if (!formData.title.trim()) {
-      console.error('❌ No title provided')
+      logger.error('❌ No title provided')
       setError('Title is required')
       return
     }
 
     if (!formData.collectionId) {
-      console.error('❌ No collection selected')
+      logger.error('❌ No collection selected')
       setError('Please select a collection')
       return
     }
@@ -291,7 +292,7 @@ export default function PinCreationModal({
       }
     }
 
-    console.log('✅ Validation passed, creating pin...')
+    logger.log('✅ Validation passed, creating pin...')
     setLoading(true)
     setError(null)
 
@@ -308,7 +309,7 @@ export default function PinCreationModal({
         mainImageUrl = imageData.url
       }
 
-      console.log('📡 Creating pin with main image:', mainImageUrl)
+      logger.log('📡 Creating pin with main image:', mainImageUrl)
 
       // Create the pin first with location data
       const result = await DatabaseService.createPin(
@@ -327,21 +328,21 @@ export default function PinCreationModal({
       )
 
       if (!result.success || !result.data) {
-        console.error('❌ Pin creation failed:', result.error)
+        logger.error('❌ Pin creation failed:', result.error)
         setError(result.error || 'Failed to create pin')
         setLoading(false)
         return
       }
 
       const newPin = result.data
-      console.log('✅ Pin created successfully:', newPin)
+      logger.log('✅ Pin created successfully:', newPin)
 
       // If using multiple images, save them to the pin_images table
       if (useMultipleImages && multipleImages.length > 0) {
         const validImages = multipleImages.filter(img => !img.isUploading && !img.isTemp)
 
         if (validImages.length > 0) {
-          console.log('📷 Saving multiple images to pin_images table')
+          logger.log('📷 Saving multiple images to pin_images table')
 
           const imageResult = await DatabaseService.savePinImages(
             newPin.id,
@@ -354,10 +355,10 @@ export default function PinCreationModal({
           )
 
           if (!imageResult.success) {
-            console.warn('⚠️ Pin created but failed to save multiple images:', imageResult.error)
+            logger.warn('⚠️ Pin created but failed to save multiple images:', imageResult.error)
             // Don't fail the whole operation - pin is created
           } else {
-            console.log('✅ Multiple images saved successfully')
+            logger.log('✅ Multiple images saved successfully')
           }
         }
       }
@@ -365,7 +366,7 @@ export default function PinCreationModal({
       onPinCreated?.(newPin)
       onClose()
     } catch (error) {
-      console.error('💥 Unexpected error creating pin:', error)
+      logger.error('💥 Unexpected error creating pin:', error)
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)

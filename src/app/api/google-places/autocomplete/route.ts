@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     // Validate API key
     const apiKey = process.env.GOOGLE_PLACES_API_KEY
     if (!apiKey) {
-      console.error('GOOGLE_PLACES_API_KEY not configured')
+      logger.error('GOOGLE_PLACES_API_KEY not configured')
       return NextResponse.json(
         { error: 'Google Places API not configured' },
         { status: 500 }
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
     // NEW Places API endpoint
     const googleUrl = 'https://places.googleapis.com/v1/places:autocomplete'
 
-    console.log('🔍 Google Places API (New) Autocomplete request:', { input, location, radius })
+    logger.log('🔍 Google Places API (New) Autocomplete request:', { input, location, radius })
 
     const response = await fetch(googleUrl, {
       method: 'POST',
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
 
     // Check for API errors
     if (!response.ok) {
-      console.error('Google Places API error:', response.status, data)
+      logger.error('Google Places API error:', response.status, data)
       return NextResponse.json(
         { error: data.error?.message || 'Failed to fetch autocomplete results' },
         { status: response.status }
@@ -89,7 +90,7 @@ export async function GET(request: NextRequest) {
       types: suggestion.placePrediction?.types || []
     }))
 
-    console.log('✅ Autocomplete results:', predictions.length)
+    logger.log('✅ Autocomplete results:', predictions.length)
 
     return NextResponse.json({
       predictions,
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Autocomplete API error:', error)
+    logger.error('Autocomplete API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

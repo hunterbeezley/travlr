@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Check if GitHub token is configured
     if (!GITHUB_TOKEN) {
-      console.error('GITHUB_TOKEN is not configured')
+      logger.error('GITHUB_TOKEN is not configured')
       return NextResponse.json(
         { error: 'Feedback system is not configured' },
         { status: 500 }
@@ -75,7 +76,7 @@ ${feedback}
 
     if (!response.ok) {
       const errorData = await response.json()
-      console.error('GitHub API error:', errorData)
+      logger.error('GitHub API error:', errorData)
       throw new Error(`GitHub API returned ${response.status}`)
     }
 
@@ -87,7 +88,7 @@ ${feedback}
       issueUrl: issue.html_url
     })
   } catch (error) {
-    console.error('Error creating GitHub issue:', error)
+    logger.error('Error creating GitHub issue:', error)
     return NextResponse.json(
       { error: 'Failed to submit feedback' },
       { status: 500 }

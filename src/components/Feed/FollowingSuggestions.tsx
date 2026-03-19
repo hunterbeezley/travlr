@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
@@ -21,7 +22,7 @@ export default function FollowingSuggestions() {
       if (error) throw error
       setSuggestions(data || [])
     } catch (error) {
-      console.error('Error loading suggestions:', error)
+      logger.error('Error loading suggestions:', error)
     } finally {
       setLoading(false)
     }
@@ -37,7 +38,7 @@ export default function FollowingSuggestions() {
 
       setFollowing(prev => new Set(prev).add(userId))
     } catch (error) {
-      console.error('Error following user:', error)
+      logger.error('Error following user:', error)
     }
   }
 

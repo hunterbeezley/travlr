@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useRef } from 'react'
 import { ImageUploadService } from '@/lib/imageUpload'
 
@@ -42,7 +43,7 @@ export default function MultipleImageUpload({
       return
     }
 
-    console.log(`📷 Starting upload of ${files.length} files`)
+    logger.log(`📷 Starting upload of ${files.length} files`)
 
     // Create temporary preview items immediately
     const tempImages: ImageItem[] = files.map((file, index) => ({
@@ -65,12 +66,12 @@ export default function MultipleImageUpload({
       const tempImageIndex = images.length + i
 
       try {
-        console.log(`📤 Uploading file ${i + 1}/${files.length}:`, file.name)
+        logger.log(`📤 Uploading file ${i + 1}/${files.length}:`, file.name)
 
         const result = await ImageUploadService.uploadImage(file, userId, 'pins')
 
         if (result.success && result.url && result.path) {
-          console.log(`✅ Upload ${i + 1} successful:`, result.url)
+          logger.log(`✅ Upload ${i + 1} successful:`, result.url)
 
           // Replace temp image with real uploaded image
           setImages(prev => {
@@ -96,7 +97,7 @@ export default function MultipleImageUpload({
             return newImages
           })
         } else {
-          console.error(`❌ Upload ${i + 1} failed:`, result.error)
+          logger.error(`❌ Upload ${i + 1} failed:`, result.error)
           // Remove failed upload
           setImages(prev => {
             const newImages = prev.filter((_, index) => index !== tempImageIndex)
@@ -106,7 +107,7 @@ export default function MultipleImageUpload({
           alert(`Failed to upload ${file.name}: ${result.error}`)
         }
       } catch (error) {
-        console.error(`💥 Upload ${i + 1} error:`, error)
+        logger.error(`💥 Upload ${i + 1} error:`, error)
         // Remove failed upload
         setImages(prev => {
           const newImages = prev.filter((_, index) => index !== tempImageIndex)

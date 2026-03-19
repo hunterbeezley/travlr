@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -181,7 +182,7 @@ export default function CollectionPageClient({
           url: url
         })
       } catch {
-        console.log('Share cancelled')
+        logger.log('Share cancelled')
       }
     } else {
       // Fallback: copy to clipboard
@@ -221,7 +222,7 @@ export default function CollectionPageClient({
       setIsEditingCollection(false)
       router.refresh()
     } catch (error) {
-      console.error('Error updating collection:', error)
+      logger.error('Error updating collection:', error)
       alert('Failed to update collection')
     } finally {
       setSavingCollection(false)
@@ -229,14 +230,14 @@ export default function CollectionPageClient({
   }
 
   // Debug logging
-  console.log('Collection object:', collection)
-  console.log('Collection profiles:', collection.profiles)
+  logger.log('Collection object:', collection)
+  logger.log('Collection profiles:', collection.profiles)
 
   const displayName = (collection.profiles?.full_name ||
                       collection.profiles?.username ||
                       'Anonymous').toString().trim() || 'Anonymous'
 
-  console.log('Display name:', displayName)
+  logger.log('Display name:', displayName)
 
   // Load initial comments
   useEffect(() => {
@@ -275,7 +276,7 @@ export default function CollectionPageClient({
         setHasMoreComments((commentsData || []).length === COMMENTS_PER_PAGE)
         setCommentsPage(1)
       } catch (err) {
-        console.error('Error loading comments:', err)
+        logger.error('Error loading comments:', err)
       } finally {
         setLoadingComments(false)
       }
@@ -295,7 +296,7 @@ export default function CollectionPageClient({
         if (error) throw error
         setCollectionStats(stats)
       } catch (err) {
-        console.error('Error loading collection stats:', err)
+        logger.error('Error loading collection stats:', err)
       } finally {
         setLoadingStats(false)
       }
@@ -347,7 +348,7 @@ export default function CollectionPageClient({
       setHasMoreComments((commentsData || []).length === COMMENTS_PER_PAGE)
       setCommentsPage(prev => prev + 1)
     } catch (err) {
-      console.error('Error loading more comments:', err)
+      logger.error('Error loading more comments:', err)
     } finally {
       setLoadingMoreComments(false)
     }
@@ -414,7 +415,7 @@ export default function CollectionPageClient({
 
       setUserVote(voteData as 'up' | 'down' | null)
     } catch (err) {
-      console.error('Error voting:', err)
+      logger.error('Error voting:', err)
       alert('Failed to record vote. Please try again.')
     } finally {
       setVotingInProgress(false)
@@ -468,7 +469,7 @@ export default function CollectionPageClient({
       setComments(prev => [...prev, transformedComment])
       setNewComment('')
     } catch (err) {
-      console.error('Error posting comment:', err)
+      logger.error('Error posting comment:', err)
       alert('Failed to post comment. Please try again.')
     } finally {
       setPostingComment(false)
@@ -489,7 +490,7 @@ export default function CollectionPageClient({
 
       setComments(prev => prev.filter(c => c.id !== commentId))
     } catch (err) {
-      console.error('Error deleting comment:', err)
+      logger.error('Error deleting comment:', err)
       alert('Failed to delete comment.')
     }
   }
@@ -528,7 +529,7 @@ export default function CollectionPageClient({
       setEditingCommentId(null)
       setEditingCommentText('')
     } catch (err) {
-      console.error('Error updating comment:', err)
+      logger.error('Error updating comment:', err)
       alert('Failed to update comment.')
     }
   }

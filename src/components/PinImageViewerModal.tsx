@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { DatabaseService } from '@/lib/database'
 import ImageSlideshow from './ImageSlideshow'
@@ -36,11 +37,11 @@ export default function PinImageViewerModal({
     setError(null)
 
     try {
-      console.log('📷 Loading images for pin:', pinId)
+      logger.log('📷 Loading images for pin:', pinId)
       
       const pinImages = await DatabaseService.getPinImages(pinId)
       
-      console.log('📥 Loaded pin images:', pinImages)
+      logger.log('📥 Loaded pin images:', pinImages)
 
       if (pinImages.length === 0) {
         setImages([])
@@ -53,7 +54,7 @@ export default function PinImageViewerModal({
         setImages(imageData)
       }
     } catch (error) {
-      console.error('💥 Error loading pin images:', error)
+      logger.error('💥 Error loading pin images:', error)
       setError('Failed to load images')
     } finally {
       setLoading(false)

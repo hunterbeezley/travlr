@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
     // Validate API key
     const apiKey = process.env.GOOGLE_PLACES_API_KEY
     if (!apiKey) {
-      console.error('GOOGLE_PLACES_API_KEY not configured')
+      logger.error('GOOGLE_PLACES_API_KEY not configured')
       return NextResponse.json(
         { error: 'Google Geocoding API not configured' },
         { status: 500 }
@@ -66,21 +67,21 @@ export async function GET(request: NextRequest) {
 
     const googleUrl = `https://maps.googleapis.com/maps/api/geocode/json?${params.toString()}`
 
-    console.log('🗺️ Google Geocoding request:', { latlng, resultType })
+    logger.log('🗺️ Google Geocoding request:', { latlng, resultType })
 
     const response = await fetch(googleUrl)
     const data = await response.json()
 
     // Check for API errors
     if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      console.error('Google Geocoding API error:', data.status, data.error_message)
+      logger.error('Google Geocoding API error:', data.status, data.error_message)
       return NextResponse.json(
         { error: data.error_message || 'Failed to geocode location' },
         { status: response.status }
       )
     }
 
-    console.log('✅ Geocoding results:', data.results?.length || 0)
+    logger.log('✅ Geocoding results:', data.results?.length || 0)
 
     return NextResponse.json({
       results: data.results || [],
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Geocoding API error:', error)
+    logger.error('Geocoding API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     // Validate API key
     const apiKey = process.env.GOOGLE_PLACES_API_KEY
     if (!apiKey) {
-      console.error('GOOGLE_PLACES_API_KEY not configured')
+      logger.error('GOOGLE_PLACES_API_KEY not configured')
       return NextResponse.json(
         { error: 'Google Places API not configured' },
         { status: 500 }
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
       'googleMapsUri'
     ].join(',')
 
-    console.log('📍 Google Places API (New) Details request:', { placeId })
+    logger.log('📍 Google Places API (New) Details request:', { placeId })
 
     const response = await fetch(googleUrl, {
       method: 'GET',
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     // Check for API errors
     if (!response.ok) {
-      console.error('Google Places API error:', response.status, data)
+      logger.error('Google Places API error:', response.status, data)
       return NextResponse.json(
         { error: data.error?.message || 'Failed to fetch place details' },
         { status: response.status }
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
       url: data.googleMapsUri || ''
     }
 
-    console.log('✅ Place details retrieved:', transformedResult.name)
+    logger.log('✅ Place details retrieved:', transformedResult.name)
 
     return NextResponse.json({
       result: transformedResult,
@@ -108,7 +109,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Place Details API error:', error)
+    logger.error('Place Details API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

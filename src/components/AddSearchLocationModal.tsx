@@ -1,4 +1,5 @@
 'use client'
+import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { extractPlaceData, mapGoogleTypeToCategory } from '@/lib/placeHelpers'
@@ -75,7 +76,7 @@ export default function AddSearchLocationModal({
 
       // Create new collection if needed
       if (isCreatingNew) {
-        console.log('Creating new collection:', {
+        logger.log('Creating new collection:', {
           title: newCollectionTitle.trim(),
           description: newCollectionDescription.trim() || null,
           is_public: isPublic,
@@ -94,7 +95,7 @@ export default function AddSearchLocationModal({
           .single()
 
         if (collectionError) {
-          console.error('Collection creation error:', {
+          logger.error('Collection creation error:', {
             message: collectionError.message,
             code: collectionError.code,
             details: collectionError.details
@@ -102,11 +103,11 @@ export default function AddSearchLocationModal({
           throw collectionError
         }
 
-        console.log('New collection created:', newCollection)
+        logger.log('New collection created:', newCollection)
         collectionId = newCollection.id
       }
 
-      console.log('Saving pin with collectionId:', collectionId)
+      logger.log('Saving pin with collectionId:', collectionId)
 
       // Validate collectionId
       if (!collectionId) {
@@ -149,14 +150,14 @@ export default function AddSearchLocationModal({
         pinInsertData.last_place_refresh = new Date().toISOString()
       }
 
-      console.log('Inserting pin with data:', pinInsertData)
+      logger.log('Inserting pin with data:', pinInsertData)
 
       const { error: pinError } = await supabase
         .from('pins')
         .insert(pinInsertData)
 
       if (pinError) {
-        console.error('Pin insert error:', {
+        logger.error('Pin insert error:', {
           message: pinError.message,
           code: pinError.code,
           details: pinError.details,
@@ -169,7 +170,7 @@ export default function AddSearchLocationModal({
       onSuccess()
       onClose()
     } catch (err: any) {
-      console.error('Error saving location:', {
+      logger.error('Error saving location:', {
         message: err?.message,
         code: err?.code,
         details: err?.details,

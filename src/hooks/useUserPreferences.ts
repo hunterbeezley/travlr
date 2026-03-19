@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from './useAuth'
@@ -69,7 +70,7 @@ export function useUserPreferences(): UseUserPreferencesReturn {
         .single()
 
       if (error) {
-        console.error('Error loading preferences:', error)
+        logger.error('Error loading preferences:', error)
         setPreferences(DEFAULT_PREFERENCES)
         return
       }
@@ -84,7 +85,7 @@ export function useUserPreferences(): UseUserPreferencesReturn {
 
       setPreferences({ ...DEFAULT_PREFERENCES, ...loadedPrefs })
     } catch (error) {
-      console.error('Error loading preferences:', error)
+      logger.error('Error loading preferences:', error)
       setPreferences(DEFAULT_PREFERENCES)
     } finally {
       setLoading(false)
@@ -97,7 +98,7 @@ export function useUserPreferences(): UseUserPreferencesReturn {
     value: UserPreferences[K]
   ) => {
     if (!user) {
-      console.warn('Cannot update preferences: user not logged in')
+      logger.warn('Cannot update preferences: user not logged in')
       return
     }
 
@@ -114,15 +115,15 @@ export function useUserPreferences(): UseUserPreferencesReturn {
         .eq('id', user.id)
 
       if (error) {
-        console.error('Error updating preference:', error)
+        logger.error('Error updating preference:', error)
         // Revert on error
         setPreferences(preferences)
         return
       }
 
-      console.log(`✅ Preference updated: ${key} = ${JSON.stringify(value)}`)
+      logger.log(`✅ Preference updated: ${key} = ${JSON.stringify(value)}`)
     } catch (error) {
-      console.error('Error updating preference:', error)
+      logger.error('Error updating preference:', error)
       // Revert on error
       setPreferences(preferences)
     }
@@ -131,7 +132,7 @@ export function useUserPreferences(): UseUserPreferencesReturn {
   // Update multiple preferences at once
   const updatePreferences = async (updates: Partial<UserPreferences>) => {
     if (!user) {
-      console.warn('Cannot update preferences: user not logged in')
+      logger.warn('Cannot update preferences: user not logged in')
       return
     }
 
@@ -148,15 +149,15 @@ export function useUserPreferences(): UseUserPreferencesReturn {
         .eq('id', user.id)
 
       if (error) {
-        console.error('Error updating preferences:', error)
+        logger.error('Error updating preferences:', error)
         // Revert on error
         setPreferences(preferences)
         return
       }
 
-      console.log(`✅ Preferences updated:`, updates)
+      logger.log(`✅ Preferences updated:`, updates)
     } catch (error) {
-      console.error('Error updating preferences:', error)
+      logger.error('Error updating preferences:', error)
       // Revert on error
       setPreferences(preferences)
     }

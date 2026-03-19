@@ -1,11 +1,12 @@
+'use client'
 // Debug Pin Creation Test Component
 // Use this to test pin creation step by step
 
-'use client'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { DatabaseService } from '@/lib/database'
 import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 export default function DebugPinCreationTest() {
   const { user } = useAuth()
@@ -54,7 +55,7 @@ export default function DebugPinCreationTest() {
     if (!user) return
 
     try {
-      console.log('🔍 Fetching collections for user:', user.id)
+      logger.log('🔍 Fetching collections for user:', user.id)
       
       const { data, error } = await supabase
         .from('collections')
@@ -62,10 +63,10 @@ export default function DebugPinCreationTest() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      console.log('📦 Collections result:', { data, error })
+      logger.log('📦 Collections result:', { data, error })
 
       if (error) {
-        console.error('Error fetching collections:', error)
+        logger.error('Error fetching collections:', error)
         setResult(`❌ Error fetching collections: ${error.message}`)
         return
       }
@@ -80,7 +81,7 @@ export default function DebugPinCreationTest() {
         setResult('⚠️ No collections found. You need to create a collection first.')
       }
     } catch (error) {
-      console.error('Exception fetching collections:', error)
+      logger.error('Exception fetching collections:', error)
       setResult(`💥 Exception: ${error}`)
     }
   }
@@ -106,7 +107,7 @@ export default function DebugPinCreationTest() {
         setResult(`❌ Failed to create collection: ${result.error}`)
       }
     } catch (error) {
-      console.error('Error creating test collection:', error)
+      logger.error('Error creating test collection:', error)
       setResult(`💥 Exception creating collection: ${error}`)
     } finally {
       setLoading(false)
@@ -128,8 +129,8 @@ export default function DebugPinCreationTest() {
     setResult('Testing pin creation...')
 
     try {
-      console.log('🚀 Starting pin creation test...')
-      console.log('Form data:', formData)
+      logger.log('🚀 Starting pin creation test...')
+      logger.log('Form data:', formData)
       
       const result = await DatabaseService.createPin(
         user.id,
@@ -146,7 +147,7 @@ export default function DebugPinCreationTest() {
         null  // country_code
       )
 
-      console.log('📥 Pin creation result:', result)
+      logger.log('📥 Pin creation result:', result)
 
       if (result.success) {
         setResult(`✅ Pin created successfully! ID: ${result.data?.id}`)
@@ -154,7 +155,7 @@ export default function DebugPinCreationTest() {
         setResult(`❌ Failed to create pin: ${result.error}`)
       }
     } catch (error) {
-      console.error('💥 Exception during pin creation:', error)
+      logger.error('💥 Exception during pin creation:', error)
       setResult(`💥 Exception: ${error}`)
     } finally {
       setLoading(false)
@@ -184,13 +185,13 @@ export default function DebugPinCreationTest() {
 
       if (error) {
         setResult(`❌ Direct DB access failed: ${error.message}`)
-        console.error('Direct DB error:', error)
+        logger.error('Direct DB error:', error)
       } else {
         setResult(`✅ Direct DB access worked! Pin ID: ${data.id}`)
-        console.log('Direct DB success:', data)
+        logger.log('Direct DB success:', data)
       }
     } catch (error) {
-      console.error('Exception in direct DB test:', error)
+      logger.error('Exception in direct DB test:', error)
       setResult(`💥 Direct DB exception: ${error}`)
     } finally {
       setLoading(false)

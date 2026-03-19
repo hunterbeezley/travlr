@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger'
 import { useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -38,12 +39,12 @@ export function useAuth(): AuthData {
       if (!forceRefresh) {
         const cached = profileCache.get(currentUser.id)
         if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-          console.log('Using cached profile')
+          logger.log('Using cached profile')
           return cached.profile
         }
       }
 
-      console.log('Fetching profile for user:', currentUser.id)
+      logger.log('Fetching profile for user:', currentUser.id)
 
       const { data: profileData, error: profileError } = await supabase
         .from('users')
@@ -52,15 +53,15 @@ export function useAuth(): AuthData {
         .single()
 
       if (profileError) {
-        console.log('Profile fetch error:', profileError.code, profileError.message)
-        console.log('Full profile error:', JSON.stringify(profileError, null, 2))
-        console.log('Attempted to fetch profile for user ID:', currentUser.id)
+        logger.log('Profile fetch error:', profileError.code, profileError.message)
+        logger.log('Full profile error:', JSON.stringify(profileError, null, 2))
+        logger.log('Attempted to fetch profile for user ID:', currentUser.id)
 
         if (profileError.code === 'PGRST116') {
           // User record doesn't exist - this shouldn't happen with the trigger
           // but handle gracefully by returning null and letting the app continue
-          console.warn('No user profile found. Profile will be created on next signup or needs manual creation.')
-          console.log('Checking if user row exists in users table...')
+          logger.warn('No user profile found. Profile will be created on next signup or needs manual creation.')
+          logger.log('Checking if user row exists in users table...')
 
           // Try to check if the user exists
           const { data: checkData, error: checkError } = await supabase
@@ -69,15 +70,15 @@ export function useAuth(): AuthData {
             .eq('id', currentUser.id)
             .maybeSingle()
 
-          console.log('User exists check:', { exists: !!checkData, checkError })
+          logger.log('User exists check:', { exists: !!checkData, checkError })
           return null
         }
 
-        console.error('Error fetching user profile:', profileError)
+        logger.error('Error fetching user profile:', profileError)
         return null
       }
 
-      console.log('Profile fetched successfully')
+      logger.log('Profile fetched successfully')
       const profile = profileData as UserProfile
 
       // Update cache
@@ -85,7 +86,7 @@ export function useAuth(): AuthData {
 
       return profile
     } catch (error) {
-      console.error('Error in fetchUserProfile:', error)
+      logger.error('Error in fetchUserProfile:', error)
       return null
     }
   }
@@ -102,15 +103,15 @@ export function useAuth(): AuthData {
 
     const getSession = async () => {
       try {
-        console.log('Getting session...')
+        logger.log('Getting session...')
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (error) {
-          console.error('Session error:', error)
+          logger.error('Session error:', error)
           // If it's a refresh token error, clear the session
           if (error.message.includes('refresh_token_not_found') ||
               error.message.includes('Invalid Refresh Token')) {
-            console.log('Clearing invalid session...')
+            logger.log('Clearing invalid session...')
             await supabase.auth.signOut()
           }
 
@@ -126,7 +127,7 @@ export function useAuth(): AuthData {
         if (!mounted) return
 
         const currentUser = session?.user ?? null
-        console.log('Current user:', currentUser?.id || 'none')
+        logger.log('Current user:', currentUser?.id || 'none')
 
         // If no session, immediately set loading to false
         if (!currentUser) {
@@ -142,7 +143,7 @@ export function useAuth(): AuthData {
         const profilePromise = fetchUserProfile(currentUser)
         const timeoutPromise = new Promise<UserProfile | null>((resolve) => {
           setTimeout(() => {
-            console.warn('Profile fetch timeout after 3 seconds, continuing anyway')
+            logger.warn('Profile fetch timeout after 3 seconds, continuing anyway')
             resolve(null)
           }, 3000)
         })
@@ -152,11 +153,11 @@ export function useAuth(): AuthData {
         if (mounted) {
           setUser(currentUser)
           setProfile(profileData)
-          console.log('Setting loading to false - user and profile ready (or timed out)')
+          logger.log('Setting loading to false - user and profile ready (or timed out)')
           setLoading(false)
         }
       } catch (error) {
-        console.error('Error in getSession:', error)
+        logger.error('Error in getSession:', error)
         if (mounted) {
           setLoading(false)
         }
@@ -166,7 +167,7 @@ export function useAuth(): AuthData {
     // Safety timeout - ensure loading is set to false after 5 seconds max
     const timeout = setTimeout(() => {
       if (mounted) {
-        console.warn('Loading timeout - forcing loading to false')
+        logger.warn('Loading timeout - forcing loading to false')
         setLoading(false)
       }
     }, 5000)
@@ -175,7 +176,7 @@ export function useAuth(): AuthData {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event)
+        logger.log('Auth state changed:', event)
         if (!mounted) return
 
         const currentUser = session?.user ?? null
@@ -185,7 +186,7 @@ export function useAuth(): AuthData {
           const profilePromise = fetchUserProfile(currentUser)
           const timeoutPromise = new Promise<UserProfile | null>((resolve) => {
             setTimeout(() => {
-              console.warn('Profile fetch timeout after 3 seconds, continuing anyway')
+              logger.warn('Profile fetch timeout after 3 seconds, continuing anyway')
               resolve(null)
             }, 3000)
           })
@@ -212,15 +213,15 @@ export function useAuth(): AuthData {
     const refreshInterval = setInterval(async () => {
       if (!mounted) return
 
-      console.log('Auto-refreshing session to prevent expiration...')
+      logger.log('Auto-refreshing session to prevent expiration...')
       const { data, error } = await supabase.auth.refreshSession()
 
       if (error) {
-        console.error('Auto session refresh failed:', error)
+        logger.error('Auto session refresh failed:', error)
         // If refresh token is invalid, sign out to clear the bad session
         if (error.message.includes('refresh_token_not_found') ||
             error.message.includes('Invalid Refresh Token')) {
-          console.log('Invalid refresh token detected, signing out...')
+          logger.log('Invalid refresh token detected, signing out...')
           await supabase.auth.signOut()
           if (mounted) {
             setUser(null)
@@ -228,7 +229,7 @@ export function useAuth(): AuthData {
           }
         }
       } else {
-        console.log('Session auto-refreshed successfully')
+        logger.log('Session auto-refreshed successfully')
         // Update user if session was refreshed
         if (mounted && data.session) {
           setUser(data.session.user)
