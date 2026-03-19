@@ -95,6 +95,12 @@ export function useAuth(): AuthData {
 
         if (error) {
           console.error('Session error:', error)
+          // If it's a refresh token error, clear the session
+          if (error.message.includes('refresh_token_not_found') ||
+              error.message.includes('Invalid Refresh Token')) {
+            console.log('Clearing invalid session...')
+            await supabase.auth.signOut()
+          }
         }
 
         if (!mounted) return
@@ -190,6 +196,16 @@ export function useAuth(): AuthData {
 
       if (error) {
         console.error('Auto session refresh failed:', error)
+        // If refresh token is invalid, sign out to clear the bad session
+        if (error.message.includes('refresh_token_not_found') ||
+            error.message.includes('Invalid Refresh Token')) {
+          console.log('Invalid refresh token detected, signing out...')
+          await supabase.auth.signOut()
+          if (mounted) {
+            setUser(null)
+            setProfile(null)
+          }
+        }
       } else {
         console.log('Session auto-refreshed successfully')
         // Update user if session was refreshed
