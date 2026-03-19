@@ -89,7 +89,7 @@ export function CollectionPageSkeleton() {
         </div>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
           gap: '1.5rem'
         }}>
           {[1, 2, 3, 4, 5, 6].map((i) => (

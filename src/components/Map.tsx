@@ -1351,7 +1351,13 @@ function MapComponent({ onMapClick }: MapProps) {
       mapTypeId: mapStyle === 'dark' ? google.maps.MapTypeId.ROADMAP : mapStyle as google.maps.MapTypeId,
       disableDoubleClickZoom: false, // Enable double-click/tap to zoom
       zoomControl: true,
+      zoomControlOptions: {
+        position: google.maps.ControlPosition.RIGHT_BOTTOM // Thumb-friendly position on mobile
+      },
       fullscreenControl: true,
+      fullscreenControlOptions: {
+        position: google.maps.ControlPosition.RIGHT_TOP
+      },
       mapTypeControl: false,
       streetViewControl: false,
       clickableIcons: false, // Disable clicking on default POI markers
@@ -1376,8 +1382,8 @@ function MapComponent({ onMapClick }: MapProps) {
     geolocateButton.style.borderRadius = '2px'
     geolocateButton.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)'
     geolocateButton.style.cursor = 'pointer'
-    geolocateButton.style.width = '40px'
-    geolocateButton.style.height = '40px'
+    geolocateButton.style.width = '44px' // Apple HIG minimum touch target
+    geolocateButton.style.height = '44px' // Apple HIG minimum touch target
     geolocateButton.style.margin = '10px'
     geolocateButton.style.fontSize = '18px'
     geolocateButton.title = 'Go to your location'

@@ -30,7 +30,7 @@ export default function CollectionGrid({ collections, currentUserId }: Collectio
   return (
     <div className="collection-grid" style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
       gap: '1.5rem'
     }}>
       {collections.map((collection) => {
@@ -84,6 +84,7 @@ export default function CollectionGrid({ collections, currentUserId }: Collectio
                       <img
                         src={url}
                         alt=""
+                        loading="lazy"
                         style={{
                           width: '100%',
                           height: '100%',

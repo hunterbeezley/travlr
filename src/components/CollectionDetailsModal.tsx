@@ -948,7 +948,7 @@ export default function CollectionDetailsModal({
             </label>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))',
               gap: '0.5rem'
             }}>
               {images.map((image) => (
