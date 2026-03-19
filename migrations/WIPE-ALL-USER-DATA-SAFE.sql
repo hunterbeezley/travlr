@@ -164,66 +164,43 @@ END $$;
 -- VERIFICATION QUERIES
 -- ============================================================================
 
--- Check counts for main tables
-SELECT
-  'users' as table_name,
-  CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users')
-    THEN (SELECT COUNT(*)::text FROM users)
-    ELSE 'table does not exist'
-  END as count
-UNION ALL
-SELECT 'collections',
-  CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'collections')
-    THEN (SELECT COUNT(*)::text FROM collections)
-    ELSE 'table does not exist'
-  END
-UNION ALL
-SELECT 'pins',
-  CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'pins')
-    THEN (SELECT COUNT(*)::text FROM pins)
-    ELSE 'table does not exist'
-  END
-UNION ALL
-SELECT 'comments',
-  CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'comments')
-    THEN (SELECT COUNT(*)::text FROM comments)
-    ELSE 'table does not exist'
-  END
-UNION ALL
-SELECT 'notifications',
-  CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'notifications')
-    THEN (SELECT COUNT(*)::text FROM notifications)
-    ELSE 'table does not exist'
-  END
-UNION ALL
-SELECT 'user_follows',
-  CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_follows')
-    THEN (SELECT COUNT(*)::text FROM user_follows)
-    ELSE 'table does not exist'
-  END
-UNION ALL
-SELECT 'collection_likes',
-  CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'collection_likes')
-    THEN (SELECT COUNT(*)::text FROM collection_likes)
-    ELSE 'table does not exist'
-  END
-UNION ALL
-SELECT 'saved_collections',
-  CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'saved_collections')
-    THEN (SELECT COUNT(*)::text FROM saved_collections)
-    ELSE 'table does not exist'
-  END
-UNION ALL
-SELECT 'feed_activities',
-  CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'feed_activities')
-    THEN (SELECT COUNT(*)::text FROM feed_activities)
-    ELSE 'table does not exist'
-  END
-ORDER BY table_name;
+DO $$
+DECLARE
+  users_count bigint;
+  collections_count bigint;
+  pins_count bigint;
+BEGIN
+  RAISE NOTICE '===========================================';
+  RAISE NOTICE 'VERIFICATION - Checking table counts:';
+  RAISE NOTICE '===========================================';
 
--- ============================================================================
--- SUCCESS MESSAGE
--- ============================================================================
-SELECT '✅ All user data has been wiped successfully!' as status;
-SELECT '🔄 Users will need to create profiles when they log in' as next_step;
-SELECT '⚠️  Note: Supabase Auth users still exist - they will create new profiles on first login' as auth_note;
+  -- Check users
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users') THEN
+    SELECT COUNT(*) INTO users_count FROM users;
+    RAISE NOTICE 'users: %', users_count;
+  ELSE
+    RAISE NOTICE 'users: table does not exist';
+  END IF;
+
+  -- Check collections
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'collections') THEN
+    SELECT COUNT(*) INTO collections_count FROM collections;
+    RAISE NOTICE 'collections: %', collections_count;
+  ELSE
+    RAISE NOTICE 'collections: table does not exist';
+  END IF;
+
+  -- Check pins
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'pins') THEN
+    SELECT COUNT(*) INTO pins_count FROM pins;
+    RAISE NOTICE 'pins: %', pins_count;
+  ELSE
+    RAISE NOTICE 'pins: table does not exist';
+  END IF;
+
+  RAISE NOTICE '===========================================';
+  RAISE NOTICE '✅ All user data has been wiped successfully!';
+  RAISE NOTICE '🔄 Users will need to create profiles when they log in';
+  RAISE NOTICE '⚠️  Note: Supabase Auth users still exist - they will create new profiles on first login';
+  RAISE NOTICE '===========================================';
+END $$;
