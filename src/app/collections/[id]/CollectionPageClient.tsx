@@ -133,6 +133,16 @@ export default function CollectionPageClient({
   const { user } = useAuth()
   const [showShareToast, setShowShareToast] = useState(false)
 
+  // Edit collection state
+  const [isEditingCollection, setIsEditingCollection] = useState(false)
+  const [editForm, setEditForm] = useState({
+    title: collection.title,
+    description: collection.description || '',
+    is_public: collection.is_public,
+    color: collection.color
+  })
+  const [savingCollection, setSavingCollection] = useState(false)
+
   // Voting state
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(initialUserVote)
   const [voteCounts, setVoteCounts] = useState(initialVoteCounts)
@@ -172,8 +182,45 @@ export default function CollectionPageClient({
     }
   }
 
-  const displayName = collection.profiles.full_name ||
-                      collection.profiles.username ||
+  const handleSaveCollection = async () => {
+    if (!editForm.title.trim()) {
+      alert('Collection title is required')
+      return
+    }
+
+    setSavingCollection(true)
+    try {
+      const { error } = await supabase
+        .from('collections')
+        .update({
+          title: editForm.title.trim(),
+          description: editForm.description.trim() || null,
+          is_public: editForm.is_public,
+          color: editForm.color,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', collection.id)
+
+      if (error) throw error
+
+      // Update local collection object
+      collection.title = editForm.title.trim()
+      collection.description = editForm.description.trim() || null
+      collection.is_public = editForm.is_public
+      collection.color = editForm.color
+
+      setIsEditingCollection(false)
+      router.refresh()
+    } catch (error) {
+      console.error('Error updating collection:', error)
+      alert('Failed to update collection')
+    } finally {
+      setSavingCollection(false)
+    }
+  }
+
+  const displayName = collection.profiles?.full_name ||
+                      collection.profiles?.username ||
                       'Anonymous'
 
   // Load initial comments
@@ -746,7 +793,7 @@ export default function CollectionPageClient({
                 gap: '0.75rem',
                 marginBottom: '1rem'
               }}>
-                {collection.profiles.profile_image ? (
+                {collection.profiles?.profile_image ? (
                   <Image
                     src={collection.profiles.profile_image}
                     alt={displayName}
@@ -768,7 +815,7 @@ export default function CollectionPageClient({
                     justifyContent: 'center',
                     fontSize: '0.875rem'
                   }}>
-                    {displayName[0].toUpperCase()}
+                    {displayName[0]?.toUpperCase() || '?'}
                   </div>
                 )}
                 <div>
@@ -811,24 +858,24 @@ export default function CollectionPageClient({
                 }}>
                   <button
                     onClick={() => handleVote('up')}
-                    disabled={!user || isOwner || votingInProgress}
+                    disabled={!user || votingInProgress}
                     aria-label="Upvote collection"
-                    title={!user ? 'Log in to vote' : isOwner ? 'Cannot vote on your own collection' : 'Upvote this collection'}
+                    title={!user ? 'Log in to vote' : 'Upvote this collection'}
                     style={{
                       background: 'transparent',
                       border: 'none',
-                      cursor: !user || isOwner || votingInProgress ? 'not-allowed' : 'pointer',
+                      cursor: !user || votingInProgress ? 'not-allowed' : 'pointer',
                       padding: '0.25rem',
                       display: 'flex',
                       alignItems: 'center',
                       fontSize: '1rem',
                       color: userVote === 'up' ? 'var(--accent)' : 'var(--muted-foreground)',
                       transition: 'color 0.2s ease',
-                      opacity: !user || isOwner ? 0.5 : 1,
+                      opacity: !user ? 0.5 : 1,
                       lineHeight: 1
                     }}
                     onMouseEnter={(e) => {
-                      if (user && !isOwner && !votingInProgress) {
+                      if (user && !votingInProgress) {
                         e.currentTarget.style.color = 'var(--accent)'
                       }
                     }}
@@ -853,24 +900,24 @@ export default function CollectionPageClient({
 
                   <button
                     onClick={() => handleVote('down')}
-                    disabled={!user || isOwner || votingInProgress}
+                    disabled={!user || votingInProgress}
                     aria-label="Downvote collection"
-                    title={!user ? 'Log in to vote' : isOwner ? 'Cannot vote on your own collection' : 'Downvote this collection'}
+                    title={!user ? 'Log in to vote' : 'Downvote this collection'}
                     style={{
                       background: 'transparent',
                       border: 'none',
-                      cursor: !user || isOwner || votingInProgress ? 'not-allowed' : 'pointer',
+                      cursor: !user || votingInProgress ? 'not-allowed' : 'pointer',
                       padding: '0.25rem',
                       display: 'flex',
                       alignItems: 'center',
                       fontSize: '1rem',
                       color: userVote === 'down' ? '#ff6b6b' : 'var(--muted-foreground)',
                       transition: 'color 0.2s ease',
-                      opacity: !user || isOwner ? 0.5 : 1,
+                      opacity: !user ? 0.5 : 1,
                       lineHeight: 1
                     }}
                     onMouseEnter={(e) => {
-                      if (user && !isOwner && !votingInProgress) {
+                      if (user && !votingInProgress) {
                         e.currentTarget.style.color = '#ff6b6b'
                       }
                     }}
@@ -948,10 +995,10 @@ export default function CollectionPageClient({
 
               {isOwner && (
                 <button
-                  onClick={() => router.push('/')}
+                  onClick={() => setIsEditingCollection(true)}
                   className="btn btn-secondary"
                 >
-                  EDIT COLLECTION
+                  ✏️ EDIT COLLECTION
                 </button>
               )}
             </div>
@@ -1489,6 +1536,205 @@ export default function CollectionPageClient({
             alert('Thank you for your report. We will review it shortly.')
           }}
         />
+      )}
+
+      {/* Edit Collection Modal */}
+      {isEditingCollection && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'var(--card)',
+            borderRadius: 'var(--radius-lg)',
+            border: '2px solid var(--border)',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '2rem'
+          }}>
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              fontFamily: 'var(--font-mono)',
+              marginBottom: '1.5rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              Edit Collection
+            </h2>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Title */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  marginBottom: '0.5rem'
+                }}>
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  placeholder="Collection title"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: 'var(--muted)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    fontSize: '0.875rem',
+                    color: 'var(--foreground)'
+                  }}
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  marginBottom: '0.5rem'
+                }}>
+                  Description
+                </label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  placeholder="Describe this collection..."
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: 'var(--muted)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    fontSize: '0.875rem',
+                    color: 'var(--foreground)',
+                    fontFamily: 'inherit',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+
+              {/* Color */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  marginBottom: '0.5rem'
+                }}>
+                  Color
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'].map(color => (
+                    <button
+                      key={color}
+                      onClick={() => setEditForm({ ...editForm, color })}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: color,
+                        border: editForm.color === color ? '3px solid var(--foreground)' : '2px solid var(--border)',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Public/Private */}
+              <div>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.75rem',
+                  background: 'var(--muted)',
+                  borderRadius: 'var(--radius)',
+                  cursor: 'pointer'
+                }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>Public Collection</span>
+                  <input
+                    type="checkbox"
+                    checked={editForm.is_public}
+                    onChange={(e) => setEditForm({ ...editForm, is_public: e.target.checked })}
+                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                  />
+                </label>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button
+                  onClick={() => {
+                    setIsEditingCollection(false)
+                    setEditForm({
+                      title: collection.title,
+                      description: collection.description || '',
+                      is_public: collection.is_public,
+                      color: collection.color
+                    })
+                  }}
+                  disabled={savingCollection}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    background: 'var(--muted)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    cursor: savingCollection ? 'not-allowed' : 'pointer',
+                    fontWeight: '600',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontSize: '0.75rem',
+                    opacity: savingCollection ? 0.5 : 1
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveCollection}
+                  disabled={savingCollection || !editForm.title.trim()}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    background: 'var(--accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 'var(--radius)',
+                    cursor: savingCollection || !editForm.title.trim() ? 'not-allowed' : 'pointer',
+                    fontWeight: '600',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontSize: '0.75rem',
+                    opacity: savingCollection || !editForm.title.trim() ? 0.5 : 1
+                  }}
+                >
+                  {savingCollection ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

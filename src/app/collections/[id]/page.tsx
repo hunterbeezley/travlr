@@ -55,11 +55,15 @@ export default function CollectionPage({ params }: PageProps) {
         // Fetch owner profile separately
         let profileData = null
         if (collectionData && !collectionError) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('users')
             .select('username, full_name, profile_image')
             .eq('id', collectionData.user_id)
             .single()
+
+          if (profileError) {
+            console.error('Error fetching profile:', profileError)
+          }
           profileData = profile
         }
 
