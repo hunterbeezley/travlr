@@ -441,7 +441,7 @@ export default function ProfilePage() {
             </button>
 
             <button
-              onClick={() => router.push('/feed')}
+              onClick={() => router.push('/')}
               className="nav-link"
             >
               FEED
@@ -1218,7 +1218,7 @@ export default function ProfilePage() {
                     Go to the map and start adding pins to your collections
                   </p>
                   <button
-                    onClick={() => router.push('/')}
+                    onClick={() => router.push('/map')}
                     style={{
                       padding: '0.75rem 1.5rem',
                       background: 'var(--accent)',

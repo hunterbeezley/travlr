@@ -1,316 +1,448 @@
 'use client'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
-import Map from '@/components/Map'
-import UserAvatar from '@/components/UserAvatar'
-import ProfileCompletion from '@/components/ProfileCompletion'
-import Auth from '@/components/Auth'  // ← ADD THIS IMPORT
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
+import Navbar from '@/components/Navbar'
+import FeedCard from '@/components/Feed/FeedCard'
+import FeedFilters from '@/components/Feed/FeedFilters'
+import FeedSkeleton from '@/components/Feed/FeedSkeleton'
+import FollowingSuggestions from '@/components/Feed/FollowingSuggestions'
+import CollectionGrid from '@/components/Discover/CollectionGrid'
+import Auth from '@/components/Auth'
 
-interface Pin {
-  id: string
-  title: string
-  description?: string
-  latitude: number
-  longitude: number
-  collection_id?: string
-  user_id: string
-  created_at: string
-}
-
-const getDisplayName = (profile: any, user: any) => {
-  if (profile?.full_name) return profile.full_name
-  if (profile?.username) return `@${profile.username}`
-  // Generate anonymous name based on user ID
-  if (profile?.id) {
-    const shortId = profile.id.slice(0, 8)
-    return `anon${shortId}`
-  }
-  return user?.email || 'User'
-}
-
-export default function HomePage() {
-  const { user, profile, loading, refreshProfile } = useAuth()
+export default function FeedPage() {
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
-  const [showPinForm, setShowPinForm] = useState(false)
-  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null)
-  const [pins, setPins] = useState<Pin[]>([])
-  const [showProfileCompletion, setShowProfileCompletion] = useState(false)
-  const [selectedPin, setSelectedPin] = useState<Pin | null>(null)
-  const [isDraggingPin, setIsDraggingPin] = useState(false)
-  const [authChecked, setAuthChecked] = useState(false)
-  
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
-  }
+  const [activities, setActivities] = useState<any[]>([])
+  const [collections, setCollections] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [view, setView] = useState<'activity' | 'foryou'>('activity')
+  const [filter, setFilter] = useState<'all' | 'friends' | 'self'>('all')
+  const [followingCount, setFollowingCount] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
 
-  const handleMapClick = (lat: number, lng: number) => {
+  // Load following count
+  useEffect(() => {
     if (!user) return
-    
-    setSelectedLocation({ lat, lng })
-    setShowPinForm(true)
-  }
 
-  const handleLocationSelect = (lat: number, lng: number) => {
-    if (!user) return
-    
-    setSelectedLocation({ lat, lng })
-    setShowPinForm(true)
-  }
+    const loadFollowingCount = async () => {
+      const { count } = await supabase
+        .from('user_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', user.id)
 
-  const handlePinSaved = (newPin: Pin) => {
-    setPins(prevPins => [...prevPins, newPin])
-    setShowPinForm(false)
-    setSelectedLocation(null)
-  }
+      setFollowingCount(count || 0)
+    }
 
-  const handlePinClick = (pin: Pin) => {
-    setSelectedPin(pin)
-  }
+    loadFollowingCount()
+  }, [user])
 
-  const handlePinDragStart = () => {
-    setIsDraggingPin(true)
-  }
-
-  const handlePinDragEnd = () => {
-    setIsDraggingPin(false)
-  }
-
-  const handlePinUpdate = (updatedPin: Pin) => {
-    setPins(prevPins => 
-      prevPins.map(pin => 
-        pin.id === updatedPin.id ? updatedPin : pin
-      )
-    )
-    setSelectedPin(updatedPin)
-  }
-
-  const handlePinDelete = (deletedPinId: string) => {
-    setPins(prevPins => prevPins.filter(pin => pin.id !== deletedPinId))
-    setSelectedPin(null)
-  }
-
-  const fetchPins = async () => {
+  // Load feed
+  const loadFeed = async (offset = 0) => {
     if (!user) return
 
     try {
-      const { data, error } = await supabase
-        .from('pins')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+      // Verify session exists
+      const { data: { session } } = await supabase.auth.getSession()
 
-      if (error) {
-        console.error('Error fetching pins:', error)
+      if (!session) {
+        console.error('No session found')
+        setLoading(false)
         return
       }
 
-      setPins(data || [])
+      const { data, error } = await supabase.rpc('get_user_feed', {
+        p_limit: 20,
+        p_offset: offset,
+        p_filter: filter
+      })
+
+      if (error) throw error
+      if (!data) return
+
+      // Enrich activities with collection/user data
+      const enriched = await Promise.all(
+        data.map(async (activity: any) => {
+          if (activity.target_type === 'collection') {
+            const { data: collection } = await supabase
+              .from('collections')
+              .select('id, name, description, user_id, created_at')
+              .eq('id', activity.target_id)
+              .single()
+
+            if (collection) {
+              // Get stats
+              const { data: stats } = await supabase.rpc('get_collection_stats', {
+                p_collection_id: collection.id
+              })
+
+              // Get pin count and sample images
+              const { count: pinCount } = await supabase
+                .from('pins')
+                .select('id', { count: 'exact', head: true })
+                .eq('collection_id', collection.id)
+
+              const { data: samplePins } = await supabase
+                .from('pins')
+                .select('image_url')
+                .eq('collection_id', collection.id)
+                .not('image_url', 'is', null)
+                .limit(3)
+
+              return {
+                ...activity,
+                target_data: {
+                  ...collection,
+                  pin_count: pinCount || 0,
+                  sample_images: samplePins?.map((p: any) => p.image_url).filter(Boolean) || [],
+                  stats
+                }
+              }
+            }
+          }
+          return activity
+        })
+      )
+
+      if (offset === 0) {
+        setActivities(enriched)
+      } else {
+        setActivities(prev => [...prev, ...enriched])
+      }
+      setHasMore(enriched.length === 20)
     } catch (error) {
-      console.error('Error fetching pins:', error)
+      console.error('Error loading feed:', error)
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
     }
   }
 
-  // Verify authentication state before showing Auth screen
-  // This prevents premature Auth display on page load
-  useEffect(() => {
-    const checkAuthState = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        console.log('Auth check - session exists:', !!session)
+  // Load For You feed
+  const loadForYouFeed = async (offset = 0) => {
+    if (!user) return
 
-        // Give useAuth hook a moment to initialize if session exists
-        if (session && !user && !loading) {
-          console.log('Session exists but user not loaded, waiting...')
-          // Wait a bit for useAuth to catch up
-          await new Promise(resolve => setTimeout(resolve, 500))
-        }
+    try {
+      const { data, error } = await supabase.rpc('get_for_you_feed', {
+        p_limit: 20,
+        p_offset: offset
+      })
 
-        setAuthChecked(true)
-      } catch (error) {
-        console.error('Error checking auth state:', error)
-        setAuthChecked(true)
+      if (error) throw error
+
+      // Enrich with sample images
+      const enriched = await Promise.all(
+        data.map(async (collection: any) => {
+          const { data: samplePins } = await supabase
+            .from('pins')
+            .select('image_url')
+            .eq('collection_id', collection.collection_id)
+            .not('image_url', 'is', null)
+            .limit(3)
+
+          const { data: stats } = await supabase.rpc('get_collection_stats', {
+            p_collection_id: collection.collection_id
+          })
+
+          return {
+            ...collection,
+            sample_images: samplePins?.map((p: any) => p.image_url).filter(Boolean) || [],
+            stats
+          }
+        })
+      )
+
+      if (offset === 0) {
+        setCollections(enriched)
+      } else {
+        setCollections(prev => [...prev, ...enriched])
       }
+      setHasMore(enriched.length === 20)
+    } catch (error) {
+      console.error('Error loading For You feed:', error)
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
     }
-
-    if (!authChecked) {
-      checkAuthState()
-    }
-  }, [authChecked, user, loading])
-
-  useEffect(() => {
-    if (user && !loading) {
-      fetchPins()
-
-      // Only check for profile completion after auth loading is complete
-      // and we have confirmed the profile data
-      if (profile !== null && !profile?.username) {
-        setShowProfileCompletion(true)
-      }
-    }
-  }, [user, profile, loading])
-
-  // Show loading while checking auth or while useAuth is initializing
-  if (loading || !authChecked) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        background: 'var(--background)'
-      }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
-          <div style={{
-            width: '3rem',
-            height: '3rem',
-            border: '3px solid var(--muted)',
-            borderTop: '3px solid var(--accent)',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <p style={{ color: 'var(--muted-foreground)' }}>Loading...</p>
-        </div>
-      </div>
-    )
   }
 
-  // Only show Auth component after we've verified there's no valid session
+  useEffect(() => {
+    if (user) {
+      setLoading(true)
+      if (view === 'activity') {
+        loadFeed()
+      } else {
+        loadForYouFeed()
+      }
+    }
+  }, [user, filter, view])
+
+  const handleLoadMore = () => {
+    setLoadingMore(true)
+    if (view === 'activity') {
+      loadFeed(activities.length)
+    } else {
+      loadForYouFeed(collections.length)
+    }
+  }
+
+  if (authLoading) {
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>
+  }
+
   if (!user) {
-    return (
-      <div className="auth-page">
-        <div className="auth-container" style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2rem'
-        }}>
-          <div style={{ maxWidth: '400px', width: '100%' }}>
-            {/* App Header */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              marginBottom: '3rem',
-              justifyContent: 'center'
-            }}>
-              <svg width="48" height="48" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
-                {/* Geometric logo */}
-                <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
-                <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
-                <circle cx="24" cy="24" r="8" fill="var(--color-red)"/>
-                <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-                <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-                <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-                <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-              </svg>
-              <h1 style={{
-                fontSize: '3rem',
-                fontWeight: '700',
-                color: 'var(--color-white)',
-                margin: 0,
-                fontFamily: 'var(--font-display)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em'
-              }}>
-                Travlr
-              </h1>
-            </div>
+    return <Auth />
+  }
 
-            {/* Use the Auth component instead of hardcoded Google button */}
-            <Auth />
-          </div>
-        </div>
+  if (loading) {
+    return (
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '1rem' }}>
+        <FeedSkeleton />
       </div>
     )
   }
 
   return (
-    <div className="app">
-      {showProfileCompletion && (
-        <ProfileCompletion
-          onComplete={async () => {
-            // Wait for profile to refresh before closing modal
-            await refreshProfile()
-            setShowProfileCompletion(false)
-          }}
-        />
-      )}
-
-      <nav className="navbar">
-        <div className="navbar-content">
-          {/* Logo */}
-          <div className="navbar-brand" style={{ cursor: 'default' }}>
-            <svg width="32" height="32" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
-              <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
-              <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
-              <circle cx="24" cy="24" r="6" fill="var(--color-red)"/>
-              <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-            </svg>
-            Travlr
-          </div>
-
-          {/* Navigation Menu */}
-          <div className="navbar-nav">
-            <button
-              onClick={() => router.push('/')}
-              className="nav-link active"
-            >
-              MAP
-            </button>
-
-            <button
-              onClick={() => router.push('/feed')}
-              className="nav-link"
-            >
-              FEED
-            </button>
-          </div>
-
-          {!loading && user && (
-            <div className="navbar-user">
-              <div
-                onClick={() => router.push('/profile')}
-                style={{ cursor: 'pointer' }}
-                title="Go to profile"
-              >
-                <UserAvatar
-                  profileImageUrl={profile?.profile_image}
-                  email={user.email || ''}
-                  size="medium"
-                />
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="btn btn-destructive btn-small"
-                title="Sign out"
-              >
-                LOGOUT
-              </button>
-            </div>
+    <>
+      <Navbar />
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '1rem', paddingTop: '5rem' }}>
+        {/* Header */}
+      <div style={{
+        marginBottom: '1.5rem',
+        paddingBottom: '1rem',
+        borderBottom: '2px solid var(--border)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1rem'
+        }}>
+          <h1 style={{
+            fontSize: '1.5rem',
+            fontWeight: '700',
+            fontFamily: 'var(--font-mono)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            margin: 0
+          }}>
+            Feed
+          </h1>
+          {view === 'activity' && (
+            <FeedFilters
+              filter={filter}
+              onFilterChange={setFilter}
+              followingCount={followingCount}
+            />
           )}
         </div>
-      </nav>
 
-      <main className="main-content">
-        <div className="map-container-full">
-          <div className="map-card-full fade-in">
-            <div className="map-wrapper-full">
-              <Map onMapClick={handleMapClick} />
-            </div>
-          </div>
+        {/* View Switcher */}
+        <div style={{
+          display: 'flex',
+          gap: '0.5rem',
+          background: 'var(--muted)',
+          padding: '0.25rem',
+          borderRadius: 'var(--radius)',
+          border: '1px solid var(--border)'
+        }}>
+          {[
+            { value: 'activity', label: 'Activity', icon: '📱' },
+            { value: 'foryou', label: 'For You', icon: '✨' }
+          ].map((v) => (
+            <button
+              key={v.value}
+              onClick={() => setView(v.value as any)}
+              style={{
+                flex: 1,
+                padding: '0.75rem 1rem',
+                background: view === v.value ? 'var(--accent)' : 'transparent',
+                color: view === v.value ? 'white' : 'var(--foreground)',
+                border: 'none',
+                borderRadius: 'var(--radius)',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                transition: 'var(--transition)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
+              }}
+              onMouseEnter={(e) => {
+                if (view !== v.value) {
+                  e.currentTarget.style.background = 'var(--background)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (view !== v.value) {
+                  e.currentTarget.style.background = 'transparent'
+                }
+              }}
+            >
+              <span>{v.icon}</span>
+              <span>{v.label}</span>
+            </button>
+          ))}
         </div>
-      </main>
+      </div>
+
+      {/* Activity View */}
+      {view === 'activity' && (
+        <>
+          {/* Empty State */}
+          {activities.length === 0 && (
+            <div style={{
+              padding: '3rem 1rem',
+              textAlign: 'center',
+              background: 'var(--muted)',
+              borderRadius: 'var(--radius-lg)',
+              border: '2px solid var(--border)'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📱</div>
+              <h3 style={{
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                marginBottom: '0.5rem',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                {filter === 'friends' && followingCount === 0
+                  ? 'Follow People to See Their Activity'
+                  : 'No Activity Yet'}
+              </h3>
+              <p style={{
+                color: 'var(--muted-foreground)',
+                marginBottom: '1.5rem',
+                fontSize: '0.875rem'
+              }}>
+                {filter === 'friends' && followingCount === 0
+                  ? 'Start following people to see their collections and activity in your feed.'
+                  : 'Create collections and add pins to see activity here.'}
+              </p>
+              {filter === 'friends' && followingCount === 0 && (
+                <Link
+                  href="/friends"
+                  style={{
+                    display: 'inline-block',
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--accent)',
+                    color: 'white',
+                    borderRadius: 'var(--radius)',
+                    textDecoration: 'none',
+                    fontWeight: '600',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  Find People
+                </Link>
+              )}
+            </div>
+          )}
+
+          {/* Feed Items */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {activities.map((activity) => (
+              <FeedCard
+                key={activity.id}
+                activity={activity}
+                currentUserId={user.id}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* For You View */}
+      {view === 'foryou' && (
+        <>
+          {/* Following Suggestions */}
+          <FollowingSuggestions />
+
+          {collections.length === 0 ? (
+            <div style={{
+              padding: '3rem 1rem',
+              textAlign: 'center',
+              background: 'var(--muted)',
+              borderRadius: 'var(--radius-lg)',
+              border: '2px solid var(--border)'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✨</div>
+              <h3 style={{
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                marginBottom: '0.5rem',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                Building Your Personalized Feed
+              </h3>
+              <p style={{
+                color: 'var(--muted-foreground)',
+                marginBottom: '1.5rem',
+                fontSize: '0.875rem'
+              }}>
+                Like and save collections to help us learn your preferences.
+              </p>
+              <Link
+                href="/explore"
+                style={{
+                  display: 'inline-block',
+                  padding: '0.75rem 1.5rem',
+                  background: 'var(--accent)',
+                  color: 'white',
+                  borderRadius: 'var(--radius)',
+                  textDecoration: 'none',
+                  fontWeight: '600',
+                  fontFamily: 'var(--font-mono)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontSize: '0.875rem'
+                }}
+              >
+                Explore Collections
+              </Link>
+            </div>
+          ) : (
+            <div style={{ maxWidth: '1200px' }}>
+              <CollectionGrid collections={collections} currentUserId={user.id} />
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Load More */}
+      {hasMore && (
+        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            style={{
+              padding: '0.75rem 2rem',
+              background: loadingMore ? 'var(--muted)' : 'var(--accent)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 'var(--radius)',
+              cursor: loadingMore ? 'not-allowed' : 'pointer',
+              fontWeight: '600',
+              fontFamily: 'var(--font-mono)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              fontSize: '0.875rem'
+            }}
+          >
+            {loadingMore ? 'Loading...' : 'Load More'}
+          </button>
+        </div>
+      )}
     </div>
+    </>
   )
 }

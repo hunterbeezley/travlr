@@ -45,14 +45,14 @@ export default function Navbar() {
             onClick={() => router.push('/')}
             className={`nav-link ${isActive('/') ? 'active' : ''}`}
           >
-            MAP
+            FEED
           </button>
 
           <button
-            onClick={() => router.push('/feed')}
-            className={`nav-link ${isActive('/feed') ? 'active' : ''}`}
+            onClick={() => router.push('/map')}
+            className={`nav-link ${isActive('/map') ? 'active' : ''}`}
           >
-            FEED
+            MAP
           </button>
 
           <button
