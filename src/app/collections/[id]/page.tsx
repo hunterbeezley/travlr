@@ -104,7 +104,7 @@ export default function CollectionPage({ params }: PageProps) {
         // Merge profile data into collection
         const collectionWithProfile = {
           ...collectionData,
-          profiles: profileData
+          profiles: profileData || { username: null, full_name: null, profile_image: null }
         }
 
         setCollection(collectionWithProfile)
@@ -112,23 +112,30 @@ export default function CollectionPage({ params }: PageProps) {
         // Fetch pins in collection
         const { data: pinsData } = await supabase
           .from('pins')
-          .select(`
-            id,
-            title,
-            description,
-            latitude,
-            longitude,
-            category,
-            created_at,
-            pin_images (
-              image_url,
-              upload_order
-            )
-          `)
+          .select('id, title, description, latitude, longitude, category, created_at')
           .eq('collection_id', collectionId)
           .order('created_at', { ascending: false })
 
-        setPins(pinsData || [])
+        // Fetch images for each pin
+        let pinsWithImages: any[] = []
+        if (pinsData && pinsData.length > 0) {
+          pinsWithImages = await Promise.all(
+            pinsData.map(async (pin) => {
+              const { data: images } = await supabase
+                .from('pin_images')
+                .select('image_url, upload_order')
+                .eq('pin_id', pin.id)
+                .order('upload_order', { ascending: true })
+
+              return {
+                ...pin,
+                pin_images: images || []
+              }
+            })
+          )
+        }
+
+        setPins(pinsWithImages)
         setVoteCounts(voteCounts)
         setUserVote(userVote)
         setLoading(false)

@@ -133,6 +133,9 @@ export default function CollectionPageClient({
   const { user } = useAuth()
   const [showShareToast, setShowShareToast] = useState(false)
 
+  // Avatar state
+  const [avatarLoadError, setAvatarLoadError] = useState(false)
+
   // Edit collection state
   const [isEditingCollection, setIsEditingCollection] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -219,9 +222,15 @@ export default function CollectionPageClient({
     }
   }
 
-  const displayName = collection.profiles?.full_name ||
+  // Debug logging
+  console.log('Collection object:', collection)
+  console.log('Collection profiles:', collection.profiles)
+
+  const displayName = (collection.profiles?.full_name ||
                       collection.profiles?.username ||
-                      'Anonymous'
+                      'Anonymous').toString().trim() || 'Anonymous'
+
+  console.log('Display name:', displayName)
 
   // Load initial comments
   useEffect(() => {
@@ -793,7 +802,7 @@ export default function CollectionPageClient({
                 gap: '0.75rem',
                 marginBottom: '1rem'
               }}>
-                {collection.profiles?.profile_image ? (
+                {collection.profiles?.profile_image && !avatarLoadError ? (
                   <Image
                     src={collection.profiles.profile_image}
                     alt={displayName}
@@ -803,6 +812,7 @@ export default function CollectionPageClient({
                       borderRadius: '50%',
                       objectFit: 'cover'
                     }}
+                    onError={() => setAvatarLoadError(true)}
                   />
                 ) : (
                   <div style={{

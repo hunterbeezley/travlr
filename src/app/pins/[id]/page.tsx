@@ -56,20 +56,24 @@ export default function PinPage({ params }: PageProps) {
             place_opening_hours,
             created_at,
             collection_id,
-            user_id,
-            pin_images (
-              image_url,
-              upload_order
-            )
+            user_id
           `)
           .eq('id', pinId)
           .single()
 
         if (pinError || !pinData) {
+          console.error('Error fetching pin:', pinError)
           setNotFoundError(true)
           setLoading(false)
           return
         }
+
+        // Fetch pin images separately
+        const { data: pinImages } = await supabase
+          .from('pin_images')
+          .select('image_url, upload_order')
+          .eq('pin_id', pinId)
+          .order('upload_order', { ascending: true })
 
         // Fetch owner profile separately
         let profileData = null
@@ -97,7 +101,8 @@ export default function PinPage({ params }: PageProps) {
         const pinWithRelations = {
           ...pinData,
           profiles: profileData,
-          collections: collectionData
+          collections: collectionData,
+          pin_images: pinImages || []
         }
 
         setPin(pinWithRelations)
@@ -105,22 +110,33 @@ export default function PinPage({ params }: PageProps) {
 
         // Fetch related pins from the same collection
         if (pinData.collection_id) {
-          const { data: relatedData } = await supabase
+          const { data: relatedPinsData } = await supabase
             .from('pins')
-            .select(`
-              id,
-              title,
-              category,
-              pin_images (
-                image_url,
-                upload_order
-              )
-            `)
+            .select('id, title, category')
             .eq('collection_id', pinData.collection_id)
             .neq('id', pinData.id)
             .limit(6)
 
-          setRelatedPins(relatedData || [])
+          // Fetch images for each related pin
+          if (relatedPinsData && relatedPinsData.length > 0) {
+            const pinsWithImages = await Promise.all(
+              relatedPinsData.map(async (relatedPin) => {
+                const { data: images } = await supabase
+                  .from('pin_images')
+                  .select('image_url, upload_order')
+                  .eq('pin_id', relatedPin.id)
+                  .order('upload_order', { ascending: true })
+
+                return {
+                  ...relatedPin,
+                  pin_images: images || []
+                }
+              })
+            )
+            setRelatedPins(pinsWithImages)
+          } else {
+            setRelatedPins([])
+          }
         }
 
         setLoading(false)
