@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Toast from '@/components/Toast'
 import ReportCommentModal from '@/components/ReportCommentModal'
 import Navbar from '@/components/Navbar'
+import CollectionActions from '@/components/Collection/CollectionActions'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -147,10 +148,14 @@ export default function CollectionPageClient({
   })
   const [savingCollection, setSavingCollection] = useState(false)
 
-  // Voting state
+  // Voting state (deprecated - keeping for backwards compat)
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(initialUserVote)
   const [voteCounts, setVoteCounts] = useState(initialVoteCounts)
   const [votingInProgress, setVotingInProgress] = useState(false)
+
+  // Collection stats for CollectionActions
+  const [collectionStats, setCollectionStats] = useState<any>(null)
+  const [loadingStats, setLoadingStats] = useState(true)
 
   // Comments state
   const [comments, setComments] = useState<Comment[]>([])
@@ -277,6 +282,26 @@ export default function CollectionPageClient({
     }
 
     loadComments()
+  }, [collection.id])
+
+  // Load collection stats for CollectionActions
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const { data: stats, error } = await supabase.rpc('get_collection_stats', {
+          p_collection_id: collection.id
+        })
+
+        if (error) throw error
+        setCollectionStats(stats)
+      } catch (err) {
+        console.error('Error loading collection stats:', err)
+      } finally {
+        setLoadingStats(false)
+      }
+    }
+
+    loadStats()
   }, [collection.id])
 
   // Load more comments
@@ -847,168 +872,125 @@ export default function CollectionPageClient({
                 </div>
               </div>
 
-              {/* Stats */}
+              {/* Engagement Summary Bar */}
               <div style={{
-                display: 'flex',
-                gap: '1.5rem',
-                flexWrap: 'wrap',
-                alignItems: 'center'
+                padding: '1.5rem',
+                background: 'var(--muted)',
+                borderRadius: 'var(--radius)',
+                border: '2px solid var(--border)',
+                marginBottom: '1.5rem'
               }}>
-                {/* Compact Voting UI */}
                 <div style={{
                   display: 'flex',
+                  gap: '2rem',
+                  flexWrap: 'wrap',
                   alignItems: 'center',
-                  gap: '0.25rem',
-                  padding: '0.25rem 0.5rem',
-                  background: 'var(--muted)',
-                  borderRadius: 'var(--radius)',
-                  border: '1px solid var(--border)'
+                  fontSize: '0.875rem',
+                  fontFamily: 'var(--font-mono)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
                 }}>
-                  <button
-                    onClick={() => handleVote('up')}
-                    disabled={!user || votingInProgress}
-                    aria-label="Upvote collection"
-                    title={!user ? 'Log in to vote' : 'Upvote this collection'}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: !user || votingInProgress ? 'not-allowed' : 'pointer',
-                      padding: '0.25rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      fontSize: '1rem',
-                      color: userVote === 'up' ? 'var(--accent)' : 'var(--muted-foreground)',
-                      transition: 'color 0.2s ease',
-                      opacity: !user ? 0.5 : 1,
-                      lineHeight: 1
-                    }}
-                    onMouseEnter={(e) => {
-                      if (user && !votingInProgress) {
-                        e.currentTarget.style.color = 'var(--accent)'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (userVote !== 'up') {
-                        e.currentTarget.style.color = 'var(--muted-foreground)'
-                      }
-                    }}
-                  >
-                    ▲
-                  </button>
-
-                  <span style={{
-                    fontSize: '0.875rem',
-                    fontWeight: '600',
-                    minWidth: '2rem',
-                    textAlign: 'center',
-                    color: voteCounts.net_score >= 0 ? 'var(--accent)' : 'var(--muted-foreground)'
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                   }}>
-                    {voteCounts.net_score >= 0 ? '+' : ''}{voteCounts.net_score}
-                  </span>
+                    <span style={{ fontSize: '1.25rem' }}>📍</span>
+                    <span style={{ color: 'var(--muted-foreground)' }}>
+                      <strong style={{ color: 'var(--foreground)' }}>{pinCount}</strong> {pinCount === 1 ? 'pin' : 'pins'}
+                    </span>
+                  </div>
 
-                  <button
-                    onClick={() => handleVote('down')}
-                    disabled={!user || votingInProgress}
-                    aria-label="Downvote collection"
-                    title={!user ? 'Log in to vote' : 'Downvote this collection'}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: !user || votingInProgress ? 'not-allowed' : 'pointer',
-                      padding: '0.25rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      fontSize: '1rem',
-                      color: userVote === 'down' ? '#ff6b6b' : 'var(--muted-foreground)',
-                      transition: 'color 0.2s ease',
-                      opacity: !user ? 0.5 : 1,
-                      lineHeight: 1
-                    }}
-                    onMouseEnter={(e) => {
-                      if (user && !votingInProgress) {
-                        e.currentTarget.style.color = '#ff6b6b'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (userVote !== 'down') {
-                        e.currentTarget.style.color = 'var(--muted-foreground)'
-                      }
-                    }}
-                  >
-                    ▼
-                  </button>
-                </div>
+                  {collectionStats && (
+                    <>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        <span style={{ fontSize: '1.25rem' }}>❤️</span>
+                        <span style={{ color: 'var(--muted-foreground)' }}>
+                          <strong style={{ color: 'var(--foreground)' }}>{collectionStats.likes_count || 0}</strong> {collectionStats.likes_count === 1 ? 'like' : 'likes'}
+                        </span>
+                      </div>
 
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '1.25rem' }}>📍</span>
-                  <span style={{
-                    fontSize: '0.875rem',
-                    color: 'var(--muted-foreground)'
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        <span style={{ fontSize: '1.25rem' }}>💾</span>
+                        <span style={{ color: 'var(--muted-foreground)' }}>
+                          <strong style={{ color: 'var(--foreground)' }}>{collectionStats.saves_count || 0}</strong> {collectionStats.saves_count === 1 ? 'save' : 'saves'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                   }}>
-                    <strong style={{ color: 'var(--foreground)' }}>{pinCount}</strong> {pinCount === 1 ? 'pin' : 'pins'}
-                  </span>
-                </div>
+                    <span style={{ fontSize: '1.25rem' }}>💬</span>
+                    <span style={{ color: 'var(--muted-foreground)' }}>
+                      <strong style={{ color: 'var(--foreground)' }}>{comments.length}</strong> {comments.length === 1 ? 'comment' : 'comments'}
+                    </span>
+                  </div>
 
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '1.25rem' }}>💬</span>
-                  <span style={{
-                    fontSize: '0.875rem',
-                    color: 'var(--muted-foreground)'
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                   }}>
-                    <strong style={{ color: 'var(--foreground)' }}>{comments.length}</strong> {comments.length === 1 ? 'comment' : 'comments'}
-                  </span>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '1.25rem' }}>{collection.is_public ? '🌍' : '🔒'}</span>
-                  <span style={{
-                    fontSize: '0.875rem',
-                    color: 'var(--muted-foreground)'
-                  }}>
-                    {collection.is_public ? 'Public' : 'Private'}
-                  </span>
+                    <span style={{ fontSize: '1.25rem' }}>{collection.is_public ? '🌍' : '🔒'}</span>
+                    <span style={{ color: 'var(--muted-foreground)' }}>
+                      {collection.is_public ? 'Public' : 'Private'}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Actions */}
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              flexDirection: 'column'
-            }}>
-              <button
-                onClick={handleShare}
-                className="btn btn-primary"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <span>🔗</span> SHARE
-              </button>
-
-              {isOwner && (
-                <button
-                  onClick={() => setIsEditingCollection(true)}
-                  className="btn btn-secondary"
-                >
-                  ✏️ EDIT COLLECTION
-                </button>
+              {/* Collection Actions (Like/Save/Share) */}
+              {collectionStats && user && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <CollectionActions
+                    collectionId={collection.id}
+                    collectionName={collection.title}
+                    stats={collectionStats}
+                    currentUserId={user.id}
+                    showShare={false}
+                  />
+                </div>
               )}
+
+              {/* Owner Actions */}
+              <div style={{
+                display: 'flex',
+                gap: '1rem',
+                flexWrap: 'wrap'
+              }}>
+                <button
+                  onClick={handleShare}
+                  className="btn btn-primary"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <span>🔗</span> SHARE
+                </button>
+
+                {isOwner && (
+                  <button
+                    onClick={() => setIsEditingCollection(true)}
+                    className="btn btn-secondary"
+                  >
+                    ✏️ EDIT COLLECTION
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
