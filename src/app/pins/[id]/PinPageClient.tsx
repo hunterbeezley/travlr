@@ -142,74 +142,11 @@ export default function PinPageClient({
         </div>
       </nav>
 
-      {/* Mobile Map - Full Screen Below Navbar */}
-      <div
-        className="pin-mobile-map-container"
-        onClick={() => {
-          // Open directly in maps app on tap
-          const url = `https://www.google.com/maps/search/?api=1&query=${pin.latitude},${pin.longitude}`
-          window.open(url, '_blank')
-        }}
-        style={{ cursor: 'pointer' }}
-      >
-        {/* Static Map Image */}
-        <img
-          src={`https://maps.googleapis.com/maps/api/staticmap?center=${pin.latitude},${pin.longitude}&zoom=15&size=640x960&markers=color:red%7C${pin.latitude},${pin.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&scale=2`}
-          alt="Pin location on map"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          }}
-        />
-
-        {/* Tap Overlay */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.3)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          pointerEvents: 'none'
-        }}>
-          <div style={{
-            background: 'rgba(0, 0, 0, 0.8)',
-            backdropFilter: 'blur(10px)',
-            padding: '1.5rem 2rem',
-            borderRadius: 'var(--radius)',
-            textAlign: 'center',
-            color: 'white'
-          }}>
-            <div style={{
-              fontSize: '2rem',
-              marginBottom: '0.5rem'
-            }}>
-              📍
-            </div>
-            <div style={{
-              fontSize: '1rem',
-              fontWeight: '600',
-              marginBottom: '0.25rem'
-            }}>
-              Tap to open in Maps
-            </div>
-            <div style={{
-              fontSize: '0.875rem',
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontFamily: 'var(--font-mono)'
-            }}>
-              {pin.latitude.toFixed(4)}, {pin.longitude.toFixed(4)}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop Content */}
-      <div className="mobile-hidden" style={{
+      {/* Main Content */}
+      <div style={{
         maxWidth: '1200px',
         margin: '0 auto',
-        padding: '2rem'
+        padding: '1rem'
       }}>
         <div style={{
           display: 'grid',
@@ -605,8 +542,8 @@ export default function PinPageClient({
               </div>
             )}
 
-            {/* Location Card - Desktop Only */}
-            <div className="mobile-hidden" style={{
+            {/* Location Card */}
+            <div style={{
               background: 'var(--card)',
               borderRadius: 'var(--radius)',
               border: '1px solid var(--border)',
