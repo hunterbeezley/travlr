@@ -295,7 +295,15 @@ export default function ProfilePage() {
     setUpdateError('')
 
     try {
-      const { error } = await supabase
+      console.log('Updating profile with data:', {
+        username: editForm.username.trim(),
+        full_name: editForm.full_name.trim() || null,
+        bio: editForm.bio.trim() || null,
+        location: editForm.location.trim() || null,
+        website: editForm.website.trim() || null,
+      })
+
+      const { data, error } = await supabase
         .from('users')
         .update({
           username: editForm.username.trim(),
@@ -306,10 +314,15 @@ export default function ProfilePage() {
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id)
+        .select()
+
+      console.log('Update result:', { data, error })
 
       if (error) throw error
 
+      console.log('Refreshing profile...')
       await refreshProfile()
+      console.log('Profile refreshed, closing edit mode')
       setIsEditing(false)
     } catch (error: any) {
       console.error('Error updating profile:', error)

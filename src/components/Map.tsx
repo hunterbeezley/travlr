@@ -2741,12 +2741,8 @@ function MapComponent({ onMapClick }: MapProps) {
 
                 {/* Collection Items */}
                 {!loadingCollections && collections.map(collection => (
-                  <button
+                  <div
                     key={collection.id}
-                    onClick={() => {
-                      handleCollectionSelect(collection.id, false)
-                      setIsBottomSheetOpen(false)
-                    }}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
@@ -2754,14 +2750,32 @@ function MapComponent({ onMapClick }: MapProps) {
                       borderRadius: 'var(--radius)',
                       backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
                       color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
-                      textAlign: 'left',
-                      cursor: 'pointer',
                       transition: 'var(--transition)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.75rem'
+                      gap: '0.75rem',
+                      position: 'relative'
                     }}
                   >
+                    {/* Clickable area for selection */}
+                    <button
+                      onClick={() => {
+                        handleCollectionSelect(collection.id, false)
+                        setIsBottomSheetOpen(false)
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: '60px',
+                        bottom: 0,
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                      aria-label={`Select ${collection.title}`}
+                    />
                     {collection.first_pin_image ? (
                       <img
                         src={collection.first_pin_image}
@@ -2770,7 +2784,8 @@ function MapComponent({ onMapClick }: MapProps) {
                           width: '48px',
                           height: '48px',
                           borderRadius: 'var(--radius)',
-                          objectFit: 'cover'
+                          objectFit: 'cover',
+                          pointerEvents: 'none'
                         }}
                       />
                     ) : (
@@ -2783,13 +2798,14 @@ function MapComponent({ onMapClick }: MapProps) {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '1.5rem'
+                        fontSize: '1.5rem',
+                        pointerEvents: 'none'
                       }}>
                         📂
                       </div>
                     )}
 
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ flex: 1, minWidth: 0, pointerEvents: 'none' }}>
                       <div style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: '0.75rem',
@@ -2811,7 +2827,67 @@ function MapComponent({ onMapClick }: MapProps) {
                         {collection.pin_count || 0} pins
                       </div>
                     </div>
-                  </button>
+
+                    {/* Details Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedCollectionForDetails({ ...collection, user_id: user?.id })
+                        setShowCollectionDetails(true)
+                        setIsBottomSheetOpen(false)
+                      }}
+                      style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        width: '28px',
+                        height: '28px',
+                        padding: 0,
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'transparent',
+                        color: 'var(--foreground)',
+                        borderRadius: 'var(--radius)',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'var(--transition)',
+                        flexShrink: 0
+                      }}
+                      title={`View details for ${collection.title}`}
+                    >
+                      ⓘ
+                    </button>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteCollection(collection.id, collection.title)
+                      }}
+                      style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        width: '28px',
+                        height: '28px',
+                        padding: 0,
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'transparent',
+                        color: 'var(--foreground)',
+                        borderRadius: 'var(--radius)',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'var(--transition)',
+                        flexShrink: 0
+                      }}
+                      title={`Delete ${collection.title}`}
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
 
                 {loadingCollections && (
