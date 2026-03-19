@@ -230,14 +230,25 @@ export default function ExplorePage() {
         </h1>
 
         {/* Search Bar and Filters */}
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1 }}>
+        <div style={{
+          display: 'flex',
+          gap: '0.75rem',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{
+            flex: '1 1 auto',
+            minWidth: '200px',
+            maxWidth: '100%'
+          }}>
             <SearchBar onSearch={handleSearch} />
           </div>
-          <AdvancedFilters
-            onApplyFilters={handleApplyFilters}
-            onClearFilters={handleClearFilters}
-          />
+          <div style={{ flexShrink: 0 }}>
+            <AdvancedFilters
+              onApplyFilters={handleApplyFilters}
+              onClearFilters={handleClearFilters}
+            />
+          </div>
         </div>
       </div>
 

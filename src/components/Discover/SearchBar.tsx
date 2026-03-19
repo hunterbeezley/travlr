@@ -20,7 +20,8 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
       <div style={{
         position: 'relative',
         display: 'flex',
-        gap: '0.5rem'
+        gap: '0.5rem',
+        flexWrap: 'nowrap'
       }}>
         <input
           type="text"
@@ -28,7 +29,8 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search collections..."
           style={{
-            flex: 1,
+            flex: '1 1 auto',
+            minWidth: '0',
             padding: '0.75rem 1rem',
             background: 'var(--card)',
             border: '2px solid var(--border)',
@@ -49,7 +51,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         <button
           type="submit"
           style={{
-            padding: '0.75rem 1.5rem',
+            padding: '0.75rem 1rem',
             background: 'var(--accent)',
             color: 'white',
             border: 'none',
@@ -61,7 +63,8 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
             transition: 'var(--transition)',
-            whiteSpace: 'nowrap'
+            whiteSpace: 'nowrap',
+            flexShrink: 0
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.opacity = '0.9'
