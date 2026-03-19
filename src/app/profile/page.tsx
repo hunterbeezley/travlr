@@ -502,13 +502,18 @@ export default function ProfilePage() {
                 onImageUploaded={async (url) => {
                   // Update the profile in the database
                   try {
-                    const { error } = await supabase
+                    console.log('Uploading avatar, updating database with URL:', url)
+                    const { data, error } = await supabase
                       .from('users')
                       .update({
                         profile_image: url,
                         updated_at: new Date().toISOString()
                       })
                       .eq('id', user.id)
+                      .select()
+                      .single()
+
+                    console.log('Avatar update result:', { data, error })
 
                     if (error) {
                       console.error('Error updating profile image:', error)
@@ -516,7 +521,10 @@ export default function ProfilePage() {
                       alert(`Failed to update profile: ${error.message || 'Unknown error'}`)
                       return
                     }
+
+                    console.log('Avatar updated successfully, refreshing profile...')
                     await refreshProfile()
+                    console.log('Profile refreshed')
                   } catch (error) {
                     console.error('Error updating profile image:', error)
                     alert('Failed to update profile')
@@ -525,13 +533,18 @@ export default function ProfilePage() {
                 onImageDeleted={async () => {
                   // Remove the profile image from the database
                   try {
-                    const { error } = await supabase
+                    console.log('Deleting avatar from database...')
+                    const { data, error } = await supabase
                       .from('users')
                       .update({
                         profile_image: null,
                         updated_at: new Date().toISOString()
                       })
                       .eq('id', user.id)
+                      .select()
+                      .single()
+
+                    console.log('Avatar delete result:', { data, error })
 
                     if (error) {
                       console.error('Error deleting profile image:', error)
@@ -539,7 +552,10 @@ export default function ProfilePage() {
                       alert(`Failed to delete profile: ${error.message || 'Unknown error'}`)
                       return
                     }
+
+                    console.log('Avatar deleted successfully, refreshing profile...')
                     await refreshProfile()
+                    console.log('Profile refreshed')
                   } catch (error) {
                     console.error('Error deleting profile image:', error)
                     alert('Failed to delete profile')
