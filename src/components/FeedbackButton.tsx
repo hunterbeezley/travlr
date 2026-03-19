@@ -78,7 +78,7 @@ export default function FeedbackButton() {
         <style jsx>{`
           .feedback-button {
             position: fixed;
-            top: 5rem;
+            bottom: 7rem;
             right: 1rem;
             width: 56px;
             height: 56px;
@@ -96,10 +96,10 @@ export default function FeedbackButton() {
             z-index: 999;
           }
 
-          /* Mobile: Adjust for smaller screen, still avoiding zoom controls */
+          /* Mobile: Same positioning to stay above zoom controls */
           @media (max-width: 767px) {
             .feedback-button {
-              top: 5rem;
+              bottom: 7rem;
               right: 1rem;
             }
           }
