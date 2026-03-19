@@ -59,8 +59,33 @@ export default function ExplorePage() {
           p_limit: 30
         })
 
-        if (error) throw error
-        setCities(data || [])
+        if (error || !data || data.length === 0) {
+          // Fallback: Get cities from pins table
+          logger.log('Using fallback for cities')
+          const { data: pins } = await supabase
+            .from('pins')
+            .select('city')
+            .not('city', 'is', null)
+
+          if (pins) {
+            // Count collections per city
+            const cityMap = new Map()
+            pins.forEach((pin: any) => {
+              if (pin.city) {
+                cityMap.set(pin.city, (cityMap.get(pin.city) || 0) + 1)
+              }
+            })
+
+            const citiesData = Array.from(cityMap.entries())
+              .map(([city, count]) => ({ city, collection_count: count }))
+              .sort((a, b) => b.collection_count - a.collection_count)
+              .slice(0, 30)
+
+            setCities(citiesData)
+          }
+        } else {
+          setCities(data)
+        }
       } catch (error) {
         logger.error('Error loading cities:', error)
       } finally {
@@ -83,13 +108,55 @@ export default function ExplorePage() {
           return
         }
 
-        const { data } = await supabase.rpc('get_trending_collections', {
+        const { data, error } = await supabase.rpc('get_trending_collections', {
           p_limit: 6,
           p_offset: 0,
           p_days: 7
         })
 
-        if (data) {
+        if (error || !data || data.length === 0) {
+          // Fallback: Get recent public collections
+          logger.log('Using fallback for trending collections')
+          const { data: collections } = await supabase
+            .from('collections')
+            .select(`
+              id,
+              title,
+              description,
+              created_at,
+              user_id,
+              is_public
+            `)
+            .eq('is_public', true)
+            .order('created_at', { ascending: false })
+            .limit(6)
+
+          if (collections) {
+            // Get user info for each collection
+            const enrichedWithUsers = await Promise.all(
+              collections.map(async (col: any) => {
+                const { data: userInfo } = await supabase
+                  .from('users')
+                  .select('username, profile_image')
+                  .eq('id', col.user_id)
+                  .single()
+
+                return {
+                  collection_id: col.id,
+                  collection_name: col.title,
+                  collection_description: col.description,
+                  created_at: col.created_at,
+                  user_id: col.user_id,
+                  username: userInfo?.username,
+                  avatar_url: userInfo?.profile_image
+                }
+              })
+            )
+
+            const enriched = await enrichCollections(enrichedWithUsers)
+            setTrendingCollections(enriched)
+          }
+        } else {
           const enriched = await enrichCollections(data)
           setTrendingCollections(enriched)
         }
@@ -115,7 +182,7 @@ export default function ExplorePage() {
           return
         }
 
-        const { data } = await supabase.rpc('get_nearby_collections', {
+        const { data, error } = await supabase.rpc('get_nearby_collections', {
           p_lat: userLocation.lat,
           p_lng: userLocation.lng,
           p_radius_km: 50,
@@ -123,7 +190,49 @@ export default function ExplorePage() {
           p_offset: 0
         })
 
-        if (data) {
+        if (error || !data || data.length === 0) {
+          // Fallback: Get recent public collections (without location filtering)
+          logger.log('Using fallback for nearby collections')
+          const { data: collections } = await supabase
+            .from('collections')
+            .select(`
+              id,
+              title,
+              description,
+              created_at,
+              user_id,
+              is_public
+            `)
+            .eq('is_public', true)
+            .order('created_at', { ascending: false })
+            .limit(6)
+
+          if (collections) {
+            // Get user info for each collection
+            const enrichedWithUsers = await Promise.all(
+              collections.map(async (col: any) => {
+                const { data: userInfo } = await supabase
+                  .from('users')
+                  .select('username, profile_image')
+                  .eq('id', col.user_id)
+                  .single()
+
+                return {
+                  collection_id: col.id,
+                  collection_name: col.title,
+                  collection_description: col.description,
+                  created_at: col.created_at,
+                  user_id: col.user_id,
+                  username: userInfo?.username,
+                  avatar_url: userInfo?.profile_image
+                }
+              })
+            )
+
+            const enriched = await enrichCollections(enrichedWithUsers)
+            setNearbyCollections(enriched)
+          }
+        } else {
           const enriched = await enrichCollections(data)
           setNearbyCollections(enriched)
         }
