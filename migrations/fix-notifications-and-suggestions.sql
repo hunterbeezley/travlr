@@ -1,13 +1,14 @@
 -- Fix multiple issues with notifications and following suggestions
 -- Issues:
 -- 1. notifications table missing "link" column (code 42703)
--- 2. get_following_suggestions has ambiguous "user_id" reference (code 42702)
+-- 2. notifications table missing "metadata" column (code 42703)
+-- 3. get_following_suggestions has ambiguous "user_id" reference (code 42702)
 
 -- ============================================================================
--- 1. Add missing "link" column to notifications table
+-- 1. Add missing columns to notifications table
 -- ============================================================================
 
--- Check if column exists first, then add if missing
+-- Add "link" column if missing
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -18,8 +19,20 @@ BEGIN
   END IF;
 END $$;
 
--- Add index for link column (optional but helpful)
+-- Add "metadata" column if missing
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'notifications' AND column_name = 'metadata'
+  ) THEN
+    ALTER TABLE notifications ADD COLUMN metadata JSONB;
+  END IF;
+END $$;
+
+-- Add indexes for the new columns
 CREATE INDEX IF NOT EXISTS idx_notifications_link ON notifications(link);
+CREATE INDEX IF NOT EXISTS idx_notifications_metadata ON notifications USING GIN(metadata);
 
 -- ============================================================================
 -- 2. Fix get_following_suggestions function - remove ambiguous user_id
@@ -151,10 +164,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Verification
 -- ============================================================================
 
--- Check that link column now exists
+-- Check that link and metadata columns now exist
 SELECT column_name, data_type
 FROM information_schema.columns
-WHERE table_name = 'notifications' AND column_name = 'link';
+WHERE table_name = 'notifications' AND column_name IN ('link', 'metadata')
+ORDER BY column_name;
 
 -- Test the fixed function (should not error)
 -- SELECT * FROM get_following_suggestions(5);

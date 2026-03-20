@@ -5,14 +5,15 @@
 - **#94**: Following a user results in error:
   - `record "new" has no field "user_id"` (code 42703)
   - `column "link" of relation "notifications" does not exist` (code 42703)
+  - `column "metadata" of relation "notifications" does not exist` (code 42703)
 
 ## Root Cause
 1. Required database functions don't exist in production database
 2. **CRITICAL**: The `check_badge_achievements()` trigger function tries to access `NEW.user_id` on the `user_follows` table, which doesn't have that field
-3. **CRITICAL**: The `notifications` table is missing a `link` column that triggers try to insert into
+3. **CRITICAL**: The `notifications` table is missing `link` and `metadata` columns that triggers try to insert into
 4. **CRITICAL**: The `get_following_suggestions()` function has ambiguous `user_id` column references in JOIN
 
-The code now has fallback logic for missing functions, but these database bugs must be fixed.
+The code now has fallback logic for missing functions, but these database schema bugs must be fixed.
 
 ## Required Migrations
 
@@ -40,7 +41,8 @@ The code now has fallback logic for missing functions, but these database bugs m
 **File:** `migrations/fix-notifications-and-suggestions.sql`
 
 **What it does:**
-- Adds missing `link` column to `notifications` table
+- Adds missing `link` column (TEXT) to `notifications` table
+- Adds missing `metadata` column (JSONB) to `notifications` table
 - Fixes ambiguous `user_id` reference in `get_following_suggestions()` function
 - Changes all internal CTEs to use `suggested_user_id` instead of `user_id`
 - Prevents column reference ambiguity errors
@@ -50,9 +52,9 @@ The code now has fallback logic for missing functions, but these database bugs m
 2. Go to SQL Editor
 3. Copy the entire contents of `migrations/fix-notifications-and-suggestions.sql`
 4. Paste and run in SQL Editor
-5. Verify: Should see "Success" message
+5. Verify: Should see "Success" message and 2 rows returned showing link and metadata columns
 
-**IMPORTANT**: Run this BEFORE trying to follow users, otherwise triggers will fail on the missing `link` column.
+**IMPORTANT**: Run this BEFORE trying to follow users, otherwise triggers will fail on missing columns.
 
 ### 4. Social Feed Phase 1 (For follow system - OPTIONAL if already applied)
 
