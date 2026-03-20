@@ -17,7 +17,7 @@ export default function MobileNav() {
   const navItems = [
     { path: '/', label: 'Feed', icon: '📱' },
     { path: '/map', label: 'Map', icon: '🗺️' },
-    { path: '/explore', label: 'Explore', icon: '🔍' },
+    { path: '/search', label: 'Search', icon: '🔍' },
     { path: '/friends', label: 'Friends', icon: '👥' },
     { path: '/profile', label: 'Profile', icon: '👤' }
   ]
