@@ -153,7 +153,7 @@ BEGIN
   SELECT
     u.id AS user_id,
     u.username,
-    u.avatar_url,
+    u.profile_image AS avatar_url,
     COALESCE(
       CASE
         WHEN asug.mutual_friends > 0 THEN asug.reason
