@@ -1010,7 +1010,7 @@ export class DatabaseService {
 
     try {
       const { data, error } = await supabase.rpc('follow_user', {
-        following_uuid: followingId
+        p_following_id: followingId
       })
 
       if (error) {
@@ -1034,7 +1034,7 @@ export class DatabaseService {
 
     try {
       const { data, error } = await supabase.rpc('unfollow_user', {
-        following_uuid: followingId
+        p_following_id: followingId
       })
 
       if (error) {

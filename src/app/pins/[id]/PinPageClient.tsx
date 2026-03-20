@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Toast from '@/components/Toast'
 import Navbar from '@/components/Navbar'
+import PinEditModal from '@/components/PinEditModal'
 
 interface Profile {
   username: string | null
@@ -81,16 +82,30 @@ export default function PinPageClient({
   const router = useRouter()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [showCopyToast, setShowCopyToast] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [currentPin, setCurrentPin] = useState<Pin>(pin)
 
-  const sortedImages = [...pin.pin_images].sort((a, b) => a.upload_order - b.upload_order)
-  const emoji = categoryEmojis[pin.category || 'other'] || '📍'
-  const displayName = pin.profiles.full_name || pin.profiles.username || 'Anonymous'
+  const sortedImages = [...currentPin.pin_images].sort((a, b) => a.upload_order - b.upload_order)
+  const emoji = categoryEmojis[currentPin.category || 'other'] || '📍'
+  const displayName = currentPin.profiles.full_name || currentPin.profiles.username || 'Anonymous'
 
   const handleCopyCoordinates = async () => {
-    const coords = `${pin.latitude}, ${pin.longitude}`
+    const coords = `${currentPin.latitude}, ${currentPin.longitude}`
     await navigator.clipboard.writeText(coords)
     setShowCopyToast(true)
     setTimeout(() => setShowCopyToast(false), 3000)
+  }
+
+  const handlePinUpdated = (updatedPin: any) => {
+    logger.log('Pin updated, refreshing page data')
+    // Reload the page to get fresh data
+    router.refresh()
+  }
+
+  const handlePinDeleted = (pinId: string) => {
+    logger.log('Pin deleted, navigating to feed')
+    // Navigate to feed after deletion
+    router.push('/')
   }
 
   const handleShare = async () => {
@@ -99,8 +114,8 @@ export default function PinPageClient({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: pin.title,
-          text: pin.description || `Check out ${pin.title} on Travlr`,
+          title: currentPin.title,
+          text: currentPin.description || `Check out ${currentPin.title} on Travlr`,
           url: url
         })
       } catch {
@@ -161,7 +176,7 @@ export default function PinPageClient({
               }}>
                 <Image
                   src={sortedImages[currentImageIndex].image_url}
-                  alt={pin.title}
+                  alt={currentPin.title}
                   fill
                   style={{ objectFit: 'cover' }}
                   priority
@@ -314,33 +329,33 @@ export default function PinPageClient({
               marginBottom: '2rem'
             }}>
               {/* Collection Badge */}
-              {pin.collections && (
+              {currentPin.collections && (
                 <div
-                  onClick={() => router.push(`/collections/${pin.collections!.id}`)}
+                  onClick={() => router.push(`/collections/${currentPin.collections!.id}`)}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.5rem',
                     padding: '0.5rem 1rem',
-                    background: `${pin.collections!.color}20`,
-                    border: `1px solid ${pin.collections!.color}`,
+                    background: `${currentPin.collections!.color}20`,
+                    border: `1px solid ${currentPin.collections!.color}`,
                     borderRadius: 'var(--radius)',
                     marginBottom: '1.5rem',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = `${pin.collections!.color}30`
+                    e.currentTarget.style.background = `${currentPin.collections!.color}30`
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = `${pin.collections!.color}20`
+                    e.currentTarget.style.background = `${currentPin.collections!.color}20`
                   }}
                 >
                   <div style={{
                     width: '8px',
                     height: '8px',
                     borderRadius: '50%',
-                    background: pin.collections!.color
+                    background: currentPin.collections!.color
                   }} />
                   <span style={{
                     fontSize: '0.875rem',
@@ -349,7 +364,7 @@ export default function PinPageClient({
                     fontFamily: 'var(--font-mono)',
                     textTransform: 'uppercase'
                   }}>
-                    {pin.collections!.title}
+                    {currentPin.collections!.title}
                   </span>
                 </div>
               )}
@@ -371,19 +386,19 @@ export default function PinPageClient({
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em'
                 }}>
-                  {pin.title}
+                  {currentPin.title}
                 </h1>
               </div>
 
               {/* Description */}
-              {pin.description && (
+              {currentPin.description && (
                 <p style={{
                   fontSize: '1rem',
                   color: 'var(--muted-foreground)',
                   lineHeight: '1.6',
                   marginBottom: '1.5rem'
                 }}>
-                  {pin.description}
+                  {currentPin.description}
                 </p>
               )}
 
@@ -395,9 +410,9 @@ export default function PinPageClient({
                 paddingTop: '1rem',
                 borderTop: '1px solid var(--border)'
               }}>
-                {pin.profiles.profile_image ? (
+                {currentPin.profiles.profile_image ? (
                   <Image
-                    src={pin.profiles.profile_image}
+                    src={currentPin.profiles.profile_image}
                     alt={displayName}
                     width={40}
                     height={40}
@@ -440,7 +455,7 @@ export default function PinPageClient({
             </div>
 
             {/* Place Details (if available) */}
-            {pin.place_id && (
+            {currentPin.place_id && (
               <div style={{
                 background: 'var(--card)',
                 borderRadius: 'var(--radius)',
@@ -464,45 +479,45 @@ export default function PinPageClient({
                   display: 'grid',
                   gap: '1rem'
                 }}>
-                  {pin.place_rating && (
+                  {currentPin.place_rating && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>⭐</span>
                       <span style={{ color: 'var(--foreground)', fontWeight: '600' }}>
-                        {pin.place_rating.toFixed(1)}
+                        {currentPin.place_rating.toFixed(1)}
                       </span>
-                      {pin.place_user_ratings_total && (
+                      {currentPin.place_user_ratings_total && (
                         <span style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem' }}>
-                          ({pin.place_user_ratings_total.toLocaleString()} reviews)
+                          ({currentPin.place_user_ratings_total.toLocaleString()} reviews)
                         </span>
                       )}
                     </div>
                   )}
 
-                  {pin.place_price_level && (
+                  {currentPin.place_price_level && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>💰</span>
                       <span style={{ color: 'var(--foreground)' }}>
-                        {'$'.repeat(pin.place_price_level)}
+                        {'$'.repeat(currentPin.place_price_level)}
                       </span>
                     </div>
                   )}
 
-                  {pin.place_business_status && (
+                  {currentPin.place_business_status && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>
-                        {pin.place_business_status === 'OPERATIONAL' ? '✅' : '⚠️'}
+                        {currentPin.place_business_status === 'OPERATIONAL' ? '✅' : '⚠️'}
                       </span>
                       <span style={{ color: 'var(--foreground)' }}>
-                        {pin.place_business_status === 'OPERATIONAL' ? 'Open' : 'Closed'}
+                        {currentPin.place_business_status === 'OPERATIONAL' ? 'Open' : 'Closed'}
                       </span>
                     </div>
                   )}
 
-                  {pin.place_website && (
+                  {currentPin.place_website && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>🌐</span>
                       <a
-                        href={pin.place_website}
+                        href={currentPin.place_website}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -516,18 +531,18 @@ export default function PinPageClient({
                     </div>
                   )}
 
-                  {pin.place_phone && (
+                  {currentPin.place_phone && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>📞</span>
                       <a
-                        href={`tel:${pin.place_phone.replace(/[^0-9+]/g, '')}`}
+                        href={`tel:${currentPin.place_phone.replace(/[^0-9+]/g, '')}`}
                         style={{
                           color: 'var(--accent)',
                           textDecoration: 'underline',
                           fontSize: '0.875rem'
                         }}
                       >
-                        {pin.place_phone}
+                        {currentPin.place_phone}
                       </a>
                     </div>
                   )}
@@ -568,7 +583,7 @@ export default function PinPageClient({
                   height="100%"
                   style={{ border: 0 }}
                   loading="lazy"
-                  src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${pin.latitude},${pin.longitude}&zoom=15`}
+                  src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${currentPin.latitude},${currentPin.longitude}&zoom=15`}
                 />
               </div>
 
@@ -593,7 +608,7 @@ export default function PinPageClient({
                     color: 'var(--foreground)',
                     fontFamily: 'var(--font-mono)'
                   }}>
-                    {pin.latitude.toFixed(6)}, {pin.longitude.toFixed(6)}
+                    {currentPin.latitude.toFixed(6)}, {currentPin.longitude.toFixed(6)}
                   </div>
                 </div>
 
@@ -627,7 +642,7 @@ export default function PinPageClient({
 
               {isOwner && (
                 <button
-                  onClick={() => router.push('/')}
+                  onClick={() => setShowEditModal(true)}
                   className="btn btn-secondary"
                   style={{
                     flex: 1,
@@ -653,7 +668,7 @@ export default function PinPageClient({
               textTransform: 'uppercase',
               letterSpacing: '0.05em'
             }}>
-              More from {pin.collections?.title}
+              More from {currentPin.collections?.title}
             </h2>
 
             <div style={{
@@ -750,6 +765,25 @@ export default function PinPageClient({
           </div>
         )}
       </div>
+
+      {/* Edit Pin Modal */}
+      <PinEditModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        pin={currentPin ? {
+          id: currentPin.id,
+          title: currentPin.title,
+          description: currentPin.description,
+          category: currentPin.category,
+          image_url: sortedImages[0]?.image_url || null,
+          latitude: currentPin.latitude,
+          longitude: currentPin.longitude,
+          user_id: currentPin.user_id,
+          collection_id: currentPin.collection_id || ''
+        } : null}
+        onPinUpdated={handlePinUpdated}
+        onPinDeleted={handlePinDeleted}
+      />
 
       {/* Toast Notification */}
       {showCopyToast && (
