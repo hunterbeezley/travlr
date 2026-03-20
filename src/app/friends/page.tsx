@@ -128,12 +128,15 @@ export default function FriendsPage() {
   const handleFollow = async (userId: string) => {
     try {
       // Try RPC function first
-      const { error: rpcError } = await supabase
+      const { data, error: rpcError } = await supabase
         .rpc('follow_user', { p_following_id: userId })
 
-      if (rpcError) {
+      // Check both Supabase error and function's returned error
+      if (rpcError || (data && typeof data === 'object' && 'error' in data)) {
+        const errorMsg = rpcError?.message || (data as any)?.error || 'Unknown error'
+        logger.log('RPC failed:', errorMsg, '- using fallback for follow')
+
         // Fallback: Direct insert into user_follows table
-        logger.log('RPC failed, using fallback for follow')
         const { error: insertError } = await supabase
           .from('user_follows')
           .insert({
@@ -141,7 +144,10 @@ export default function FriendsPage() {
             following_id: userId
           })
 
-        if (insertError) throw insertError
+        if (insertError) {
+          logger.error('Fallback insert failed:', insertError)
+          throw new Error(insertError.message)
+        }
       }
 
       setFollowing(prev => new Set(prev).add(userId))
@@ -154,19 +160,25 @@ export default function FriendsPage() {
   const handleUnfollow = async (userId: string) => {
     try {
       // Try RPC function first
-      const { error: rpcError } = await supabase
+      const { data, error: rpcError } = await supabase
         .rpc('unfollow_user', { p_following_id: userId })
 
-      if (rpcError) {
+      // Check both Supabase error and function's returned error
+      if (rpcError || (data && typeof data === 'object' && 'error' in data)) {
+        const errorMsg = rpcError?.message || (data as any)?.error || 'Unknown error'
+        logger.log('RPC failed:', errorMsg, '- using fallback for unfollow')
+
         // Fallback: Direct delete from user_follows table
-        logger.log('RPC failed, using fallback for unfollow')
         const { error: deleteError } = await supabase
           .from('user_follows')
           .delete()
           .eq('follower_id', user?.id)
           .eq('following_id', userId)
 
-        if (deleteError) throw deleteError
+        if (deleteError) {
+          logger.error('Fallback delete failed:', deleteError)
+          throw new Error(deleteError.message)
+        }
       }
 
       setFollowing(prev => {

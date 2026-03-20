@@ -383,7 +383,13 @@ export default function FeedPage() {
   return (
     <>
       <Navbar />
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '1rem', paddingTop: '5rem' }}>
+      <div style={{
+        maxWidth: '800px',
+        margin: '0 auto',
+        padding: '1rem',
+        paddingTop: '5rem',
+        paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' // Account for mobile nav
+      }}>
         {/* Header */}
       <div style={{
         marginBottom: '1.5rem',

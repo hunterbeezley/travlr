@@ -59,11 +59,15 @@ export default function FollowingSuggestions() {
   const handleFollow = async (userId: string) => {
     try {
       // Try RPC function first
-      const { error: rpcError } = await supabase.rpc('follow_user', {
+      const { data, error: rpcError } = await supabase.rpc('follow_user', {
         p_following_id: userId
       })
 
-      if (rpcError) {
+      // Check both Supabase error and function's returned error
+      if (rpcError || (data && typeof data === 'object' && 'error' in data)) {
+        const errorMsg = rpcError?.message || (data as any)?.error || 'Unknown error'
+        logger.log('RPC failed:', errorMsg, '- using fallback')
+
         // Fallback: Direct insert
         const { error: insertError } = await supabase
           .from('user_follows')
@@ -72,7 +76,10 @@ export default function FollowingSuggestions() {
             following_id: userId
           })
 
-        if (insertError) throw insertError
+        if (insertError) {
+          logger.error('Fallback insert failed:', insertError)
+          throw new Error(insertError.message)
+        }
       }
 
       setFollowing(prev => new Set(prev).add(userId))
