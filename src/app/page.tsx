@@ -19,11 +19,21 @@ export default function FeedPage() {
   const [activities, setActivities] = useState<any[]>([])
   const [collections, setCollections] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState<'activity' | 'foryou'>('activity')
+  const [view, setView] = useState<'activity' | 'foryou' | 'discover'>('activity')
   const [filter, setFilter] = useState<'all' | 'friends' | 'self'>('all')
   const [followingCount, setFollowingCount] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+
+  // Discover tab state
+  const [trendingCollections, setTrendingCollections] = useState<any[]>([])
+  const [nearbyCollections, setNearbyCollections] = useState<any[]>([])
+  const [cities, setCities] = useState<any[]>([])
+  const [loadingTrending, setLoadingTrending] = useState(true)
+  const [loadingNearby, setLoadingNearby] = useState(true)
+  const [loadingCities, setLoadingCities] = useState(true)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [showAllCities, setShowAllCities] = useState(false)
 
   // Load following count
   useEffect(() => {
@@ -344,13 +354,220 @@ export default function FeedPage() {
     )
   }
 
+  // Get user location for nearby collections (Discover tab)
+  useEffect(() => {
+    if (navigator.geolocation && view === 'discover') {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          })
+        },
+        (error) => {
+          logger.log('Location access denied:', error)
+          setLoadingNearby(false)
+        }
+      )
+    }
+  }, [view])
+
+  // Load cities (Discover tab)
+  useEffect(() => {
+    if (!user || view !== 'discover') return
+
+    const loadCities = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          setLoadingCities(false)
+          return
+        }
+
+        const { data, error } = await supabase.rpc('get_popular_cities', {
+          p_limit: 30
+        })
+
+        if (error || !data || data.length === 0) {
+          // Fallback: Get cities from pins table
+          logger.log('Using fallback for cities')
+          const { data: pins } = await supabase
+            .from('pins')
+            .select('city')
+            .not('city', 'is', null)
+
+          if (pins) {
+            const cityMap = new Map()
+            pins.forEach((pin: any) => {
+              if (pin.city) {
+                cityMap.set(pin.city, (cityMap.get(pin.city) || 0) + 1)
+              }
+            })
+
+            const citiesData = Array.from(cityMap.entries())
+              .map(([city, count]) => ({ city, collection_count: count }))
+              .sort((a, b) => b.collection_count - a.collection_count)
+              .slice(0, 30)
+
+            setCities(citiesData)
+          }
+        } else {
+          setCities(data)
+        }
+      } catch (error) {
+        logger.error('Error loading cities:', error)
+      } finally {
+        setLoadingCities(false)
+      }
+    }
+
+    loadCities()
+  }, [user, view])
+
+  // Load trending collections (Discover tab)
+  useEffect(() => {
+    if (!user || view !== 'discover') return
+
+    const loadTrending = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          setLoadingTrending(false)
+          return
+        }
+
+        const { data, error } = await supabase.rpc('get_trending_collections', {
+          p_limit: 6,
+          p_offset: 0,
+          p_days: 7
+        })
+
+        if (error || !data || data.length === 0) {
+          // Fallback: Get recent public collections
+          logger.log('Using fallback for trending collections')
+          const { data: collections } = await supabase
+            .from('collections')
+            .select('id, title, description, created_at, user_id, is_public')
+            .eq('is_public', true)
+            .order('created_at', { ascending: false })
+            .limit(6)
+
+          if (collections) {
+            const enrichedWithUsers = await Promise.all(
+              collections.map(async (col: any) => {
+                const { data: userInfo } = await supabase
+                  .from('users')
+                  .select('username, profile_image')
+                  .eq('id', col.user_id)
+                  .single()
+
+                return {
+                  collection_id: col.id,
+                  collection_name: col.title,
+                  collection_description: col.description,
+                  created_at: col.created_at,
+                  user_id: col.user_id,
+                  username: userInfo?.username,
+                  avatar_url: userInfo?.profile_image
+                }
+              })
+            )
+
+            const enriched = await enrichCollections(enrichedWithUsers)
+            setTrendingCollections(enriched)
+          }
+        } else {
+          const enriched = await enrichCollections(data)
+          setTrendingCollections(enriched)
+        }
+      } catch (error) {
+        logger.error('Error loading trending:', error)
+      } finally {
+        setLoadingTrending(false)
+      }
+    }
+
+    loadTrending()
+  }, [user, view])
+
+  // Load nearby collections when location is available (Discover tab)
+  useEffect(() => {
+    if (!user || !userLocation || view !== 'discover') return
+
+    const loadNearby = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          setLoadingNearby(false)
+          return
+        }
+
+        const { data, error } = await supabase.rpc('get_nearby_collections', {
+          p_lat: userLocation.lat,
+          p_lng: userLocation.lng,
+          p_radius_km: 50,
+          p_limit: 6,
+          p_offset: 0
+        })
+
+        if (error || !data || data.length === 0) {
+          // Fallback: Get recent public collections
+          logger.log('Using fallback for nearby collections')
+          const { data: collections } = await supabase
+            .from('collections')
+            .select('id, title, description, created_at, user_id, is_public')
+            .eq('is_public', true)
+            .order('created_at', { ascending: false })
+            .limit(6)
+
+          if (collections) {
+            const enrichedWithUsers = await Promise.all(
+              collections.map(async (col: any) => {
+                const { data: userInfo } = await supabase
+                  .from('users')
+                  .select('username, profile_image')
+                  .eq('id', col.user_id)
+                  .single()
+
+                return {
+                  collection_id: col.id,
+                  collection_name: col.title,
+                  collection_description: col.description,
+                  created_at: col.created_at,
+                  user_id: col.user_id,
+                  username: userInfo?.username,
+                  avatar_url: userInfo?.profile_image
+                }
+              })
+            )
+
+            const enriched = await enrichCollections(enrichedWithUsers)
+            setNearbyCollections(enriched)
+          }
+        } else {
+          const enriched = await enrichCollections(data)
+          setNearbyCollections(enriched)
+        }
+      } catch (error) {
+        logger.error('Error loading nearby:', error)
+      } finally {
+        setLoadingNearby(false)
+      }
+    }
+
+    loadNearby()
+  }, [user, userLocation, view])
+
   useEffect(() => {
     if (user) {
       setLoading(true)
       if (view === 'activity') {
         loadFeed()
-      } else {
+      } else if (view === 'foryou') {
         loadForYouFeed()
+      } else {
+        // Discover tab doesn't need initial loading (done by individual useEffects)
+        setLoading(false)
       }
     }
   }, [user, filter, view])
@@ -363,6 +580,23 @@ export default function FeedPage() {
       loadForYouFeed(collections.length)
     }
   }
+
+  const handleCityClick = (city: string) => {
+    router.push(`/explore/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, '-'))}`)
+  }
+
+  const popularCategories = [
+    '☕ Restaurants',
+    '🍺 Bars',
+    '🏨 Hotels',
+    '🎭 Entertainment',
+    '🛍️ Shopping',
+    '🏛️ Culture',
+    '🌳 Outdoors',
+    '🏃 Activities'
+  ]
+
+  const displayCities = showAllCities ? cities : cities.slice(0, 12)
 
   if (authLoading) {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>
@@ -431,8 +665,9 @@ export default function FeedPage() {
           border: '1px solid var(--border)'
         }}>
           {[
-            { value: 'activity', label: 'Activity', icon: '📱' },
-            { value: 'foryou', label: 'For You', icon: '✨' }
+            { value: 'activity', label: 'Following', icon: '📱' },
+            { value: 'foryou', label: 'For You', icon: '✨' },
+            { value: 'discover', label: 'Discover', icon: '🌍' }
           ].map((v) => (
             <button
               key={v.value}
@@ -572,15 +807,16 @@ export default function FeedPage() {
               }}>
                 Like and save collections to help us learn your preferences.
               </p>
-              <Link
-                href="/explore"
+              <button
+                onClick={() => setView('discover')}
                 style={{
                   display: 'inline-block',
                   padding: '0.75rem 1.5rem',
                   background: 'var(--accent)',
                   color: 'white',
+                  border: 'none',
                   borderRadius: 'var(--radius)',
-                  textDecoration: 'none',
+                  cursor: 'pointer',
                   fontWeight: '600',
                   fontFamily: 'var(--font-mono)',
                   textTransform: 'uppercase',
@@ -589,13 +825,324 @@ export default function FeedPage() {
                 }}
               >
                 Explore Collections
-              </Link>
+              </button>
             </div>
           ) : (
             <div style={{ maxWidth: '1200px' }}>
               <CollectionGrid collections={collections} currentUserId={user.id} />
             </div>
           )}
+        </>
+      )}
+
+      {/* Discover View */}
+      {view === 'discover' && (
+        <>
+          {/* SECTION: Explore by City */}
+          <section style={{
+            marginBottom: '3rem',
+            padding: '1.5rem',
+            background: 'var(--card)',
+            border: '2px solid var(--border)',
+            borderRadius: 'var(--radius-lg)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '1rem',
+              paddingBottom: '1rem',
+              borderBottom: '2px solid var(--border)'
+            }}>
+              <h2 style={{
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                margin: 0
+              }}>
+                <span>🌆</span>
+                <span>Explore by City</span>
+              </h2>
+            </div>
+
+            {loadingCities ? (
+              <div style={{
+                padding: '2rem',
+                textAlign: 'center',
+                color: 'var(--muted-foreground)',
+                fontSize: '0.875rem'
+              }}>
+                Loading cities...
+              </div>
+            ) : cities.length === 0 ? (
+              <div style={{
+                padding: '2rem',
+                textAlign: 'center',
+                color: 'var(--muted-foreground)',
+                fontSize: '0.875rem'
+              }}>
+                No cities available yet
+              </div>
+            ) : (
+              <>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                  gap: '0.75rem',
+                  marginBottom: '1rem'
+                }}>
+                  {displayCities.map((city) => (
+                    <button
+                      key={city.city}
+                      onClick={() => handleCityClick(city.city)}
+                      style={{
+                        padding: '1rem',
+                        background: 'var(--muted)',
+                        border: '2px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        fontWeight: '600',
+                        fontFamily: 'var(--font-mono)',
+                        textAlign: 'left',
+                        transition: 'var(--transition)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--accent)'
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)'
+                        e.currentTarget.style.transform = 'translateY(0)'
+                      }}
+                    >
+                      <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🌆</div>
+                      <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{city.city}</div>
+                      <div style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--muted-foreground)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        {city.collection_count} {city.collection_count === 1 ? 'collection' : 'collections'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {cities.length > 12 && (
+                  <button
+                    onClick={() => setShowAllCities(!showAllCities)}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      background: 'var(--background)',
+                      border: '2px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: '600',
+                      fontFamily: 'var(--font-mono)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      transition: 'var(--transition)',
+                      color: 'var(--foreground)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--accent)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border)'
+                    }}
+                  >
+                    {showAllCities ? 'Show Less' : `Show All ${cities.length} Cities`}
+                  </button>
+                )}
+              </>
+            )}
+          </section>
+
+          {/* SECTION: Trending This Week */}
+          <section style={{ marginBottom: '3rem' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '1rem',
+              paddingBottom: '1rem',
+              borderBottom: '2px solid var(--border)'
+            }}>
+              <h2 style={{
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                margin: 0
+              }}>
+                <span>🔥</span>
+                <span>Trending This Week</span>
+              </h2>
+            </div>
+
+            {loadingTrending ? (
+              <div style={{
+                padding: '3rem',
+                textAlign: 'center',
+                color: 'var(--muted-foreground)',
+                fontSize: '0.875rem'
+              }}>
+                Loading trending collections...
+              </div>
+            ) : trendingCollections.length === 0 ? (
+              <div style={{
+                padding: '3rem 1rem',
+                textAlign: 'center',
+                background: 'var(--muted)',
+                borderRadius: 'var(--radius-lg)',
+                border: '2px solid var(--border)'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔥</div>
+                <p style={{
+                  color: 'var(--muted-foreground)',
+                  fontSize: '0.875rem'
+                }}>
+                  No trending collections yet
+                </p>
+              </div>
+            ) : (
+              <CollectionGrid collections={trendingCollections} currentUserId={user.id} />
+            )}
+          </section>
+
+          {/* SECTION: Nearby Collections */}
+          {userLocation && (
+            <section style={{ marginBottom: '3rem' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1rem',
+                paddingBottom: '1rem',
+                borderBottom: '2px solid var(--border)'
+              }}>
+                <h2 style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '700',
+                  fontFamily: 'var(--font-mono)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  margin: 0
+                }}>
+                  <span>📍</span>
+                  <span>Nearby Collections</span>
+                </h2>
+              </div>
+
+              {loadingNearby ? (
+                <div style={{
+                  padding: '3rem',
+                  textAlign: 'center',
+                  color: 'var(--muted-foreground)',
+                  fontSize: '0.875rem'
+                }}>
+                  Loading nearby collections...
+                </div>
+              ) : nearbyCollections.length === 0 ? (
+                <div style={{
+                  padding: '3rem 1rem',
+                  textAlign: 'center',
+                  background: 'var(--muted)',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '2px solid var(--border)'
+                }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📍</div>
+                  <p style={{
+                    color: 'var(--muted-foreground)',
+                    fontSize: '0.875rem'
+                  }}>
+                    No nearby collections within 50km
+                  </p>
+                </div>
+              ) : (
+                <CollectionGrid collections={nearbyCollections} currentUserId={user.id} />
+              )}
+            </section>
+          )}
+
+          {/* SECTION: Browse by Category */}
+          <section style={{ marginBottom: '3rem' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '1rem',
+              paddingBottom: '1rem',
+              borderBottom: '2px solid var(--border)'
+            }}>
+              <h2 style={{
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                margin: 0
+              }}>
+                <span>📂</span>
+                <span>Browse by Category</span>
+              </h2>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+              gap: '0.75rem'
+            }}>
+              {popularCategories.map((category) => (
+                <Link
+                  key={category}
+                  href={`/explore/category/${encodeURIComponent(category.split(' ')[1].toLowerCase())}`}
+                  style={{
+                    padding: '1rem',
+                    background: 'var(--muted)',
+                    border: '2px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    fontFamily: 'var(--font-mono)',
+                    textDecoration: 'none',
+                    color: 'var(--foreground)',
+                    textAlign: 'center',
+                    transition: 'var(--transition)',
+                    display: 'block'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--accent)'
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border)'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                  }}
+                >
+                  {category}
+                </Link>
+              ))}
+            </div>
+          </section>
         </>
       )}
 
