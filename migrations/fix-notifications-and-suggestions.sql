@@ -3,6 +3,7 @@
 -- 1. notifications table missing "link" column (code 42703)
 -- 2. notifications table missing "metadata" column (code 42703)
 -- 3. get_following_suggestions has ambiguous "user_id" reference (code 42702)
+-- 4. get_following_suggestions references u.avatar_url but users table has profile_image (code 42703)
 
 -- ============================================================================
 -- 1. Add missing columns to notifications table
