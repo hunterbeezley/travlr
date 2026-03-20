@@ -77,22 +77,6 @@ export default function Navbar() {
           >
             FRIENDS
           </button>
-
-          <button
-            onClick={() => router.push('/saved')}
-            className={`nav-link ${isActive('/saved') ? 'active' : ''}`}
-          >
-            SAVED
-          </button>
-
-          {user && (
-            <button
-              onClick={() => router.push('/analytics')}
-              className={`nav-link ${isActive('/analytics') ? 'active' : ''}`}
-            >
-              ANALYTICS
-            </button>
-          )}
         </div>
 
         {!loading && user && (
