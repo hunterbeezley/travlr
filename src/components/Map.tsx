@@ -2595,7 +2595,7 @@ function MapComponent({ onMapClick }: MapProps) {
           className="mobile-only"
           style={{
             position: 'fixed',
-            bottom: '2rem',
+            bottom: '5rem', // Above mobile nav (60px + safe area)
             left: '1rem',
             width: '56px',
             height: '56px',
@@ -2605,7 +2605,7 @@ function MapComponent({ onMapClick }: MapProps) {
             border: '2px solid var(--border)',
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
             cursor: 'pointer',
-            zIndex: 997,
+            zIndex: 999, // Below mobile nav but visible
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '1.5rem',

@@ -33,12 +33,30 @@ export default function FriendsPage() {
   const [following, setFollowing] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'search' | 'suggestions'>('suggestions')
 
-  // Load user suggestions on mount
+  // Load user suggestions and following state on mount
   useEffect(() => {
     if (user) {
       loadSuggestions()
+      loadFollowingState()
     }
   }, [user])
+
+  // Load which users the current user is following
+  const loadFollowingState = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_follows')
+        .select('following_id')
+        .eq('follower_id', user?.id)
+
+      if (error) throw error
+
+      const followingIds = new Set(data?.map((f: any) => f.following_id) || [])
+      setFollowing(followingIds)
+    } catch (error) {
+      logger.error('Error loading following state:', error)
+    }
+  }
 
   const loadSuggestions = async () => {
     try {
@@ -109,23 +127,47 @@ export default function FriendsPage() {
 
   const handleFollow = async (userId: string) => {
     try {
-      const { error } = await supabase
+      // Try RPC function first
+      const { error: rpcError } = await supabase
         .rpc('follow_user', { p_following_id: userId })
 
-      if (error) throw error
+      if (rpcError) {
+        // Fallback: Direct insert into user_follows table
+        logger.log('RPC failed, using fallback for follow')
+        const { error: insertError } = await supabase
+          .from('user_follows')
+          .insert({
+            follower_id: user?.id,
+            following_id: userId
+          })
+
+        if (insertError) throw insertError
+      }
 
       setFollowing(prev => new Set(prev).add(userId))
     } catch (error) {
       logger.error('Error following user:', error)
+      alert('Failed to follow user. Please try again.')
     }
   }
 
   const handleUnfollow = async (userId: string) => {
     try {
-      const { error } = await supabase
+      // Try RPC function first
+      const { error: rpcError } = await supabase
         .rpc('unfollow_user', { p_following_id: userId })
 
-      if (error) throw error
+      if (rpcError) {
+        // Fallback: Direct delete from user_follows table
+        logger.log('RPC failed, using fallback for unfollow')
+        const { error: deleteError } = await supabase
+          .from('user_follows')
+          .delete()
+          .eq('follower_id', user?.id)
+          .eq('following_id', userId)
+
+        if (deleteError) throw deleteError
+      }
 
       setFollowing(prev => {
         const newSet = new Set(prev)
@@ -134,6 +176,7 @@ export default function FriendsPage() {
       })
     } catch (error) {
       logger.error('Error unfollowing user:', error)
+      alert('Failed to unfollow user. Please try again.')
     }
   }
 
