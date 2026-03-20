@@ -1,10 +1,10 @@
 'use client'
 import { logger } from '@/lib/logger'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
-import CollectionCard from '@/components/CollectionCard'
+import CollectionGrid from '@/components/Discover/CollectionGrid'
 import UserAvatar from '@/components/UserAvatar'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -35,7 +35,7 @@ interface User {
   rank: number
 }
 
-export default function SearchPage() {
+function SearchPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
@@ -388,19 +388,13 @@ export default function SearchPage() {
                 </p>
               </div>
             ) : (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                gap: '1.5rem'
-              }}>
-                {collections.map((collection) => (
-                  <CollectionCard
-                    key={collection.id}
-                    collection={collection}
-                    onNavigate={() => router.push(`/collections/${collection.id}`)}
-                  />
-                ))}
-              </div>
+              <CollectionGrid
+                collections={collections.map(c => ({
+                  ...c,
+                  collection_id: c.id
+                }))}
+                currentUserId={user?.id || ''}
+              />
             )}
           </div>
         ) : (
@@ -567,5 +561,18 @@ export default function SearchPage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ padding: '5rem 1rem', textAlign: 'center' }}>
+        <div className="spinner" style={{ width: '2rem', height: '2rem', margin: '0 auto 1rem' }} />
+        <p style={{ color: 'var(--muted-foreground)' }}>Loading search...</p>
+      </div>
+    }>
+      <SearchPageContent />
+    </Suspense>
   )
 }
