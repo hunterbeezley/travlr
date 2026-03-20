@@ -1344,6 +1344,141 @@ select option {
   }
 }
 
+/* =============================================================================
+   EXTENDED ANIMATION SYSTEM
+   Issue #77: Rich micro-interactions
+   ============================================================================= */
+
+/* Float animation - for floating badges, decorative elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Glow animation - for active/selected states, notifications */
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 5px rgba(230, 57, 70, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(230, 57, 70, 0.8);
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* Pulse slow - for background orbs, subtle attention */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 6s ease-in-out infinite;
+}
+
+/* Gradient animation - for animated gradient backgrounds */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 15s ease infinite;
+  background-size: 200% 200%;
+}
+
+/* Scale in - for modal/toast entry animations */
+@keyframes scale-in {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+/* Slide up - for list items, cards entering view */
+@keyframes slide-up {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Fade in fast - quick opacity transition */
+@keyframes fade-in-fast {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in-fast {
+  animation: fade-in-fast 0.2s ease-out;
+}
+
+/* Stagger delays for sequential animations */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-glow,
+  .animate-pulse-slow,
+  .animate-gradient-x,
+  .animate-scale-in,
+  .animate-slide-up,
+  .animate-fade-in-fast,
+  .fade-in,
+  .fade-in-delay,
+  .stagger-fade-in,
+  .slide-up-sharp {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 /* Smooth transitions for interactive elements */
 button,
 a {
