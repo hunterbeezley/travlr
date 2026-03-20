@@ -2,14 +2,36 @@
 
 ## Issues Fixed
 - **#91**: "For You" tab error - `Error loading suggestions: {}`
-- **#94**: Following a user results in error
+- **#94**: Following a user results in error - `record "new" has no field "user_id"`
 
 ## Root Cause
-These errors occur because required database functions don't exist in your production database yet. The code now has fallback logic, but for best performance, you should apply these migrations.
+1. Required database functions don't exist in production database
+2. **CRITICAL**: The `check_badge_achievements()` trigger function tries to access `NEW.user_id` on the `user_follows` table, which doesn't have that field (it has `follower_id` and `following_id`)
+
+The code now has fallback logic for missing functions, but the trigger bug must be fixed in the database.
 
 ## Required Migrations
 
-### 1. Social Feed Phase 1 (CRITICAL - Required for follow/unfollow)
+### 1. Fix Badge Achievements Function (CRITICAL - MUST RUN FIRST)
+
+**File:** `migrations/fix-check-badge-achievements-function.sql`
+
+**What it does:**
+- Fixes the `check_badge_achievements()` trigger function
+- The function was trying to access `NEW.user_id` on all tables
+- Now correctly checks which table triggered it before accessing fields
+- Prevents "record 'new' has no field 'user_id'" error
+
+**How to apply:**
+1. Open your Supabase Dashboard
+2. Go to SQL Editor
+3. Copy the entire contents of `migrations/fix-check-badge-achievements-function.sql`
+4. Paste and run in SQL Editor
+5. Verify: Should see "Success" message
+
+**IMPORTANT**: Run this BEFORE trying to follow users, otherwise you'll get the field error.
+
+### 2. Social Feed Phase 1 (CRITICAL - Required for follow/unfollow)
 
 **File:** `migrations/add-social-feed-phase1.sql`
 
@@ -64,11 +86,12 @@ The fallbacks are slower and less intelligent, but functional.
 ## Order Matters
 
 Apply migrations in this order:
-1. Phase 1 (follow system)
-2. Phase 2 (collections feed) - if needed
-3. Phase 3 (notifications) - if needed
-4. Phase 4 (suggestions) - fixes #91
-5. Phase 5 (advanced features) - optional
+1. **fix-check-badge-achievements-function.sql** (CRITICAL - fixes follow error)
+2. Phase 1 (follow system)
+3. Phase 2 (collections feed) - if needed
+4. Phase 3 (notifications) - if needed
+5. Phase 4 (suggestions) - fixes #91
+6. Phase 5 (advanced features) - optional
 
 ## Troubleshooting
 
