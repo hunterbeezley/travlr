@@ -62,11 +62,15 @@ BEGIN
   RETURN QUERY
   WITH current_following AS (
     -- Users already following
-    SELECT following_id FROM user_follows WHERE follower_id = v_user_id
+    SELECT uf.following_id
+    FROM user_follows uf
+    WHERE uf.follower_id = v_user_id
   ),
   user_collections_liked AS (
     -- Collections current user has liked
-    SELECT collection_id FROM collection_likes WHERE user_id = v_user_id
+    SELECT cl.collection_id
+    FROM collection_likes cl
+    WHERE cl.user_id = v_user_id
   ),
   similar_users AS (
     -- Users who liked similar collections
@@ -75,9 +79,11 @@ BEGIN
       COUNT(*) AS common_likes,
       'Similar taste in collections' AS reason
     FROM collection_likes cl
-    WHERE cl.collection_id IN (SELECT collection_id FROM user_collections_liked)
-      AND cl.user_id != v_user_id
-      AND cl.user_id NOT IN (SELECT following_id FROM current_following)
+    INNER JOIN user_collections_liked ucl ON cl.collection_id = ucl.collection_id
+    WHERE cl.user_id != v_user_id
+      AND NOT EXISTS (
+        SELECT 1 FROM current_following cf WHERE cf.following_id = cl.user_id
+      )
     GROUP BY cl.user_id
   ),
   friends_of_friends AS (
@@ -87,10 +93,12 @@ BEGIN
       COUNT(*) AS mutual_count,
       'Friend of ' || COUNT(*) || ' people you follow' AS reason
     FROM user_follows uf1
-    JOIN user_follows uf2 ON uf2.follower_id = uf1.following_id
+    INNER JOIN user_follows uf2 ON uf2.follower_id = uf1.following_id
     WHERE uf1.follower_id = v_user_id
       AND uf2.following_id != v_user_id
-      AND uf2.following_id NOT IN (SELECT following_id FROM current_following)
+      AND NOT EXISTS (
+        SELECT 1 FROM current_following cf WHERE cf.following_id = uf2.following_id
+      )
     GROUP BY uf2.following_id
   ),
   popular_users AS (
@@ -101,7 +109,9 @@ BEGIN
       'Popular creator' AS reason
     FROM user_follows uf
     WHERE uf.following_id != v_user_id
-      AND uf.following_id NOT IN (SELECT following_id FROM current_following)
+      AND NOT EXISTS (
+        SELECT 1 FROM current_following cf WHERE cf.following_id = uf.following_id
+      )
     GROUP BY uf.following_id
     HAVING COUNT(*) > 5
   ),
@@ -112,12 +122,14 @@ BEGIN
       COUNT(*) AS common_interest_count,
       'Similar interests' AS reason
     FROM user_interests ui1
-    JOIN user_interests ui2 ON
+    INNER JOIN user_interests ui2 ON
       ui2.interest_type = ui1.interest_type
       AND ui2.interest_value = ui1.interest_value
       AND ui2.user_id != v_user_id
     WHERE ui1.user_id = v_user_id
-      AND ui2.user_id NOT IN (SELECT following_id FROM current_following)
+      AND NOT EXISTS (
+        SELECT 1 FROM current_following cf WHERE cf.following_id = ui2.user_id
+      )
     GROUP BY ui2.user_id
   ),
   all_suggestions AS (
