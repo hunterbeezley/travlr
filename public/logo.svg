@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#18181B"/>
+
+  <!-- Outer frame (white) -->
+  <rect x="64" y="64" width="384" height="384" fill="none" stroke="#FFFFFF" stroke-width="8"/>
+
+  <!-- Inner frame (red) -->
+  <rect x="96" y="96" width="320" height="320" fill="none" stroke="#E63946" stroke-width="8"/>
+
+  <!-- Center circle (red fill) -->
+  <circle cx="256" cy="256" r="64" fill="#E63946"/>
+
+  <!-- Corner connectors (red) -->
+  <line x1="64" y1="64" x2="96" y2="96" stroke="#E63946" stroke-width="8"/>
+  <line x1="448" y1="64" x2="416" y2="96" stroke="#E63946" stroke-width="8"/>
+  <line x1="64" y1="448" x2="96" y2="416" stroke="#E63946" stroke-width="8"/>
+  <line x1="448" y1="448" x2="416" y2="416" stroke="#E63946" stroke-width="8"/>
+</svg>
