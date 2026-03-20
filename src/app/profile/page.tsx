@@ -994,6 +994,7 @@ export default function ProfilePage() {
                   {collections.map((collection) => (
                     <div
                       key={collection.id}
+                      onClick={() => router.push(`/collections/${collection.id}`)}
                       style={{
                         padding: '1rem',
                         border: '1px solid var(--border)',
@@ -1195,6 +1196,7 @@ export default function ProfilePage() {
                   {pins.slice(0, 10).map((pin) => (
                     <div
                       key={pin.id}
+                      onClick={() => router.push(`/pins/${pin.id}`)}
                       style={{
                         padding: '1rem',
                         border: '1px solid var(--border)',
