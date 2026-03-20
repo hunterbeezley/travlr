@@ -2,27 +2,55 @@
 import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
 
 export default function FollowingSuggestions() {
+  const { user } = useAuth()
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [following, setFollowing] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    loadSuggestions()
-  }, [])
+    if (user) {
+      loadSuggestions()
+    }
+  }, [user])
 
   const loadSuggestions = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_following_suggestions', {
+      // Try RPC function first
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_following_suggestions', {
         p_limit: 5
       })
 
-      if (error) throw error
-      setSuggestions(data || [])
+      if (!rpcError && rpcData) {
+        setSuggestions(rpcData)
+      } else {
+        // Fallback: Get random users
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, username, full_name, profile_image, email')
+          .neq('id', user?.id || '')
+          .limit(5)
+
+        if (error) {
+          logger.error('Fallback query error:', error)
+          setSuggestions([])
+        } else {
+          // Transform to match expected format
+          const transformed = data.map(u => ({
+            user_id: u.id,
+            username: u.username || u.full_name || u.email.split('@')[0],
+            avatar_url: u.profile_image,
+            reason: 'Suggested for you'
+          }))
+          setSuggestions(transformed)
+        }
+      }
     } catch (error) {
       logger.error('Error loading suggestions:', error)
+      setSuggestions([])
     } finally {
       setLoading(false)
     }
@@ -30,15 +58,27 @@ export default function FollowingSuggestions() {
 
   const handleFollow = async (userId: string) => {
     try {
-      const { error } = await supabase.rpc('follow_user', {
+      // Try RPC function first
+      const { error: rpcError } = await supabase.rpc('follow_user', {
         p_following_id: userId
       })
 
-      if (error) throw error
+      if (rpcError) {
+        // Fallback: Direct insert
+        const { error: insertError } = await supabase
+          .from('user_follows')
+          .insert({
+            follower_id: user?.id,
+            following_id: userId
+          })
+
+        if (insertError) throw insertError
+      }
 
       setFollowing(prev => new Set(prev).add(userId))
     } catch (error) {
       logger.error('Error following user:', error)
+      alert('Failed to follow user. Please try again.')
     }
   }
 
