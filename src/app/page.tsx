@@ -14,7 +14,7 @@ import CollectionGrid from '@/components/Discover/CollectionGrid'
 import Auth from '@/components/Auth'
 import EmptyState from '@/components/EmptyState'
 import UserAvatar from '@/components/UserAvatar'
-import { Activity, Sparkles, Users, Search } from 'lucide-react'
+import { Activity, Sparkles, Users, Search, Building2, TrendingUp, MapPin, Folder } from 'lucide-react'
 
 export default function FeedPage() {
   const { user, loading: authLoading } = useAuth()
@@ -723,22 +723,17 @@ export default function FeedPage() {
       }}>
         {/* Header */}
       <div style={{
-        marginBottom: '1.5rem',
-        paddingBottom: '1rem',
-        borderBottom: '2px solid var(--border)'
+        marginBottom: '1.5rem'
       }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '1rem'
+          marginBottom: '1.25rem'
         }}>
           <h1 style={{
-            fontSize: '1.5rem',
+            fontSize: '1.75rem',
             fontWeight: '700',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
             margin: 0
           }}>
             Feed
@@ -752,21 +747,21 @@ export default function FeedPage() {
           )}
         </div>
 
-        {/* View Switcher */}
+        {/* View Switcher - Tidal-style pills */}
         <div style={{
           display: 'flex',
           gap: '0.5rem',
-          background: 'var(--muted)',
-          padding: '0.25rem',
-          borderRadius: 'var(--radius)',
-          border: '1px solid var(--border)',
+          background: 'var(--card-elevated)',
+          padding: '0.375rem',
+          borderRadius: 'var(--radius-pill)',
+          boxShadow: 'var(--shadow-sm)',
           overflowX: 'auto'
         }}>
           {[
-            { value: 'activity', label: 'Following', icon: '📱' },
-            { value: 'foryou', label: 'For You', icon: '✨' },
-            { value: 'discover', label: 'Discover', icon: '🌍' },
-            { value: 'search', label: 'Search', icon: '🔍' }
+            { value: 'activity', label: 'Following', Icon: Users },
+            { value: 'foryou', label: 'For You', Icon: Sparkles },
+            { value: 'discover', label: 'Discover', Icon: Activity },
+            { value: 'search', label: 'Search', Icon: Search }
           ].map((v) => (
             <button
               key={v.value}
@@ -775,24 +770,22 @@ export default function FeedPage() {
                 flex: 1,
                 padding: '0.75rem 1rem',
                 background: view === v.value ? 'var(--accent)' : 'transparent',
-                color: view === v.value ? 'white' : 'var(--foreground)',
+                color: view === v.value ? 'white' : 'var(--muted-foreground)',
                 border: 'none',
-                borderRadius: 'var(--radius)',
+                borderRadius: 'var(--radius-pill)',
                 cursor: 'pointer',
-                fontSize: '0.875rem',
+                fontSize: '0.8125rem',
                 fontWeight: '600',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                transition: 'var(--transition)',
+                transition: 'all 0.2s ease',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                whiteSpace: 'nowrap'
               }}
               onMouseEnter={(e) => {
                 if (view !== v.value) {
-                  e.currentTarget.style.background = 'var(--background)'
+                  e.currentTarget.style.background = 'var(--surface-subtle)'
                 }
               }}
               onMouseLeave={(e) => {
@@ -801,7 +794,7 @@ export default function FeedPage() {
                 }
               }}
             >
-              <span>{v.icon}</span>
+              <v.Icon size={16} />
               <span>{v.label}</span>
             </button>
           ))}
@@ -872,32 +865,27 @@ export default function FeedPage() {
         <>
           {/* SECTION: Explore by City */}
           <section style={{
-            marginBottom: '3rem',
+            marginBottom: '2.5rem',
             padding: '1.5rem',
-            background: 'var(--card)',
-            border: '2px solid var(--border)',
-            borderRadius: 'var(--radius-lg)'
+            background: 'var(--card-elevated)',
+            borderRadius: 'var(--radius-xl)',
+            boxShadow: 'var(--shadow)'
           }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '1rem',
-              paddingBottom: '1rem',
-              borderBottom: '2px solid var(--border)'
+              marginBottom: '1.25rem'
             }}>
               <h2 style={{
-                fontSize: '1.25rem',
+                fontSize: '1.125rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
                 margin: 0
               }}>
-                <span>🌆</span>
+                <Building2 size={20} style={{ color: 'var(--accent)' }} />
                 <span>Explore by City</span>
               </h2>
             </div>
@@ -924,7 +912,7 @@ export default function FeedPage() {
               <>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
                   gap: '0.75rem',
                   marginBottom: '1rem'
                 }}>
@@ -934,32 +922,29 @@ export default function FeedPage() {
                       onClick={() => handleCityClick(city.city)}
                       style={{
                         padding: '1rem',
-                        background: 'var(--muted)',
-                        border: '2px solid var(--border)',
-                        borderRadius: 'var(--radius)',
+                        background: 'var(--surface-subtle)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-lg)',
                         cursor: 'pointer',
                         fontSize: '0.875rem',
                         fontWeight: '600',
-                        fontFamily: 'var(--font-mono)',
                         textAlign: 'left',
-                        transition: 'var(--transition)'
+                        transition: 'all 0.2s ease'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--accent)'
+                        e.currentTarget.style.background = 'var(--muted)'
                         e.currentTarget.style.transform = 'translateY(-2px)'
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--border)'
+                        e.currentTarget.style.background = 'var(--surface-subtle)'
                         e.currentTarget.style.transform = 'translateY(0)'
                       }}
                     >
-                      <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🌆</div>
-                      <div style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{city.city}</div>
+                      <Building2 size={24} style={{ color: 'var(--accent)', marginBottom: '0.5rem' }} />
+                      <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>{city.city}</div>
                       <div style={{
-                        fontSize: '0.7rem',
-                        color: 'var(--muted-foreground)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
+                        fontSize: '0.75rem',
+                        color: 'var(--muted-foreground)'
                       }}>
                         {city.collection_count} {city.collection_count === 1 ? 'collection' : 'collections'}
                       </div>
@@ -972,24 +957,23 @@ export default function FeedPage() {
                     onClick={() => setShowAllCities(!showAllCities)}
                     style={{
                       width: '100%',
-                      padding: '0.75rem',
-                      background: 'var(--background)',
-                      border: '2px solid var(--border)',
-                      borderRadius: 'var(--radius)',
+                      padding: '0.875rem',
+                      background: 'var(--muted)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-pill)',
                       cursor: 'pointer',
                       fontSize: '0.875rem',
                       fontWeight: '600',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      transition: 'var(--transition)',
+                      transition: 'all 0.2s ease',
                       color: 'var(--foreground)'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--accent)'
+                      e.currentTarget.style.background = 'var(--accent)'
+                      e.currentTarget.style.color = 'white'
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border)'
+                      e.currentTarget.style.background = 'var(--muted)'
+                      e.currentTarget.style.color = 'var(--foreground)'
                     }}
                   >
                     {showAllCities ? 'Show Less' : `Show All ${cities.length} Cities`}
@@ -1000,27 +984,22 @@ export default function FeedPage() {
           </section>
 
           {/* SECTION: Trending This Week */}
-          <section style={{ marginBottom: '3rem' }}>
+          <section style={{ marginBottom: '2.5rem' }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '1rem',
-              paddingBottom: '1rem',
-              borderBottom: '2px solid var(--border)'
+              marginBottom: '1.25rem'
             }}>
               <h2 style={{
-                fontSize: '1.25rem',
+                fontSize: '1.125rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
                 margin: 0
               }}>
-                <span>🔥</span>
+                <TrendingUp size={20} style={{ color: '#f97316' }} />
                 <span>Trending This Week</span>
               </h2>
             </div>
@@ -1038,11 +1017,11 @@ export default function FeedPage() {
               <div style={{
                 padding: '3rem 1rem',
                 textAlign: 'center',
-                background: 'var(--muted)',
-                borderRadius: 'var(--radius-lg)',
-                border: '2px solid var(--border)'
+                background: 'var(--card-elevated)',
+                borderRadius: 'var(--radius-xl)',
+                boxShadow: 'var(--shadow-sm)'
               }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔥</div>
+                <TrendingUp size={48} style={{ color: 'var(--muted-foreground)', marginBottom: '1rem' }} />
                 <p style={{
                   color: 'var(--muted-foreground)',
                   fontSize: '0.875rem'
@@ -1057,27 +1036,22 @@ export default function FeedPage() {
 
           {/* SECTION: Nearby Collections */}
           {userLocation && (
-            <section style={{ marginBottom: '3rem' }}>
+            <section style={{ marginBottom: '2.5rem' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '1rem',
-                paddingBottom: '1rem',
-                borderBottom: '2px solid var(--border)'
+                marginBottom: '1.25rem'
               }}>
                 <h2 style={{
-                  fontSize: '1.25rem',
+                  fontSize: '1.125rem',
                   fontWeight: '700',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
                   margin: 0
                 }}>
-                  <span>📍</span>
+                  <MapPin size={20} style={{ color: 'var(--accent)' }} />
                   <span>Nearby Collections</span>
                 </h2>
               </div>
@@ -1095,11 +1069,11 @@ export default function FeedPage() {
                 <div style={{
                   padding: '3rem 1rem',
                   textAlign: 'center',
-                  background: 'var(--muted)',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '2px solid var(--border)'
+                  background: 'var(--card-elevated)',
+                  borderRadius: 'var(--radius-xl)',
+                  boxShadow: 'var(--shadow-sm)'
                 }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📍</div>
+                  <MapPin size={48} style={{ color: 'var(--muted-foreground)', marginBottom: '1rem' }} />
                   <p style={{
                     color: 'var(--muted-foreground)',
                     fontSize: '0.875rem'
@@ -1121,7 +1095,7 @@ export default function FeedPage() {
       {/* Search View */}
       {view === 'search' && (
         <>
-          {/* Search Input */}
+          {/* Search Input - Tidal-style pill */}
           <div style={{
             marginBottom: '1.5rem',
             position: 'relative'
@@ -1133,36 +1107,38 @@ export default function FeedPage() {
               placeholder="Search collections and users..."
               style={{
                 width: '100%',
-                padding: '1rem',
-                paddingLeft: '3rem',
-                border: '2px solid var(--border)',
-                borderRadius: 'var(--radius-lg)',
+                padding: '1rem 1.5rem',
+                paddingLeft: '3.5rem',
+                border: 'none',
+                borderRadius: 'var(--radius-pill)',
                 fontSize: '1rem',
-                background: 'var(--card)',
+                background: 'var(--card-elevated)',
                 color: 'var(--foreground)',
                 outline: 'none',
-                transition: 'var(--transition)'
+                boxShadow: 'var(--shadow)',
+                transition: 'all 0.2s ease'
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = 'var(--accent)'
+                e.currentTarget.style.boxShadow = 'var(--shadow-lg), 0 0 0 2px var(--accent)'
               }}
               onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)'
+                e.currentTarget.style.boxShadow = 'var(--shadow)'
               }}
             />
-            <span style={{
-              position: 'absolute',
-              left: '1rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: '1.25rem'
-            }}>
-              🔍
-            </span>
+            <Search
+              size={20}
+              style={{
+                position: 'absolute',
+                left: '1.25rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--muted-foreground)'
+              }}
+            />
             {searchLoading && (
               <div style={{
                 position: 'absolute',
-                right: '1rem',
+                right: '1.25rem',
                 top: '50%',
                 transform: 'translateY(-50%)'
               }}>
@@ -1171,19 +1147,19 @@ export default function FeedPage() {
             )}
           </div>
 
-          {/* Search Tabs */}
+          {/* Search Tabs - Pill style */}
           <div style={{
             display: 'flex',
             gap: '0.5rem',
             marginBottom: '1.5rem',
-            background: 'var(--muted)',
-            padding: '0.25rem',
-            borderRadius: 'var(--radius)',
-            border: '1px solid var(--border)'
+            background: 'var(--card-elevated)',
+            padding: '0.375rem',
+            borderRadius: 'var(--radius-pill)',
+            boxShadow: 'var(--shadow-sm)'
           }}>
             {[
-              { value: 'collections', label: 'Collections', icon: '📂' },
-              { value: 'users', label: 'Users', icon: '👥' }
+              { value: 'collections', label: 'Collections', Icon: Folder },
+              { value: 'users', label: 'Users', Icon: Users }
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -1192,23 +1168,20 @@ export default function FeedPage() {
                   flex: 1,
                   padding: '0.75rem',
                   background: searchTab === tab.value ? 'var(--accent)' : 'transparent',
-                  color: searchTab === tab.value ? 'white' : 'var(--foreground)',
+                  color: searchTab === tab.value ? 'white' : 'var(--muted-foreground)',
                   border: 'none',
-                  borderRadius: 'var(--radius)',
+                  borderRadius: 'var(--radius-pill)',
                   cursor: 'pointer',
-                  fontSize: '0.875rem',
+                  fontSize: '0.8125rem',
                   fontWeight: '600',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  transition: 'var(--transition)',
+                  transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem'
                 }}
               >
-                <span>{tab.icon}</span>
+                <tab.Icon size={16} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -1255,11 +1228,11 @@ export default function FeedPage() {
                         <div
                           key={searchUser.id}
                           style={{
-                            padding: '1rem',
-                            background: 'var(--card)',
-                            border: '1px solid var(--border)',
-                            borderRadius: 'var(--radius-lg)',
-                            transition: 'var(--transition)'
+                            padding: '1.25rem',
+                            background: 'var(--card-elevated)',
+                            borderRadius: 'var(--radius-xl)',
+                            boxShadow: 'var(--shadow)',
+                            transition: 'all 0.2s ease'
                           }}
                         >
                           <div style={{
@@ -1286,9 +1259,7 @@ export default function FeedPage() {
                                 <h3 style={{
                                   fontSize: '1rem',
                                   fontWeight: '700',
-                                  marginBottom: '0.25rem',
-                                  fontFamily: 'var(--font-mono)',
-                                  textTransform: 'uppercase'
+                                  marginBottom: '0.25rem'
                                 }}>
                                   {searchUser.full_name || searchUser.username || searchUser.email}
                                 </h3>
@@ -1337,20 +1308,18 @@ export default function FeedPage() {
                             <button
                               onClick={() => searchFollowing.has(searchUser.id) ? handleUnfollow(searchUser.id) : handleFollow(searchUser.id)}
                               style={{
-                                padding: '0.5rem 1rem',
+                                padding: '0.625rem 1.25rem',
                                 background: searchFollowing.has(searchUser.id) ? 'var(--muted)' : 'var(--accent)',
                                 color: searchFollowing.has(searchUser.id) ? 'var(--muted-foreground)' : 'white',
-                                border: searchFollowing.has(searchUser.id) ? '1px solid var(--border)' : 'none',
-                                borderRadius: 'var(--radius)',
+                                border: 'none',
+                                borderRadius: 'var(--radius-pill)',
                                 cursor: 'pointer',
-                                fontSize: '0.75rem',
+                                fontSize: '0.8125rem',
                                 fontWeight: '600',
-                                fontFamily: 'var(--font-mono)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
                                 whiteSpace: 'nowrap',
                                 flexShrink: 0,
-                                transition: 'var(--transition)'
+                                transition: 'all 0.2s ease',
+                                boxShadow: searchFollowing.has(searchUser.id) ? 'none' : 'var(--shadow-sm)'
                               }}
                               onMouseEnter={(e) => {
                                 if (!searchFollowing.has(searchUser.id)) {
@@ -1377,16 +1346,15 @@ export default function FeedPage() {
             <div style={{
               padding: '3rem',
               textAlign: 'center',
-              background: 'var(--muted)',
-              borderRadius: 'var(--radius-lg)',
-              border: '2px solid var(--border)'
+              background: 'var(--card-elevated)',
+              borderRadius: 'var(--radius-xl)',
+              boxShadow: 'var(--shadow-sm)'
             }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+              <Search size={48} style={{ color: 'var(--muted-foreground)', marginBottom: '1rem' }} />
               <h3 style={{
-                fontSize: '1.25rem',
+                fontSize: '1.125rem',
                 fontWeight: '700',
-                marginBottom: '0.5rem',
-                fontFamily: 'var(--font-mono)'
+                marginBottom: '0.5rem'
               }}>
                 Search for Content
               </h3>
@@ -1403,22 +1371,21 @@ export default function FeedPage() {
 
       {/* Load More */}
       {hasMore && (
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
           <button
             onClick={handleLoadMore}
             disabled={loadingMore}
             style={{
-              padding: '0.75rem 2rem',
+              padding: '0.875rem 2.5rem',
               background: loadingMore ? 'var(--muted)' : 'var(--accent)',
               color: 'white',
               border: 'none',
-              borderRadius: 'var(--radius)',
+              borderRadius: 'var(--radius-pill)',
               cursor: loadingMore ? 'not-allowed' : 'pointer',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              fontSize: '0.875rem'
+              fontSize: '0.875rem',
+              boxShadow: loadingMore ? 'none' : 'var(--shadow-glow)',
+              transition: 'all 0.2s ease'
             }}
           >
             {loadingMore ? 'Loading...' : 'Load More'}

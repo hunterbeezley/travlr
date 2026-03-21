@@ -1,8 +1,8 @@
 /* Modern Theme for Travlr */
-/* Dot Matrix Typography & Bold Minimalism */
+/* Tidal-Inspired Design - Soft, Approachable, Modern */
 
-/* Import a dot-matrix style font from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
+/* Import Inter for a clean, modern look */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* Modern CSS Reset */
 *,
@@ -81,11 +81,17 @@ select {
   --dot-size: 2px;
   --dot-spacing: 20px;
 
-  /* Shadows - Minimal, hard shadows */
-  --shadow-sm: 0 2px 0 0 rgba(255, 255, 255, 0.1);
-  --shadow: 0 4px 0 0 rgba(255, 255, 255, 0.1);
-  --shadow-lg: 0 8px 0 0 rgba(255, 255, 255, 0.15);
-  --shadow-xl: 0 12px 0 0 rgba(255, 255, 255, 0.2);
+  /* Shadows - Soft, modern shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.25);
+  --shadow-glow: 0 0 20px rgba(230, 57, 70, 0.3);
+
+  /* Elevated surfaces */
+  --card-elevated: #2A2A2D;
+  --card-hover: #323235;
+  --surface-subtle: rgba(255, 255, 255, 0.03);
 
   /* Spacing - Grid-based */
   --space-xs: 4px;
@@ -95,16 +101,17 @@ select {
   --space-xl: 32px;
   --space-2xl: 48px;
 
-  /* Border Radius - Sharp corners */
-  --radius-sm: 2px;
-  --radius: 4px;
-  --radius-lg: 6px;
-  --radius-xl: 8px;
+  /* Border Radius - Soft, rounded corners */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 9999px;
 
-  /* Typography - Dot Matrix Style */
-  --font-display: 'Rajdhani', sans-serif; /* Bold, geometric */
-  --font-body: 'Rajdhani', sans-serif;
-  --font-mono: 'Share Tech Mono', monospace; /* Dot matrix feel */
+  /* Typography - Clean, Modern Style */
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
 
   /* Transitions - Snappy */
   --transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -122,11 +129,17 @@ select {
     --muted: #F3F4F6;
     --muted-foreground: #6B7280;
 
-    /* Inverted shadows for light mode */
-    --shadow-sm: 0 2px 0 0 rgba(0, 0, 0, 0.05);
-    --shadow: 0 4px 0 0 rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 8px 0 0 rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 12px 0 0 rgba(0, 0, 0, 0.12);
+    /* Soft shadows for light mode */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.12);
+    --shadow-glow: 0 0 20px rgba(230, 57, 70, 0.15);
+
+    /* Elevated surfaces for light mode */
+    --card-elevated: #FFFFFF;
+    --card-hover: #F8F8F8;
+    --surface-subtle: rgba(0, 0, 0, 0.02);
   }
 }
 
@@ -156,33 +169,8 @@ body {
   color: inherit;
 }
 
-/* Dot matrix background pattern */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image:
-    radial-gradient(circle, var(--color-gray-3) var(--dot-size), transparent var(--dot-size));
-  background-size: var(--dot-spacing) var(--dot-spacing);
-  opacity: 0.2;
-  pointer-events: none;
-  z-index: -1;
-}
-
-/* Red accent line at top of page - more subtle */
-body::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-red-muted), transparent);
-  z-index: 9999;
-}
+/* Clean background - no dot pattern */
+/* Removed dot-matrix pattern for cleaner Tidal-inspired look */
 
 /* Layout Components */
 .container {
@@ -210,8 +198,8 @@ label {
 }
 
 h1 {
-  font-size: clamp(2.5rem, 5vw, 4rem);
-  text-transform: uppercase;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
 }
 
 h2 {
@@ -242,29 +230,11 @@ h3 {
 .spinner {
   width: 60px;
   height: 60px;
-  border: 3px solid transparent;
-  border-top: 3px solid var(--color-red-muted);
-  border-right: 3px solid var(--color-red-muted);
-  border-radius: 0;
-  animation: spinSquare 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border: 3px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: 50%;
+  animation: spin 1s ease-in-out infinite;
   position: relative;
-}
-
-.spinner::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 30px;
-  height: 30px;
-  border: 2px solid var(--border);
-  border-radius: 0;
-}
-
-@keyframes spinSquare {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 @keyframes spin {
@@ -401,25 +371,24 @@ h3 {
   letter-spacing: 0.05em;
 }
 
-/* Buttons - Sharp & Bold */
+/* Buttons - Soft & Modern */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 0.875rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
   transition: var(--transition);
-  border: 2px solid transparent;
+  border: none;
   cursor: pointer;
   text-decoration: none;
   outline: none;
   position: relative;
   overflow: hidden;
   padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-pill);
 }
 
 .btn::before {
@@ -462,20 +431,18 @@ h3 {
   color: var(--color-white);
 }
 
-/* Gradient Button - Primary CTAs */
+/* Gradient Button - Primary CTAs (Tidal-style pill) */
 .btn-gradient {
   background: linear-gradient(135deg, var(--color-red) 0%, var(--accent-hover) 100%);
   color: var(--color-white);
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.75rem;
   border: none;
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+  box-shadow: var(--shadow), var(--shadow-glow);
   position: relative;
   overflow: hidden;
 }
@@ -525,58 +492,33 @@ h3 {
   font-size: 0.75rem;
 }
 
-/* Form Elements */
+/* Form Elements - Soft, modern cards */
 .form-container {
   max-width: 500px;
   margin: var(--space-2xl) auto;
   padding: var(--space-2xl);
   background: var(--card);
-  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
   position: relative;
   color: var(--foreground);
 }
 
-.form-container::before {
-  content: '';
-  position: absolute;
-  top: -1px;
-  left: -1px;
-  width: 20px;
-  height: 20px;
-  border-top: 2px solid var(--color-red-muted);
-  border-left: 2px solid var(--color-red-muted);
-}
-
-.form-container::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  right: -1px;
-  width: 20px;
-  height: 20px;
-  border-bottom: 2px solid var(--color-red-muted);
-  border-right: 2px solid var(--color-red-muted);
-}
-
 .form-title {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
   margin-bottom: var(--space-sm);
   text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-white);
+  color: var(--foreground);
 }
 
 .form-subtitle {
   color: var(--muted-foreground);
   text-align: center;
   margin-bottom: var(--space-xl);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
 }
 
 .form-group {
@@ -586,10 +528,10 @@ h3 {
 .form-input {
   width: 100%;
   padding: var(--space-md);
-  border: 2px solid var(--border);
-  background: var(--background);
+  border: 1px solid var(--border);
+  background: var(--card-elevated);
   color: var(--foreground);
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 0.875rem;
   transition: all 0.2s ease;
   border-radius: var(--radius);
@@ -604,9 +546,7 @@ h3 {
 
 .form-input::placeholder {
   color: var(--muted-foreground);
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
+  font-size: 0.875rem;
 }
 
 /* Error State */

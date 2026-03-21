@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import CollectionActions from '../Collection/CollectionActions'
+import { User, MapPin, Heart, Bookmark } from 'lucide-react'
 
 interface FeedCardProps {
   activity: any
@@ -50,9 +51,9 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
 
   return (
     <div style={{
-      background: 'var(--card)',
-      border: '2px solid var(--border)',
-      borderRadius: 'var(--radius-lg)',
+      background: 'var(--card-elevated)',
+      borderRadius: 'var(--radius-xl)',
+      boxShadow: 'var(--shadow)',
       overflow: 'hidden'
     }}>
       {/* Header: User Info */}
@@ -60,8 +61,7 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
         padding: '1rem',
         display: 'flex',
         alignItems: 'center',
-        gap: '0.75rem',
-        borderBottom: '1px solid var(--border)'
+        gap: '0.75rem'
       }}>
         <Link
           href={`/profile/${user_id}`}
@@ -88,7 +88,7 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
               }}
             />
           ) : (
-            <span style={{ fontSize: '1.25rem' }}>👤</span>
+            <User size={20} style={{ color: 'var(--muted-foreground)' }} />
           )}
         </Link>
         <div style={{ flex: 1 }}>
@@ -225,16 +225,19 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
           alignItems: 'center',
           gap: '1rem',
           fontSize: '0.75rem',
-          color: 'var(--muted-foreground)',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em'
+          color: 'var(--muted-foreground)'
         }}>
-          <span>📍 {target_data.pin_count} pins</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <MapPin size={14} /> {target_data.pin_count} pins
+          </span>
           {target_data.stats && (
             <>
-              <span>❤️ {target_data.stats.likes_count || 0}</span>
-              <span>💾 {target_data.stats.saves_count || 0}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Heart size={14} /> {target_data.stats.likes_count || 0}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Bookmark size={14} /> {target_data.stats.saves_count || 0}
+              </span>
             </>
           )}
         </div>
@@ -244,7 +247,7 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
       {target_data.stats && (
         <div style={{
           padding: '0.75rem 1rem',
-          borderTop: '1px solid var(--border)'
+          background: 'var(--surface-subtle)'
         }}>
           <CollectionActions
             collectionId={target_data.id}

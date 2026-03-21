@@ -411,12 +411,11 @@ export default function ProfilePage() {
         }}>
           {/* Profile Header */}
           <div className="profile-header-card" style={{
-            background: 'var(--card)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
+            background: 'var(--card-elevated)',
+            borderRadius: 'var(--radius-xl)',
             padding: '2rem',
             marginBottom: '2rem',
-            boxShadow: 'var(--shadow-sm)'
+            boxShadow: 'var(--shadow)'
           }}>
             <div className="profile-header-content" style={{
               display: 'flex',
@@ -543,17 +542,18 @@ export default function ProfilePage() {
                       onClick={() => setIsEditing(!isEditing)}
                       className="profile-edit-btn"
                       style={{
-                        padding: '0.5rem 1rem',
+                        padding: '0.625rem 1.25rem',
                         background: 'var(--accent)',
                         color: 'white',
                         border: 'none',
-                        borderRadius: 'var(--radius)',
+                        borderRadius: 'var(--radius-pill)',
                         cursor: 'pointer',
-                        fontSize: '0.875rem',
-                        fontWeight: '500',
-                        transition: 'var(--transition)',
+                        fontSize: '0.8125rem',
+                        fontWeight: '600',
+                        transition: 'all 0.2s ease',
                         flexShrink: 0,
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        boxShadow: 'var(--shadow-sm)'
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.background = 'var(--accent-hover)'
@@ -562,34 +562,36 @@ export default function ProfilePage() {
                         e.currentTarget.style.background = 'var(--accent)'
                       }}
                     >
-                      {isEditing ? 'CANCEL' : 'EDIT PROFILE'}
+                      {isEditing ? 'Cancel' : 'Edit Profile'}
                     </button>
 
                     <button
                       onClick={handleSignOut}
                       className="profile-logout-btn"
                       style={{
-                        padding: '0.5rem 1rem',
-                        background: 'var(--destructive)',
-                        color: 'white',
+                        padding: '0.625rem 1.25rem',
+                        background: 'var(--muted)',
+                        color: 'var(--muted-foreground)',
                         border: 'none',
-                        borderRadius: 'var(--radius)',
+                        borderRadius: 'var(--radius-pill)',
                         cursor: 'pointer',
-                        fontSize: '0.875rem',
-                        fontWeight: '500',
-                        transition: 'var(--transition)',
+                        fontSize: '0.8125rem',
+                        fontWeight: '600',
+                        transition: 'all 0.2s ease',
                         flexShrink: 0,
                         whiteSpace: 'nowrap'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#b91c1c' // darker red
+                        e.currentTarget.style.background = 'var(--destructive)'
+                        e.currentTarget.style.color = 'white'
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'var(--destructive)'
+                        e.currentTarget.style.background = 'var(--muted)'
+                        e.currentTarget.style.color = 'var(--muted-foreground)'
                       }}
                       title="Sign out of your account"
                     >
-                      LOGOUT
+                      Logout
                     </button>
                   </div>
                 </div>
@@ -897,25 +899,26 @@ export default function ProfilePage() {
             <button
               onClick={() => router.push('/saved')}
               style={{
-                padding: '1rem',
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-lg)',
+                padding: '1.25rem',
+                background: 'var(--card-elevated)',
+                border: 'none',
+                borderRadius: 'var(--radius-xl)',
                 cursor: 'pointer',
-                transition: 'var(--transition)',
+                transition: 'all 0.2s ease',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
                 color: 'var(--foreground)',
-                fontWeight: '500'
+                fontWeight: '500',
+                boxShadow: 'var(--shadow-sm)'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--accent)'
-                e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = 'var(--shadow)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)'
-                e.currentTarget.style.boxShadow = 'none'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
               }}
             >
               <span style={{ fontSize: '1.5rem' }}>💾</span>
@@ -930,25 +933,26 @@ export default function ProfilePage() {
             <button
               onClick={() => router.push('/analytics')}
               style={{
-                padding: '1rem',
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-lg)',
+                padding: '1.25rem',
+                background: 'var(--card-elevated)',
+                border: 'none',
+                borderRadius: 'var(--radius-xl)',
                 cursor: 'pointer',
-                transition: 'var(--transition)',
+                transition: 'all 0.2s ease',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
                 color: 'var(--foreground)',
-                fontWeight: '500'
+                fontWeight: '500',
+                boxShadow: 'var(--shadow-sm)'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--accent)'
-                e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = 'var(--shadow)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)'
-                e.currentTarget.style.boxShadow = 'none'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
               }}
             >
               <span style={{ fontSize: '1.5rem' }}>📊</span>
@@ -969,11 +973,11 @@ export default function ProfilePage() {
           }}>
             {/* Collections */}
             <div style={{
-              background: 'var(--card)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '2rem',
-              minHeight: '400px'
+              background: 'var(--card-elevated)',
+              borderRadius: 'var(--radius-xl)',
+              padding: '1.5rem',
+              minHeight: '400px',
+              boxShadow: 'var(--shadow)'
             }}>
               <div style={{
                 display: 'flex',
@@ -1001,18 +1005,19 @@ export default function ProfilePage() {
                 <button
                   onClick={() => setShowCreateCollection(true)}
                   style={{
-                    padding: '0.5rem 1rem',
+                    padding: '0.625rem 1rem',
                     background: 'var(--accent)',
                     color: 'white',
                     border: 'none',
-                    borderRadius: 'var(--radius)',
+                    borderRadius: 'var(--radius-pill)',
                     cursor: 'pointer',
-                    fontSize: '0.875rem',
-                    fontWeight: '500',
-                    transition: 'var(--transition)',
+                    fontSize: '0.8125rem',
+                    fontWeight: '600',
+                    transition: 'all 0.2s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    gap: '0.5rem',
+                    boxShadow: 'var(--shadow-sm)'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'var(--accent-hover)'
@@ -1021,7 +1026,7 @@ export default function ProfilePage() {
                     e.currentTarget.style.background = 'var(--accent)'
                   }}
                 >
-                  ➕ New Collection
+                  + New
                 </button>
               </div>
 
@@ -1179,11 +1184,11 @@ export default function ProfilePage() {
 
             {/* Pins */}
             <div style={{
-              background: 'var(--card)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '2rem',
-              minHeight: '400px'
+              background: 'var(--card-elevated)',
+              borderRadius: 'var(--radius-xl)',
+              padding: '1.5rem',
+              minHeight: '400px',
+              boxShadow: 'var(--shadow)'
             }}>
               <div style={{
                 display: 'flex',
@@ -1377,6 +1382,7 @@ export default function ProfilePage() {
           right: 0,
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -1384,25 +1390,19 @@ export default function ProfilePage() {
           padding: '1rem'
         }}>
           <div style={{
-            background: 'rgba(39, 39, 42, 0.85)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: 'var(--radius-lg)',
+            background: 'var(--card-elevated)',
+            borderRadius: 'var(--radius-xl)',
             padding: '2rem',
             maxWidth: '500px',
             width: '100%',
             boxShadow: 'var(--shadow-xl)'
           }}>
             <h3 style={{
-              fontSize: '1.5rem',
-              fontWeight: '600',
-              marginBottom: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
+              fontSize: '1.25rem',
+              fontWeight: '700',
+              marginBottom: '1.5rem'
             }}>
-              📂 Create New Collection
+              Create New Collection
             </h3>
 
             <form onSubmit={handleCreateCollection}>

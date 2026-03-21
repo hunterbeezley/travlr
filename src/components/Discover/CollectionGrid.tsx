@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import CollectionActions from '../Collection/CollectionActions'
+import { User, MapPin, Heart, Bookmark, MessageCircle, TrendingUp, Star, Sparkles } from 'lucide-react'
 
 interface CollectionGridProps {
   collections: any[]
@@ -42,20 +43,20 @@ export default function CollectionGrid({ collections, currentUserId }: Collectio
           <div
             key={collection.collection_id}
             style={{
-              background: 'var(--card)',
-              border: '2px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
+              background: 'var(--card-elevated)',
+              borderRadius: 'var(--radius-xl)',
+              boxShadow: 'var(--shadow)',
               overflow: 'hidden',
-              transition: 'var(--transition)',
+              transition: 'all 0.2s ease',
               position: 'relative'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-4px)'
-              e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)'
+              e.currentTarget.style.boxShadow = 'var(--shadow-lg)'
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'none'
+              e.currentTarget.style.boxShadow = 'var(--shadow)'
             }}
           >
             {/* Image Grid */}
@@ -109,50 +110,47 @@ export default function CollectionGrid({ collections, currentUserId }: Collectio
                 }}>
                   {showTrendingBadge && (
                     <span style={{
-                      padding: '0.25rem 0.5rem',
-                      background: 'rgba(249, 115, 22, 0.1)',
+                      padding: '0.375rem 0.75rem',
+                      background: 'rgba(249, 115, 22, 0.15)',
                       color: '#f97316',
-                      border: '1px solid rgba(249, 115, 22, 0.3)',
-                      borderRadius: 'var(--radius)',
+                      borderRadius: 'var(--radius-pill)',
                       fontSize: '0.625rem',
-                      fontWeight: '700',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
                     }}>
-                      🔥 Trending
+                      <TrendingUp size={12} /> Trending
                     </span>
                   )}
                   {showPopularBadge && (
                     <span style={{
-                      padding: '0.25rem 0.5rem',
-                      background: 'rgba(168, 85, 247, 0.1)',
+                      padding: '0.375rem 0.75rem',
+                      background: 'rgba(168, 85, 247, 0.15)',
                       color: '#a855f7',
-                      border: '1px solid rgba(168, 85, 247, 0.3)',
-                      borderRadius: 'var(--radius)',
+                      borderRadius: 'var(--radius-pill)',
                       fontSize: '0.625rem',
-                      fontWeight: '700',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
                     }}>
-                      ⭐ Popular
+                      <Star size={12} /> Popular
                     </span>
                   )}
                   {showNewBadge && (
                     <span style={{
-                      padding: '0.25rem 0.5rem',
-                      background: 'rgba(59, 130, 246, 0.1)',
+                      padding: '0.375rem 0.75rem',
+                      background: 'rgba(59, 130, 246, 0.15)',
                       color: '#3b82f6',
-                      border: '1px solid rgba(59, 130, 246, 0.3)',
-                      borderRadius: 'var(--radius)',
+                      borderRadius: 'var(--radius-pill)',
                       fontSize: '0.625rem',
-                      fontWeight: '700',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
                     }}>
-                      🆕 New
+                      <Sparkles size={12} /> New
                     </span>
                   )}
                 </div>
@@ -190,7 +188,7 @@ export default function CollectionGrid({ collections, currentUserId }: Collectio
                       }}
                     />
                   ) : (
-                    <span style={{ fontSize: '0.75rem' }}>👤</span>
+                    <User size={14} style={{ color: 'var(--muted-foreground)' }} />
                   )}
                 </Link>
                 <Link
@@ -246,42 +244,35 @@ export default function CollectionGrid({ collections, currentUserId }: Collectio
                 alignItems: 'center',
                 gap: '0.75rem',
                 flexWrap: 'wrap',
-                fontSize: '0.7rem',
+                fontSize: '0.75rem',
                 color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
                 marginBottom: '0.75rem',
-                padding: '0.5rem',
-                background: 'var(--muted)',
+                padding: '0.625rem 0.75rem',
+                background: 'var(--surface-subtle)',
                 borderRadius: 'var(--radius)'
               }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  📍 {collection.pin_count} {collection.pin_count === 1 ? 'pin' : 'pins'}
+                  <MapPin size={13} /> {collection.pin_count} {collection.pin_count === 1 ? 'pin' : 'pins'}
                 </span>
 
                 {collection.stats && (
                   <>
-                    <span style={{ color: 'var(--border)' }}>•</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#ef4444' }}>
-                      ❤️ {collection.stats.likes_count || 0}
+                      <Heart size={13} /> {collection.stats.likes_count || 0}
                     </span>
-                    <span style={{ color: 'var(--border)' }}>•</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#3b82f6' }}>
-                      💾 {collection.stats.saves_count || 0}
+                      <Bookmark size={13} /> {collection.stats.saves_count || 0}
                     </span>
-                    <span style={{ color: 'var(--border)' }}>•</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      💬 {collection.stats.comments_count || 0}
+                      <MessageCircle size={13} /> {collection.stats.comments_count || 0}
                     </span>
                   </>
                 )}
 
                 {collection.distance_km !== undefined && (
-                  <>
-                    <span style={{ color: 'var(--border)' }}>•</span>
-                    <span>🚶 {collection.distance_km.toFixed(1)} km</span>
-                  </>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <MapPin size={13} /> {collection.distance_km.toFixed(1)} km
+                  </span>
                 )}
               </div>
 

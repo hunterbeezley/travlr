@@ -1,6 +1,7 @@
 'use client'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { Home, Map, Search, Users, User } from 'lucide-react'
 
 export default function MobileNav() {
   const router = useRouter()
@@ -15,11 +16,11 @@ export default function MobileNav() {
   }
 
   const navItems = [
-    { path: '/', label: 'Feed', icon: '📱' },
-    { path: '/map', label: 'Map', icon: '🗺️' },
-    { path: '/search', label: 'Search', icon: '🔍' },
-    { path: '/friends', label: 'Friends', icon: '👥' },
-    { path: '/profile', label: 'Profile', icon: '👤' }
+    { path: '/', label: 'Feed', icon: Home },
+    { path: '/map', label: 'Map', icon: Map },
+    { path: '/search', label: 'Search', icon: Search },
+    { path: '/friends', label: 'Friends', icon: Users },
+    { path: '/profile', label: 'Profile', icon: User }
   ]
 
   return (
@@ -31,73 +32,42 @@ export default function MobileNav() {
         left: 0,
         right: 0,
         background: 'var(--card)',
-        borderTop: '2px solid var(--border)',
+        boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.3)',
         display: 'flex',
         justifyContent: 'space-around',
         alignItems: 'center',
-        padding: '0.5rem 0',
+        padding: '0.75rem 0',
         zIndex: 1000,
-        // Safe area padding for iOS devices with notches
-        paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))'
+        paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'
       }}>
       {navItems.map((item) => {
         const active = isActive(item.path)
+        const Icon = item.icon
 
         return (
           <button
             key={item.path}
             onClick={() => router.push(item.path)}
+            aria-label={item.label}
             style={{
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.25rem',
-              padding: '0.5rem',
-              background: 'transparent',
+              padding: '0.75rem 1.25rem',
+              background: active ? 'var(--accent)' : 'transparent',
               border: 'none',
+              borderRadius: 'var(--radius-pill)',
               cursor: 'pointer',
-              color: active ? 'var(--accent)' : 'var(--muted-foreground)',
-              transition: 'var(--transition)',
-              minWidth: '64px',
-              minHeight: '44px', // Apple HIG minimum touch target
-              position: 'relative'
+              color: active ? 'white' : 'var(--muted-foreground)',
+              transition: 'all 0.2s ease',
+              minWidth: '48px',
+              minHeight: '48px'
             }}
           >
-            {/* Icon */}
-            <span style={{
-              fontSize: '1.5rem',
-              lineHeight: 1,
-              filter: active ? 'none' : 'grayscale(100%)',
-              opacity: active ? 1 : 0.6
-            }}>
-              {item.icon}
-            </span>
-
-            {/* Label */}
-            <span style={{
-              fontSize: '0.625rem',
-              fontWeight: active ? '700' : '500',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              {item.label}
-            </span>
-
-            {/* Active indicator */}
-            {active && (
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '32px',
-                height: '3px',
-                background: 'var(--accent)',
-                borderRadius: '0 0 3px 3px'
-              }} />
-            )}
+            <Icon
+              size={22}
+              strokeWidth={active ? 2.5 : 2}
+            />
           </button>
         )
       })}
