@@ -40,10 +40,8 @@ ON collections USING GIN(search_vector);
 -- Note: Location filtering is handled through pins table, not collections table
 -- Collections don't have a location column; each pin has a location
 
--- Create index for category filtering
-CREATE INDEX IF NOT EXISTS collections_category_idx
-ON collections(category)
-WHERE category IS NOT NULL;
+-- Note: Category filtering removed - categories belong to pins, not collections
+-- If category filtering is needed, it should query through the pins table
 
 -- Add search vector to users table
 ALTER TABLE users
@@ -82,10 +80,12 @@ CREATE INDEX IF NOT EXISTS users_search_idx
 ON users USING GIN(search_vector);
 
 -- Create RPC function for searching collections
+-- Note: filter_category is accepted but ignored (collections don't have categories)
+-- Note: filter_location filters by pins within collections
 CREATE OR REPLACE FUNCTION search_collections(
   search_query TEXT,
-  filter_category TEXT DEFAULT NULL,
-  filter_location TEXT DEFAULT NULL,
+  filter_category TEXT DEFAULT NULL, -- Ignored (collections don't have category column)
+  filter_location TEXT DEFAULT NULL, -- Filters by pins' locations
   sort_by TEXT DEFAULT 'relevance', -- relevance, recent, popular
   result_limit INT DEFAULT 50
 )
@@ -94,7 +94,7 @@ RETURNS TABLE (
   title TEXT,
   description TEXT,
   location TEXT,
-  category TEXT,
+  category TEXT, -- Always NULL (collections don't have category)
   color TEXT,
   is_public BOOLEAN,
   created_at TIMESTAMPTZ,
@@ -109,7 +109,7 @@ BEGIN
     c.title,
     c.description,
     NULL::TEXT AS location, -- Collections don't have location; it's in pins
-    c.category,
+    NULL::TEXT AS category, -- Collections don't have category; it's in pins
     c.color,
     c.is_public,
     c.created_at,
@@ -140,7 +140,8 @@ BEGIN
       OR c.search_vector @@ plainto_tsquery('english', search_query)
       OR c.title ILIKE '%' || search_query || '%'
     )
-    AND (filter_category IS NULL OR c.category = filter_category)
+    -- Note: Category filtering removed - collections don't have category column
+    -- Categories belong to pins, not collections
   ORDER BY
     CASE
       WHEN sort_by = 'relevance' THEN ts_rank(c.search_vector, plainto_tsquery('english', search_query))
