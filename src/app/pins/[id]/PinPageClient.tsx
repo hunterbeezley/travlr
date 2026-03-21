@@ -142,6 +142,7 @@ export default function PinPageClient({
         maxWidth: '1200px',
         margin: '0 auto',
         padding: '1rem',
+        paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))', // Space for mobile nav
         background: 'var(--background)',
         position: 'relative',
         zIndex: 1,
@@ -634,10 +635,10 @@ export default function PinPageClient({
                 aria-label="Share this pin"
                 style={{
                   flex: 1,
-                  minWidth: '150px'
+                  minWidth: '120px' // Reduced for mobile
                 }}
               >
-                🔗 SHARE PIN
+                🔗 SHARE
               </button>
 
               {isOwner && (
@@ -646,10 +647,10 @@ export default function PinPageClient({
                   className="btn btn-secondary"
                   style={{
                     flex: 1,
-                    minWidth: '150px'
+                    minWidth: '120px' // Reduced for mobile
                   }}
                 >
-                  ✏️ EDIT PIN
+                  ✏️ EDIT
                 </button>
               )}
             </div>
@@ -673,7 +674,7 @@ export default function PinPageClient({
 
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(200px, 100%), 1fr))', // Prevent overflow on small screens
               gap: '1rem'
             }}>
               {relatedPins.map((relatedPin) => {
