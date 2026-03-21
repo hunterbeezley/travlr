@@ -97,17 +97,17 @@ export default function FriendsPage() {
     try {
       setLoading(true)
 
-      // Search for users by username, full name, or email
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, username, full_name, bio, profile_image, location, email')
-        .neq('id', user?.id || '')
-        .or(`username.ilike.%${query}%,full_name.ilike.%${query}%,email.ilike.%${query}%`)
-        .limit(50)
+      // Use RPC function for better search with full-text indexing
+      const { data, error } = await supabase.rpc('search_users', {
+        search_query: query.trim(),
+        result_limit: 50
+      })
 
       if (error) throw error
 
-      setSearchResults(data || [])
+      // Filter out current user
+      const filteredData = (data || []).filter((u: any) => u.id !== user?.id)
+      setSearchResults(filteredData)
     } catch (error) {
       logger.error('Error searching users:', error)
       setSearchResults([])
