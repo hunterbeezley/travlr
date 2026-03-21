@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import UserAvatar from '@/components/UserAvatar'
 import Auth from '@/components/Auth'
+import EmptyState from '@/components/EmptyState'
+import { SearchX, UserPlus } from 'lucide-react'
 
 interface UserSearchResult {
   id: string
@@ -481,29 +483,12 @@ export default function FriendsPage() {
             gap: '1rem'
           }}>
             {searchQuery && searchResults.length === 0 && !loading && (
-              <div style={{
-                padding: '3rem',
-                textAlign: 'center',
-                background: 'var(--muted)',
-                borderRadius: 'var(--radius-lg)',
-                border: '2px solid var(--border)'
-              }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-                <h3 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '700',
-                  marginBottom: '0.5rem',
-                  fontFamily: 'var(--font-mono)'
-                }}>
-                  No Results Found
-                </h3>
-                <p style={{
-                  color: 'var(--muted-foreground)',
-                  fontSize: '0.875rem'
-                }}>
-                  Try searching with a different username or name
-                </p>
-              </div>
+              <EmptyState
+                icon={SearchX}
+                title="No Results Found"
+                description={`No users found matching "${searchQuery}". Try searching with a different username or name.`}
+                variant="subtle"
+              />
             )}
 
             {!searchQuery && (
@@ -549,29 +534,12 @@ export default function FriendsPage() {
                 <p style={{ color: 'var(--muted-foreground)' }}>Loading suggestions...</p>
               </div>
             ) : suggestions.length === 0 ? (
-              <div style={{
-                padding: '3rem',
-                textAlign: 'center',
-                background: 'var(--muted)',
-                borderRadius: 'var(--radius-lg)',
-                border: '2px solid var(--border)'
-              }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✨</div>
-                <h3 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '700',
-                  marginBottom: '0.5rem',
-                  fontFamily: 'var(--font-mono)'
-                }}>
-                  No Suggestions Yet
-                </h3>
-                <p style={{
-                  color: 'var(--muted-foreground)',
-                  fontSize: '0.875rem'
-                }}>
-                  Check back later for personalized suggestions
-                </p>
-              </div>
+              <EmptyState
+                icon={UserPlus}
+                title="No Suggestions Yet"
+                description="Check back later for personalized suggestions based on your activity and connections."
+                variant="subtle"
+              />
             ) : (
               suggestions.map(renderUserCard)
             )}

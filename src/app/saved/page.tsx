@@ -387,87 +387,25 @@ export default function SavedCollectionsPage() {
           Loading collections...
         </div>
       ) : collections.length === 0 ? (
-        <div style={{
-          padding: '3rem 1rem',
-          textAlign: 'center',
-          background: 'var(--muted)',
-          borderRadius: 'var(--radius-lg)',
-          border: '2px solid var(--border)'
-        }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
-            {selectedFolder === 'Recently Saved' ? '📅' : '💾'}
-          </div>
-          <h3 style={{
-            fontSize: '1.25rem',
-            fontWeight: '700',
-            marginBottom: '0.5rem',
-            fontFamily: 'var(--font-mono)'
-          }}>
-            {selectedFolder === 'Recently Saved'
+        <EmptyState
+          icon={selectedFolder === 'Recently Saved' ? Calendar : Bookmark}
+          title={
+            selectedFolder === 'Recently Saved'
               ? 'No Recent Saves'
               : selectedFolder === 'All'
                 ? 'No Saved Collections Yet'
-                : `No Collections in "${selectedFolder}"`}
-          </h3>
-          <p style={{
-            color: 'var(--muted-foreground)',
-            marginBottom: '1.5rem',
-            fontSize: '0.875rem',
-            maxWidth: '400px',
-            margin: '0 auto 1.5rem'
-          }}>
-            {selectedFolder === 'Recently Saved'
+                : `No Collections in "${selectedFolder}"`
+          }
+          description={
+            selectedFolder === 'Recently Saved'
               ? 'You haven\'t saved any collections in the last 30 days. Discover and save collections to see them here.'
               : selectedFolder === 'All'
                 ? 'Start saving collections you love to organize and revisit them later.'
-                : 'This folder is empty. Move collections here or explore to find new ones.'}
-          </p>
-          <div style={{
-            display: 'flex',
-            gap: '1rem',
-            justifyContent: 'center',
-            flexWrap: 'wrap'
-          }}>
-            <Link
-              href="/explore"
-              style={{
-                display: 'inline-block',
-                padding: '0.75rem 1.5rem',
-                background: 'var(--accent)',
-                color: 'white',
-                border: '2px solid var(--accent)',
-                borderRadius: 'var(--radius)',
-                textDecoration: 'none',
-                fontWeight: '600',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                fontSize: '0.875rem'
-              }}
-            >
-              Explore Collections
-            </Link>
-            <Link
-              href="/"
-              style={{
-                display: 'inline-block',
-                padding: '0.75rem 1.5rem',
-                background: 'var(--muted)',
-                color: 'var(--foreground)',
-                border: '2px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                textDecoration: 'none',
-                fontWeight: '600',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                fontSize: '0.875rem'
-              }}
-            >
-              View Feed
-            </Link>
-          </div>
-        </div>
+                : 'This folder is empty. Move collections here or explore to find new ones.'
+          }
+          actionLabel="Explore Collections"
+          actionHref="/explore"
+        />
       ) : (
         <div style={{
           display: 'grid',

@@ -7,9 +7,11 @@ import ProfileCompletion from '@/components/ProfileCompletion'
 import Auth from '@/components/Auth'
 import ProfilePictureUpload from '@/components/ProfilePictureUpload'
 import Navbar from '@/components/Navbar'
+import EmptyState from '@/components/EmptyState'
 import { supabase } from '@/lib/supabase'
 import { DatabaseService } from '@/lib/database'
 import { logger } from '@/lib/logger'
+import { FolderOpen } from 'lucide-react'
 
 interface UserProfile {
   id: string
@@ -1036,34 +1038,14 @@ export default function ProfilePage() {
                   <p style={{ color: 'var(--muted-foreground)' }}>Loading collections...</p>
                 </div>
               ) : collections.length === 0 ? (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '3rem 1rem',
-                  color: 'var(--muted-foreground)'
-                }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📂</div>
-                  <h4 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                    No Collections Yet
-                  </h4>
-                  <p style={{ marginBottom: '1.5rem' }}>
-                    Create your first collection to organize your pins
-                  </p>
-                  <button
-                    onClick={() => setShowCreateCollection(true)}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: 'var(--accent)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 'var(--radius)',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem',
-                      fontWeight: '500'
-                    }}
-                  >
-                    ➕ Create Collection
-                  </button>
-                </div>
+                <EmptyState
+                  icon={FolderOpen}
+                  title="No Collections Yet"
+                  description="Create your first collection to organize your pins and share your favorite places."
+                  actionLabel="Create Collection"
+                  onAction={() => setShowCreateCollection(true)}
+                  variant="subtle"
+                />
               ) : (
                 <div style={{
                   display: 'grid',

@@ -6,7 +6,9 @@ import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import CollectionGrid from '@/components/Discover/CollectionGrid'
 import UserAvatar from '@/components/UserAvatar'
+import EmptyState from '@/components/EmptyState'
 import { useAuth } from '@/hooks/useAuth'
+import { FolderOpen, Users } from 'lucide-react'
 
 interface Collection {
   id: string
@@ -364,29 +366,12 @@ function SearchPageContent() {
                 <p style={{ color: 'var(--muted-foreground)' }}>Searching collections...</p>
               </div>
             ) : collections.length === 0 ? (
-              <div style={{
-                padding: '3rem',
-                textAlign: 'center',
-                background: 'var(--muted)',
-                borderRadius: 'var(--radius-lg)',
-                border: '2px solid var(--border)'
-              }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📂</div>
-                <h3 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '700',
-                  marginBottom: '0.5rem',
-                  fontFamily: 'var(--font-mono)'
-                }}>
-                  {searchQuery ? 'No Collections Found' : 'Start Searching'}
-                </h3>
-                <p style={{
-                  color: 'var(--muted-foreground)',
-                  fontSize: '0.875rem'
-                }}>
-                  {searchQuery ? 'Try a different search term or filters' : 'Enter a search term to find collections'}
-                </p>
-              </div>
+              <EmptyState
+                icon={FolderOpen}
+                title={searchQuery ? 'No Collections Found' : 'Start Searching'}
+                description={searchQuery ? 'Try a different search term or adjust your filters to find more collections.' : 'Enter a search term to find collections from travelers around the world.'}
+                variant="subtle"
+              />
             ) : (
               <CollectionGrid
                 collections={collections.map(c => ({
@@ -408,29 +393,12 @@ function SearchPageContent() {
                 <p style={{ color: 'var(--muted-foreground)' }}>Searching users...</p>
               </div>
             ) : users.length === 0 ? (
-              <div style={{
-                padding: '3rem',
-                textAlign: 'center',
-                background: 'var(--muted)',
-                borderRadius: 'var(--radius-lg)',
-                border: '2px solid var(--border)'
-              }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👥</div>
-                <h3 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '700',
-                  marginBottom: '0.5rem',
-                  fontFamily: 'var(--font-mono)'
-                }}>
-                  {searchQuery ? 'No Users Found' : 'Start Searching'}
-                </h3>
-                <p style={{
-                  color: 'var(--muted-foreground)',
-                  fontSize: '0.875rem'
-                }}>
-                  {searchQuery ? 'Try a different search term' : 'Enter a search term to find users'}
-                </p>
-              </div>
+              <EmptyState
+                icon={Users}
+                title={searchQuery ? 'No Users Found' : 'Start Searching'}
+                description={searchQuery ? 'Try a different search term to find travelers and creators.' : 'Enter a search term to discover and connect with other travelers.'}
+                variant="subtle"
+              />
             ) : (
               <div style={{
                 display: 'flex',
