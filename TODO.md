@@ -1,6 +1,6 @@
 # Travlr - Task Board
 
-**Last Updated:** March 17, 2026
+**Last Updated:** March 21, 2026
 
 > **All tasks are now tracked as GitHub Issues!**
 >
@@ -14,42 +14,43 @@
 - **All Issues:** https://github.com/hunterbeezley/travlr/issues
 - **Open Enhancements:** https://github.com/hunterbeezley/travlr/issues?q=is:issue+is:open+label:enhancement
 - **Open Bugs:** https://github.com/hunterbeezley/travlr/issues?q=is:issue+is:open+label:bug
-- **Security Issues:** https://github.com/hunterbeezley/travlr/issues?q=is:issue+is:open+label:security
+- **Closed Issues:** https://github.com/hunterbeezley/travlr/issues?q=is:issue+is:closed
 
 ## 📊 Current Issues Summary
 
-### 🔴 Critical Priority - Social Competition (3 issues)
+### 🔴 Critical Priority - Launch Blocker (1 issue)
 
 | # | Issue | Priority |
 |---|-------|----------|
-| [#30](https://github.com/hunterbeezley/travlr/issues/30) | Add comments and voting system to collections | ⭐ CRITICAL |
-| [#29](https://github.com/hunterbeezley/travlr/issues/29) | Add city-based discovery feed to explore popular collections | ⭐ CRITICAL |
 | [#21](https://github.com/hunterbeezley/travlr/issues/21) | Create Terms of Service and Privacy Policy | 🚫 LAUNCH BLOCKER |
 
-**Why Critical:** Without these, Travlr cannot compete with Pinbox as a social platform
+**Why Critical:** Legal requirement before production launch
 
-### 🟡 High Priority - User Experience (4 issues)
-
-| # | Issue | Priority |
-|---|-------|----------|
-| [#31](https://github.com/hunterbeezley/travlr/issues/31) | Enhance UX and visual design for collections and pins pages | 🎨 UX |
-| [#26](https://github.com/hunterbeezley/travlr/issues/26) | Mobile responsiveness and touch optimization | 📱 MOBILE |
-| [#28](https://github.com/hunterbeezley/travlr/issues/28) | Add social feed for discovery and friend activity | 🌍 DISCOVERY |
-| [#27](https://github.com/hunterbeezley/travlr/issues/27) | Add POI discovery and improve pin visibility/differentiation | 🗺️ DISCOVERY |
-
-### 🟢 Medium Priority - Polish & Compliance (4 issues)
+### 🟡 High Priority - Growth & Engagement (4 issues)
 
 | # | Issue | Priority |
 |---|-------|----------|
-| [#25](https://github.com/hunterbeezley/travlr/issues/25) | Improve map view toggle UX with modal selector | 🗺️ UX |
-| [#24](https://github.com/hunterbeezley/travlr/issues/24) | Accessibility: Improve WCAG compliance | ♿ A11Y |
+| [#90](https://github.com/hunterbeezley/travlr/issues/90) | Competitive Analysis: Feature Gaps vs Pinbox & Map Platforms | 📊 STRATEGY |
+| [#89](https://github.com/hunterbeezley/travlr/issues/89) | Implement trending/popular content algorithm | 📈 DISCOVERY |
+| [#87](https://github.com/hunterbeezley/travlr/issues/87) | Add collection collaboration (multiple editors) | 🤝 SOCIAL |
+| [#58](https://github.com/hunterbeezley/travlr/issues/58) | Create comprehensive onboarding flow for new users | 🎓 UX |
+
+### 🟢 Medium Priority - Features & Integration (4 issues)
+
+| # | Issue | Priority |
+|---|-------|----------|
+| [#88](https://github.com/hunterbeezley/travlr/issues/88) | Add embeddable map widgets for external websites | 🌐 INTEGRATION |
+| [#86](https://github.com/hunterbeezley/travlr/issues/86) | Add offline mode for viewing cached collections | 📱 PWA |
+| [#85](https://github.com/hunterbeezley/travlr/issues/85) | Add navigation app integration (Google Maps, Apple Maps, Waze) | 🗺️ INTEGRATION |
+| [#84](https://github.com/hunterbeezley/travlr/issues/84) | Add import/export support for KML, GPX, and CSV formats | 📥 DATA |
+
+### 🟣 Low Priority - Polish & Compliance (4 issues)
+
+| # | Issue | Priority |
+|---|-------|----------|
+| [#24](https://github.com/hunterbeezley/travlr/issues/24) | Accessibility: Improve WCAG compliance (ARIA labels, semantic HTML) | ♿ A11Y |
 | [#23](https://github.com/hunterbeezley/travlr/issues/23) | Compliance: Execute Data Processing Agreement with Supabase | 📄 LEGAL |
 | [#18](https://github.com/hunterbeezley/travlr/issues/18) | Code Style: Replace var with const/let and reduce 'any' usage | 🧹 CODE QUALITY |
-
-### 🔵 Low Priority - Nice to Have (1 issue)
-
-| # | Issue | Priority |
-|---|-------|----------|
 | [#17](https://github.com/hunterbeezley/travlr/issues/17) | Accessibility: Missing alt attributes and button types | ♿ A11Y |
 
 ---
@@ -111,13 +112,23 @@ gh issue close 1 --comment "Fixed in PR #42"
 
 ## 📈 Progress Tracking
 
-**Total Active Issues:** 23
-**Estimated Total Time:** ~74 hours
+**Total Open Issues:** 13 (down from 120 closed!)
+**Launch Blocker:** 1 issue (#21 - Legal docs)
 
-**Production Blockers:** 2 issues (12 hours)
-**Security Hardening:** 8 issues (22 hours)
-**Enhancements:** 11 issues (45 hours)
-**Documentation:** 2 issues (8 hours)
+### ✅ Recently Completed
+
+- 🔐 Security Phase 1: Route protection, rate limiting, validation (#120)
+- 🎨 Tidal-inspired design system (#107)
+- 🌍 Social feed implementation (#28, #91, #92, #93)
+- 📱 Mobile UX improvements (#26, #95-#119 - 25 bugs fixed!)
+- 🔍 Search functionality (#98, #102, #104, #112-#114)
+
+### 🎯 Focus Areas
+
+**Critical:** Legal compliance (#21) before launch
+**High Priority:** Growth features (trending, collaboration, onboarding)
+**Medium Priority:** Integrations and data portability
+**Low Priority:** Polish and code quality
 
 ---
 

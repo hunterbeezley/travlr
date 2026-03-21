@@ -315,7 +315,25 @@ Before going live, get these sign-offs:
 
 ---
 
-**Last Updated:** March 16, 2026
+**Last Updated:** March 21, 2026
 **Next Review:** Before production launch
 
-For detailed analysis, see: [LEGAL_COMPLIANCE_REPORT.md](./LEGAL_COMPLIANCE_REPORT.md)
+## ✅ Technical Compliance Status (March 2026)
+
+Many technical compliance items are already complete:
+
+### Implemented ✅
+- ✅ Account deletion functionality (`/settings`)
+- ✅ Data export/download functionality (`/settings`)
+- ✅ Settings page for privacy preferences
+- ✅ Security hardening (Phase 1 complete)
+- ✅ HTTPS enforced (via Supabase)
+- ✅ Password requirements (via Supabase Auth)
+- ✅ Basic GDPR technical requirements
+
+### Remaining 🚧
+- [ ] Terms of Service page ([#21](https://github.com/hunterbeezley/travlr/issues/21)) ⚠️ BLOCKER
+- [ ] Privacy Policy page ([#21](https://github.com/hunterbeezley/travlr/issues/21)) ⚠️ BLOCKER
+- [ ] Signup consent checkboxes (need legal docs first)
+- [ ] Footer legal links (need pages first)
+- [ ] Supabase DPA execution ([#23](https://github.com/hunterbeezley/travlr/issues/23))

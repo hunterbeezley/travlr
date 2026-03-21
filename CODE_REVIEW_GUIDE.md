@@ -1,6 +1,6 @@
 # Code Review Guide
 
-Complete guide for reviewing code in the Rally app.
+Complete guide for reviewing code in the Travlr app.
 
 ## 🎯 Code Review Goals
 
