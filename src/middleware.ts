@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Define public routes that don't require authentication
+  // Define routes that are fully public (no auth needed)
   const publicRoutes = [
     '/',
     '/offline',
@@ -48,23 +48,46 @@ export async function middleware(request: NextRequest) {
     '/auth/confirm',
     '/legal/privacy',
     '/legal/terms',
+    '/map',
+    '/search',
+    '/friends',
   ]
 
-  // Check if current path is public
-  const isPublicRoute =
+  // Define protected routes that REQUIRE authentication
+  const protectedRoutes = [
+    '/profile',
+    '/saved',
+    '/settings',
+    '/analytics',
+    '/debug-profile',
+    '/debug-pin',
+  ]
+
+  // Check if current path should be allowed through
+  const shouldAllowThrough =
     publicRoutes.some((route) => pathname === route) ||
     pathname.startsWith('/explore/') ||
     pathname.startsWith('/legal/') ||
+    pathname.startsWith('/collections/') || // Collections are viewable (RLS handles privacy)
+    pathname.startsWith('/pins/') || // Pins are viewable (RLS handles privacy)
+    pathname.startsWith('/profile/') || // Profile pages are viewable
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api/google-places') || // Google Places API is rate-limited separately
+    pathname.startsWith('/api/') || // All API routes handle their own auth
     pathname.includes('.') // Static files
 
-  // If user is not authenticated and trying to access protected route
-  if (!user && !isPublicRoute) {
+  // Only block if explicitly trying to access a protected route without auth
+  const isProtectedRoute = protectedRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'))
+
+  if (!user && isProtectedRoute) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/'
     redirectUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(redirectUrl)
+  }
+
+  // Allow everything else through (pages will handle their own auth checks)
+  if (shouldAllowThrough) {
+    return response
   }
 
   // If user is authenticated and trying to access login/signup, redirect to feed
