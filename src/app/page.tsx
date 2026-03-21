@@ -13,7 +13,8 @@ import FollowingSuggestions from '@/components/Feed/FollowingSuggestions'
 import CollectionGrid from '@/components/Discover/CollectionGrid'
 import Auth from '@/components/Auth'
 import EmptyState from '@/components/EmptyState'
-import { Activity, Sparkles, Users } from 'lucide-react'
+import UserAvatar from '@/components/UserAvatar'
+import { Activity, Sparkles, Users, Search } from 'lucide-react'
 
 export default function FeedPage() {
   const { user, loading: authLoading } = useAuth()
@@ -21,11 +22,19 @@ export default function FeedPage() {
   const [activities, setActivities] = useState<any[]>([])
   const [collections, setCollections] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState<'activity' | 'foryou' | 'discover'>('activity')
+  const [view, setView] = useState<'activity' | 'foryou' | 'discover' | 'search'>('activity')
   const [filter, setFilter] = useState<'all' | 'friends' | 'self'>('all')
   const [followingCount, setFollowingCount] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+
+  // Search tab state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchTab, setSearchTab] = useState<'collections' | 'users'>('collections')
+  const [searchCollections, setSearchCollections] = useState<any[]>([])
+  const [searchUsers, setSearchUsers] = useState<any[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchFollowing, setSearchFollowing] = useState<Set<string>>(new Set())
 
   // Discover tab state
   const [trendingCollections, setTrendingCollections] = useState<any[]>([])
@@ -568,7 +577,7 @@ export default function FeedPage() {
       } else if (view === 'foryou') {
         loadForYouFeed()
       } else {
-        // Discover tab doesn't need initial loading (done by individual useEffects)
+        // Discover and Search tabs don't need initial loading (done by individual useEffects)
         setLoading(false)
       }
     }
@@ -586,6 +595,101 @@ export default function FeedPage() {
   const handleCityClick = (city: string) => {
     router.push(`/explore/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, '-'))}`)
   }
+
+  // Search functions
+  const performSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchCollections([])
+      setSearchUsers([])
+      return
+    }
+
+    setSearchLoading(true)
+    try {
+      if (searchTab === 'collections') {
+        const { data, error } = await supabase.rpc('search_collections', {
+          search_query: query.trim(),
+          filter_category: null,
+          filter_location: null,
+          sort_by: 'relevance',
+          result_limit: 50
+        })
+        if (error) throw error
+        setSearchCollections(data || [])
+      } else {
+        const { data, error } = await supabase.rpc('search_users', {
+          search_query: query.trim(),
+          result_limit: 50
+        })
+        if (error) throw error
+        setSearchUsers(data || [])
+      }
+    } catch (error) {
+      logger.error('Error searching:', error)
+      setSearchCollections([])
+      setSearchUsers([])
+    } finally {
+      setSearchLoading(false)
+    }
+  }
+
+  const loadSearchFollowing = async () => {
+    if (!user) return
+    try {
+      const { data, error } = await supabase
+        .from('user_follows')
+        .select('following_id')
+        .eq('follower_id', user.id)
+      if (error) throw error
+      setSearchFollowing(new Set(data?.map((f: any) => f.following_id) || []))
+    } catch (error) {
+      logger.error('Error loading following state:', error)
+    }
+  }
+
+  const handleFollow = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_follows')
+        .insert({ follower_id: user?.id, following_id: userId })
+      if (error) throw error
+      setSearchFollowing(prev => new Set(prev).add(userId))
+    } catch (error) {
+      logger.error('Error following user:', error)
+    }
+  }
+
+  const handleUnfollow = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_follows')
+        .delete()
+        .eq('follower_id', user?.id)
+        .eq('following_id', userId)
+      if (error) throw error
+      setSearchFollowing(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(userId)
+        return newSet
+      })
+    } catch (error) {
+      logger.error('Error unfollowing user:', error)
+    }
+  }
+
+  // Load search following when switching to search view
+  useEffect(() => {
+    if (view === 'search' && user) {
+      loadSearchFollowing()
+    }
+  }, [view, user])
+
+  // Trigger search when query or tab changes
+  useEffect(() => {
+    if (view === 'search') {
+      performSearch(searchQuery)
+    }
+  }, [searchQuery, searchTab, view])
 
   // Categories removed - collections don't have categories (only pins do)
 
@@ -655,12 +759,14 @@ export default function FeedPage() {
           background: 'var(--muted)',
           padding: '0.25rem',
           borderRadius: 'var(--radius)',
-          border: '1px solid var(--border)'
+          border: '1px solid var(--border)',
+          overflowX: 'auto'
         }}>
           {[
             { value: 'activity', label: 'Following', icon: '📱' },
             { value: 'foryou', label: 'For You', icon: '✨' },
-            { value: 'discover', label: 'Discover', icon: '🌍' }
+            { value: 'discover', label: 'Discover', icon: '🌍' },
+            { value: 'search', label: 'Search', icon: '🔍' }
           ].map((v) => (
             <button
               key={v.value}
@@ -1009,6 +1115,289 @@ export default function FeedPage() {
 
           {/* Category section removed - collections don't have categories (only pins do) */}
           {/* Use search page to discover collections instead */}
+        </>
+      )}
+
+      {/* Search View */}
+      {view === 'search' && (
+        <>
+          {/* Search Input */}
+          <div style={{
+            marginBottom: '1.5rem',
+            position: 'relative'
+          }}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search collections and users..."
+              style={{
+                width: '100%',
+                padding: '1rem',
+                paddingLeft: '3rem',
+                border: '2px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                fontSize: '1rem',
+                background: 'var(--card)',
+                color: 'var(--foreground)',
+                outline: 'none',
+                transition: 'var(--transition)'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--accent)'
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)'
+              }}
+            />
+            <span style={{
+              position: 'absolute',
+              left: '1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: '1.25rem'
+            }}>
+              🔍
+            </span>
+            {searchLoading && (
+              <div style={{
+                position: 'absolute',
+                right: '1rem',
+                top: '50%',
+                transform: 'translateY(-50%)'
+              }}>
+                <div className="spinner" style={{ width: '1.25rem', height: '1.25rem' }} />
+              </div>
+            )}
+          </div>
+
+          {/* Search Tabs */}
+          <div style={{
+            display: 'flex',
+            gap: '0.5rem',
+            marginBottom: '1.5rem',
+            background: 'var(--muted)',
+            padding: '0.25rem',
+            borderRadius: 'var(--radius)',
+            border: '1px solid var(--border)'
+          }}>
+            {[
+              { value: 'collections', label: 'Collections', icon: '📂' },
+              { value: 'users', label: 'Users', icon: '👥' }
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setSearchTab(tab.value as any)}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  background: searchTab === tab.value ? 'var(--accent)' : 'transparent',
+                  color: searchTab === tab.value ? 'white' : 'var(--foreground)',
+                  border: 'none',
+                  borderRadius: 'var(--radius)',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  fontFamily: 'var(--font-mono)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  transition: 'var(--transition)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Search Results */}
+          {searchQuery ? (
+            <>
+              {/* Collections Results */}
+              {searchTab === 'collections' && (
+                <>
+                  {searchCollections.length === 0 && !searchLoading && (
+                    <EmptyState
+                      icon={Search}
+                      title="No Collections Found"
+                      description={`No collections found matching "${searchQuery}"`}
+                      variant="subtle"
+                    />
+                  )}
+                  {searchCollections.length > 0 && (
+                    <CollectionGrid collections={searchCollections} currentUserId={user.id} />
+                  )}
+                </>
+              )}
+
+              {/* Users Results */}
+              {searchTab === 'users' && (
+                <>
+                  {searchUsers.length === 0 && !searchLoading && (
+                    <EmptyState
+                      icon={Users}
+                      title="No Users Found"
+                      description={`No users found matching "${searchQuery}"`}
+                      variant="subtle"
+                    />
+                  )}
+                  {searchUsers.length > 0 && (
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '1rem'
+                    }}>
+                      {searchUsers.map((searchUser: any) => (
+                        <div
+                          key={searchUser.id}
+                          style={{
+                            padding: '1rem',
+                            background: 'var(--card)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-lg)',
+                            transition: 'var(--transition)'
+                          }}
+                        >
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '1rem'
+                          }}>
+                            <div
+                              onClick={() => router.push(`/profile/${searchUser.id}`)}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <UserAvatar
+                                profileImageUrl={searchUser.profile_image}
+                                email={searchUser.email || searchUser.username || ''}
+                                size="large"
+                              />
+                            </div>
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div
+                                onClick={() => router.push(`/profile/${searchUser.id}`)}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                <h3 style={{
+                                  fontSize: '1rem',
+                                  fontWeight: '700',
+                                  marginBottom: '0.25rem',
+                                  fontFamily: 'var(--font-mono)',
+                                  textTransform: 'uppercase'
+                                }}>
+                                  {searchUser.full_name || searchUser.username || searchUser.email}
+                                </h3>
+                                <p style={{
+                                  fontSize: '0.875rem',
+                                  color: 'var(--muted-foreground)',
+                                  marginBottom: '0.5rem'
+                                }}>
+                                  {searchUser.username ? `@${searchUser.username}` : searchUser.email}
+                                </p>
+                              </div>
+
+                              {searchUser.bio && (
+                                <p style={{
+                                  fontSize: '0.875rem',
+                                  color: 'var(--foreground)',
+                                  marginBottom: '0.75rem',
+                                  lineHeight: '1.5'
+                                }}>
+                                  {searchUser.bio}
+                                </p>
+                              )}
+
+                              {searchUser.location && (
+                                <div style={{
+                                  fontSize: '0.75rem',
+                                  color: 'var(--muted-foreground)',
+                                  marginBottom: '0.75rem'
+                                }}>
+                                  📍 {searchUser.location}
+                                </div>
+                              )}
+
+                              <div style={{
+                                display: 'flex',
+                                gap: '1rem',
+                                fontSize: '0.75rem',
+                                color: 'var(--muted-foreground)',
+                                marginBottom: '0.75rem'
+                              }}>
+                                <span>👥 {searchUser.follower_count || 0} followers</span>
+                                <span>📂 {searchUser.collection_count || 0} collections</span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => searchFollowing.has(searchUser.id) ? handleUnfollow(searchUser.id) : handleFollow(searchUser.id)}
+                              style={{
+                                padding: '0.5rem 1rem',
+                                background: searchFollowing.has(searchUser.id) ? 'var(--muted)' : 'var(--accent)',
+                                color: searchFollowing.has(searchUser.id) ? 'var(--muted-foreground)' : 'white',
+                                border: searchFollowing.has(searchUser.id) ? '1px solid var(--border)' : 'none',
+                                borderRadius: 'var(--radius)',
+                                cursor: 'pointer',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                fontFamily: 'var(--font-mono)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                                transition: 'var(--transition)'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!searchFollowing.has(searchUser.id)) {
+                                  e.currentTarget.style.background = 'var(--accent-hover)'
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!searchFollowing.has(searchUser.id)) {
+                                  e.currentTarget.style.background = 'var(--accent)'
+                                }
+                              }}
+                            >
+                              {searchFollowing.has(searchUser.id) ? 'Following' : 'Follow'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          ) : (
+            <div style={{
+              padding: '3rem',
+              textAlign: 'center',
+              background: 'var(--muted)',
+              borderRadius: 'var(--radius-lg)',
+              border: '2px solid var(--border)'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+              <h3 style={{
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                marginBottom: '0.5rem',
+                fontFamily: 'var(--font-mono)'
+              }}>
+                Search for Content
+              </h3>
+              <p style={{
+                color: 'var(--muted-foreground)',
+                fontSize: '0.875rem'
+              }}>
+                Find collections and users across Travlr
+              </p>
+            </div>
+          )}
         </>
       )}
 
