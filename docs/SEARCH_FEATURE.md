@@ -51,7 +51,9 @@ CREATE INDEX users_search_idx ON users USING GIN(search_vector);
 ### Search Vectors
 
 Search vectors are automatically maintained via triggers:
-- **Collections**: `title` (weight A) + `description` (weight B) + `location` (weight C)
+- **Collections**: `title` (weight A) + `description` (weight B)
+  - Note: Collections don't have a location column; locations are stored in the pins table
+  - Location filtering works by checking if any pin in the collection matches the location
 - **Users**: `username` (weight A) + `full_name` (weight A) + `bio` (weight B)
 
 ### RPC Functions

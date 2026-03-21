@@ -1,6 +1,7 @@
 -- Add search functionality for collections and users
 -- Migration: add-search-functionality.sql
 -- Created: 2026-03-20
+-- Updated: 2026-03-20 - Fixed: Collections don't have location column (locations are in pins table)
 
 -- Add search vector column to collections table
 ALTER TABLE collections
@@ -12,8 +13,7 @@ RETURNS trigger AS $$
 BEGIN
   NEW.search_vector :=
     setweight(to_tsvector('english', COALESCE(NEW.title, '')), 'A') ||
-    setweight(to_tsvector('english', COALESCE(NEW.description, '')), 'B') ||
-    setweight(to_tsvector('english', COALESCE(NEW.location, '')), 'C');
+    setweight(to_tsvector('english', COALESCE(NEW.description, '')), 'B');
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -21,7 +21,7 @@ $$ LANGUAGE plpgsql;
 -- Create trigger to automatically update search vector
 DROP TRIGGER IF EXISTS collections_search_vector_update ON collections;
 CREATE TRIGGER collections_search_vector_update
-  BEFORE INSERT OR UPDATE OF title, description, location
+  BEFORE INSERT OR UPDATE OF title, description
   ON collections
   FOR EACH ROW
   EXECUTE FUNCTION update_collections_search_vector();
@@ -30,18 +30,15 @@ CREATE TRIGGER collections_search_vector_update
 UPDATE collections
 SET search_vector =
   setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
-  setweight(to_tsvector('english', COALESCE(description, '')), 'B') ||
-  setweight(to_tsvector('english', COALESCE(location, '')), 'C')
+  setweight(to_tsvector('english', COALESCE(description, '')), 'B')
 WHERE search_vector IS NULL;
 
 -- Create GIN index for fast full-text search
 CREATE INDEX IF NOT EXISTS collections_search_idx
 ON collections USING GIN(search_vector);
 
--- Create index for location-based filtering
-CREATE INDEX IF NOT EXISTS collections_location_idx
-ON collections(location)
-WHERE location IS NOT NULL;
+-- Note: Location filtering is handled through pins table, not collections table
+-- Collections don't have a location column; each pin has a location
 
 -- Create index for category filtering
 CREATE INDEX IF NOT EXISTS collections_category_idx
@@ -111,7 +108,7 @@ BEGIN
     c.id,
     c.title,
     c.description,
-    c.location,
+    NULL::TEXT AS location, -- Collections don't have location; it's in pins
     c.category,
     c.color,
     c.is_public,
@@ -128,6 +125,14 @@ BEGIN
     FROM pins
     GROUP BY collection_id
   ) pin_counts ON c.id = pin_counts.collection_id
+  -- Optional: Filter by location through pins (complex, can add later if needed)
+  LEFT JOIN LATERAL (
+    SELECT 1
+    FROM pins p
+    WHERE p.collection_id = c.id
+      AND (filter_location IS NULL OR p.location ILIKE '%' || filter_location || '%')
+    LIMIT 1
+  ) location_filter ON (filter_location IS NULL OR location_filter IS NOT NULL)
   WHERE
     c.is_public = true
     AND (
@@ -136,7 +141,6 @@ BEGIN
       OR c.title ILIKE '%' || search_query || '%'
     )
     AND (filter_category IS NULL OR c.category = filter_category)
-    AND (filter_location IS NULL OR c.location ILIKE '%' || filter_location || '%')
   ORDER BY
     CASE
       WHEN sort_by = 'relevance' THEN ts_rank(c.search_vector, plainto_tsquery('english', search_query))
