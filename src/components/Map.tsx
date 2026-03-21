@@ -1730,7 +1730,11 @@ function MapComponent({ onMapClick }: MapProps) {
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.5rem'
+                gap: '0.5rem',
+                scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'var(--accent) var(--muted)'
               }}>
                 {/* All Pins Button */}
                 <button

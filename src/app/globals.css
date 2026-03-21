@@ -46,6 +46,43 @@ select {
   font: inherit;
 }
 
+/* Smooth Scrolling & Custom Scrollbars */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--muted);
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+}
+
+/* Mobile: Enable momentum scrolling */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
 /* CSS Custom Properties */
 :root {
   /* Colors - Softened Monochrome + Red */
