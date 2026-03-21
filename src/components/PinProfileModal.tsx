@@ -273,8 +273,8 @@ export default function PinProfileModal({
         onClick={onClose}
         style={{
           position: 'absolute',
-          top: '1rem',
-          right: '1rem',
+          top: 'max(1rem, env(safe-area-inset-top))',
+          right: 'max(1rem, env(safe-area-inset-right))',
           zIndex: 1001,
           width: '48px',
           height: '48px',
