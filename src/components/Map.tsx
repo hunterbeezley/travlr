@@ -2595,7 +2595,7 @@ function MapComponent({ onMapClick }: MapProps) {
           className="mobile-only"
           style={{
             position: 'fixed',
-            bottom: '5rem', // Above mobile nav (60px + safe area)
+            bottom: 'calc(5rem + env(safe-area-inset-bottom))', // Above mobile nav with safe area
             left: '1rem',
             width: '56px',
             height: '56px',

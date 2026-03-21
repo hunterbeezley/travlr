@@ -8,7 +8,7 @@ import CollectionGrid from '@/components/Discover/CollectionGrid'
 import UserAvatar from '@/components/UserAvatar'
 import EmptyState from '@/components/EmptyState'
 import { useAuth } from '@/hooks/useAuth'
-import { FolderOpen, Users } from 'lucide-react'
+import { FolderOpen, Users, Search } from 'lucide-react'
 
 interface Collection {
   id: string
@@ -212,7 +212,7 @@ function SearchPageContent() {
             style={{
               width: '100%',
               padding: '1rem',
-              paddingLeft: '3rem',
+              paddingLeft: '3.5rem',
               border: '2px solid var(--border)',
               borderRadius: 'var(--radius-lg)',
               fontSize: '1rem',
@@ -228,15 +228,17 @@ function SearchPageContent() {
               e.currentTarget.style.borderColor = 'var(--border)'
             }}
           />
-          <span style={{
+          <div style={{
             position: 'absolute',
-            left: '1rem',
+            left: '1.25rem',
             top: '50%',
             transform: 'translateY(-50%)',
-            fontSize: '1.25rem'
+            color: 'var(--muted-foreground)',
+            display: 'flex',
+            alignItems: 'center'
           }}>
-            🔍
-          </span>
+            <Search size={20} strokeWidth={2} />
+          </div>
         </div>
 
         {/* Tabs */}

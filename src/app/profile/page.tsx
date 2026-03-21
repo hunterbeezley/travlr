@@ -969,7 +969,7 @@ export default function ProfilePage() {
           <div className="profile-sections-grid" style={{
             display: 'grid',
             gap: '2rem',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))'
           }}>
             {/* Collections */}
             <div style={{

@@ -8,7 +8,7 @@ import Navbar from '@/components/Navbar'
 import UserAvatar from '@/components/UserAvatar'
 import Auth from '@/components/Auth'
 import EmptyState from '@/components/EmptyState'
-import { SearchX, UserPlus } from 'lucide-react'
+import { SearchX, UserPlus, Search } from 'lucide-react'
 
 interface UserSearchResult {
   id: string
@@ -387,7 +387,7 @@ export default function FriendsPage() {
             style={{
               width: '100%',
               padding: '1rem',
-              paddingLeft: '3rem',
+              paddingLeft: '3.5rem',
               border: '2px solid var(--border)',
               borderRadius: 'var(--radius-lg)',
               fontSize: '1rem',
@@ -403,15 +403,17 @@ export default function FriendsPage() {
               e.currentTarget.style.borderColor = 'var(--border)'
             }}
           />
-          <span style={{
+          <div style={{
             position: 'absolute',
-            left: '1rem',
+            left: '1.25rem',
             top: '50%',
             transform: 'translateY(-50%)',
-            fontSize: '1.25rem'
+            color: 'var(--muted-foreground)',
+            display: 'flex',
+            alignItems: 'center'
           }}>
-            🔍
-          </span>
+            <Search size={20} strokeWidth={2} />
+          </div>
           {loading && (
             <div style={{
               position: 'absolute',
