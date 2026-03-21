@@ -12,6 +12,8 @@ import FeedSkeleton from '@/components/Feed/FeedSkeleton'
 import FollowingSuggestions from '@/components/Feed/FollowingSuggestions'
 import CollectionGrid from '@/components/Discover/CollectionGrid'
 import Auth from '@/components/Auth'
+import EmptyState from '@/components/EmptyState'
+import { Activity, Sparkles, Users } from 'lucide-react'
 
 export default function FeedPage() {
   const { user, loading: authLoading } = useAuth()
@@ -714,54 +716,23 @@ export default function FeedPage() {
         <>
           {/* Empty State */}
           {activities.length === 0 && (
-            <div style={{
-              padding: '3rem 1rem',
-              textAlign: 'center',
-              background: 'var(--muted)',
-              borderRadius: 'var(--radius-lg)',
-              border: '2px solid var(--border)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📱</div>
-              <h3 style={{
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                marginBottom: '0.5rem',
-                fontFamily: 'var(--font-mono)'
-              }}>
-                {filter === 'friends' && followingCount === 0
-                  ? 'Follow People to See Their Activity'
-                  : 'No Activity Yet'}
-              </h3>
-              <p style={{
-                color: 'var(--muted-foreground)',
-                marginBottom: '1.5rem',
-                fontSize: '0.875rem'
-              }}>
-                {filter === 'friends' && followingCount === 0
-                  ? 'Start following people to see their collections and activity in your feed.'
-                  : 'Create collections and add pins to see activity here.'}
-              </p>
-              {filter === 'friends' && followingCount === 0 && (
-                <Link
-                  href="/friends"
-                  style={{
-                    display: 'inline-block',
-                    padding: '0.75rem 1.5rem',
-                    background: 'var(--accent)',
-                    color: 'white',
-                    borderRadius: 'var(--radius)',
-                    textDecoration: 'none',
-                    fontWeight: '600',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    fontSize: '0.875rem'
-                  }}
-                >
-                  Find People
-                </Link>
-              )}
-            </div>
+            filter === 'friends' && followingCount === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="Follow People to See Their Activity"
+                description="Start following people to see their collections and activity in your feed."
+                actionLabel="Find People"
+                actionHref="/friends"
+              />
+            ) : (
+              <EmptyState
+                icon={Activity}
+                title="No Activity Yet"
+                description="Create collections and add pins to see activity here. Your journey starts with your first collection!"
+                actionLabel="Create Collection"
+                actionHref="/map"
+              />
+            )
           )}
 
           {/* Feed Items */}
@@ -784,49 +755,13 @@ export default function FeedPage() {
           <FollowingSuggestions />
 
           {collections.length === 0 ? (
-            <div style={{
-              padding: '3rem 1rem',
-              textAlign: 'center',
-              background: 'var(--muted)',
-              borderRadius: 'var(--radius-lg)',
-              border: '2px solid var(--border)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✨</div>
-              <h3 style={{
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                marginBottom: '0.5rem',
-                fontFamily: 'var(--font-mono)'
-              }}>
-                Building Your Personalized Feed
-              </h3>
-              <p style={{
-                color: 'var(--muted-foreground)',
-                marginBottom: '1.5rem',
-                fontSize: '0.875rem'
-              }}>
-                Like and save collections to help us learn your preferences.
-              </p>
-              <button
-                onClick={() => setView('discover')}
-                style={{
-                  display: 'inline-block',
-                  padding: '0.75rem 1.5rem',
-                  background: 'var(--accent)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 'var(--radius)',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  fontSize: '0.875rem'
-                }}
-              >
-                Explore Collections
-              </button>
-            </div>
+            <EmptyState
+              icon={Sparkles}
+              title="Building Your Personalized Feed"
+              description="Like and save collections to help us learn your preferences. We'll show you more of what you love!"
+              actionLabel="Explore Collections"
+              onAction={() => setView('discover')}
+            />
           ) : (
             <div style={{ maxWidth: '1200px' }}>
               <CollectionGrid collections={collections} currentUserId={user.id} />

@@ -7,6 +7,8 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Auth from '@/components/Auth'
 import OrganizeFolderModal from '@/components/Saved/OrganizeFolderModal'
+import EmptyState from '@/components/EmptyState'
+import { Bookmark, Calendar } from 'lucide-react'
 
 export default function SavedCollectionsPage() {
   const { user, loading: authLoading } = useAuth()
