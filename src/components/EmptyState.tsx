@@ -76,7 +76,6 @@ export default function EmptyState({
       <p style={{
         fontSize: '0.875rem',
         color: 'var(--muted-foreground)',
-        marginBottom: actionLabel ? '2rem' : '0',
         lineHeight: '1.6',
         maxWidth: '400px',
         margin: '0 auto',
