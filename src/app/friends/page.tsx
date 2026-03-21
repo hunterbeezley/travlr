@@ -344,7 +344,8 @@ export default function FriendsPage() {
         maxWidth: '800px',
         margin: '0 auto',
         padding: '1rem',
-        paddingTop: '5rem'
+        paddingTop: '5rem',
+        paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' // Space for mobile nav
       }}>
         {/* Header */}
         <div style={{
