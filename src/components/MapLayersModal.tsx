@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 
 interface MapLayer {
   name: string
@@ -28,6 +29,20 @@ export default function MapLayersModal({
   poiCategories,
   onCategoriesChange
 }: MapLayersModalProps) {
+  // Handle Escape key to close modal
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   const availableCategories = [
@@ -107,11 +122,13 @@ export default function MapLayersModal({
           zIndex: 1000,
           width: '90%',
           maxWidth: '400px',
+          maxHeight: '90vh', // Limit height to viewport
           background: 'var(--background)',
           border: '2px solid var(--border)',
           borderRadius: 'var(--radius-lg)',
           boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
-          overflow: 'hidden'
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         {/* Header */}
@@ -120,7 +137,8 @@ export default function MapLayersModal({
           borderBottom: '2px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          flexShrink: 0 // Keep header fixed
         }}>
           <h3 style={{
             fontSize: '1rem',
@@ -161,7 +179,11 @@ export default function MapLayersModal({
         </div>
 
         {/* Options */}
-        <div style={{ padding: '1rem' }}>
+        <div style={{
+          padding: '1rem',
+          overflowY: 'auto', // Make scrollable
+          flex: 1 // Take remaining space
+        }}>
           {layers.map((layer) => (
             <button
               key={layer.value}
