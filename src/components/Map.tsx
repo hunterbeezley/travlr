@@ -1408,7 +1408,7 @@ function MapComponent({ onMapClick }: MapProps) {
       }
     })
 
-    mapInstance.controls[google.maps.ControlPosition.RIGHT_TOP].push(geolocateButton)
+    mapInstance.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(geolocateButton)
 
     // Add event listeners for position tracking
     mapInstance.addListener('center_changed', () => {
