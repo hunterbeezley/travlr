@@ -758,10 +758,10 @@ export default function FeedPage() {
           overflowX: 'auto'
         }}>
           {[
-            { value: 'activity', label: 'Following', Icon: Users },
-            { value: 'foryou', label: 'For You', Icon: Sparkles },
-            { value: 'discover', label: 'Discover', Icon: Activity },
-            { value: 'search', label: 'Search', Icon: Search }
+            { value: 'activity', label: 'Following' },
+            { value: 'foryou', label: 'For You' },
+            { value: 'discover', label: 'Discover' },
+            { value: 'search', label: 'Search' }
           ].map((v) => (
             <button
               key={v.value}
@@ -794,7 +794,10 @@ export default function FeedPage() {
                 }
               }}
             >
-              <v.Icon size={16} />
+              {v.value === 'activity' && <Users size={16} />}
+              {v.value === 'foryou' && <Sparkles size={16} />}
+              {v.value === 'discover' && <Activity size={16} />}
+              {v.value === 'search' && <Search size={16} />}
               <span>{v.label}</span>
             </button>
           ))}
@@ -1158,8 +1161,8 @@ export default function FeedPage() {
             boxShadow: 'var(--shadow-sm)'
           }}>
             {[
-              { value: 'collections', label: 'Collections', Icon: Folder },
-              { value: 'users', label: 'Users', Icon: Users }
+              { value: 'collections', label: 'Collections' },
+              { value: 'users', label: 'Users' }
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -1181,7 +1184,8 @@ export default function FeedPage() {
                   gap: '0.5rem'
                 }}
               >
-                <tab.Icon size={16} />
+                {tab.value === 'collections' && <Folder size={16} />}
+                {tab.value === 'users' && <Users size={16} />}
                 <span>{tab.label}</span>
               </button>
             ))}
