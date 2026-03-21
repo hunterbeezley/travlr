@@ -2,6 +2,7 @@
 import { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { createElement } from 'react'
 
 interface EmptyStateProps {
   icon: LucideIcon
@@ -14,7 +15,7 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({
-  icon: Icon,
+  icon,
   title,
   description,
   actionLabel,
@@ -49,23 +50,20 @@ export default function EmptyState({
         justifyContent: 'center',
         marginBottom: '1.5rem'
       }}>
-        <Icon
-          size={64}
-          strokeWidth={1.5}
-          style={{
+        {createElement(icon, {
+          size: 64,
+          strokeWidth: 1.5,
+          style: {
             color: 'rgba(255, 255, 255, 0.3)',
             filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))'
-          }}
-        />
+          }
+        })}
       </div>
 
       {/* Title */}
       <h3 style={{
         fontSize: '1.25rem',
         fontWeight: '700',
-        fontFamily: 'var(--font-mono)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
         marginBottom: '0.75rem',
         color: 'var(--foreground)'
       }}>
@@ -91,30 +89,25 @@ export default function EmptyState({
             href={actionHref}
             style={{
               display: 'inline-block',
-              padding: '0.75rem 1.5rem',
+              padding: '0.875rem 1.75rem',
               background: 'var(--accent)',
               color: 'white',
               border: 'none',
-              borderRadius: 'var(--radius)',
+              borderRadius: 'var(--radius-pill)',
               fontSize: '0.875rem',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
               textDecoration: 'none',
               cursor: 'pointer',
-              transition: 'var(--transition)',
-              boxShadow: '0 2px 8px rgba(230, 57, 70, 0.3)'
+              transition: 'all 0.2s ease',
+              boxShadow: 'var(--shadow-glow)'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--accent-hover)'
               e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(230, 57, 70, 0.4)'
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'var(--accent)'
               e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(230, 57, 70, 0.3)'
             }}
           >
             {actionLabel}
@@ -123,29 +116,24 @@ export default function EmptyState({
           <button
             onClick={handleAction}
             style={{
-              padding: '0.75rem 1.5rem',
+              padding: '0.875rem 1.75rem',
               background: 'var(--accent)',
               color: 'white',
               border: 'none',
-              borderRadius: 'var(--radius)',
+              borderRadius: 'var(--radius-pill)',
               fontSize: '0.875rem',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
               cursor: 'pointer',
-              transition: 'var(--transition)',
-              boxShadow: '0 2px 8px rgba(230, 57, 70, 0.3)'
+              transition: 'all 0.2s ease',
+              boxShadow: 'var(--shadow-glow)'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--accent-hover)'
               e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(230, 57, 70, 0.4)'
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'var(--accent)'
               e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(230, 57, 70, 0.3)'
             }}
           >
             {actionLabel}
