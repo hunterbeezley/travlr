@@ -1,7 +1,8 @@
 'use client'
 import Link from 'next/link'
 import CollectionActions from '../Collection/CollectionActions'
-import { User, MapPin, Heart, Bookmark } from 'lucide-react'
+import UserAvatar from '../UserAvatar'
+import { User, MapPin, Heart, Bookmark, MessageCircle, TrendingUp, Sparkles, Plus } from 'lucide-react'
 
 interface FeedCardProps {
   activity: any
@@ -35,6 +36,52 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
     }
   }
 
+  const getActivityIcon = () => {
+    switch (activity_type) {
+      case 'collection_created':
+        return <Plus size={14} style={{ color: 'var(--accent)' }} />
+      case 'collection_updated':
+        return <Sparkles size={14} style={{ color: 'var(--accent)' }} />
+      case 'pin_added':
+        return <MapPin size={14} style={{ color: 'var(--accent)' }} />
+      case 'collection_liked':
+        return <Heart size={14} style={{ color: 'var(--accent)' }} />
+      case 'collection_saved':
+        return <Bookmark size={14} style={{ color: 'var(--accent)' }} />
+      default:
+        return null
+    }
+  }
+
+  const getActivityBadge = () => {
+    if (target_data.stats) {
+      const engagementScore = (target_data.stats.likes_count || 0) +
+                            (target_data.stats.saves_count || 0) +
+                            (target_data.stats.comments_count || 0)
+      if (engagementScore > 20) {
+        return (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            padding: '0.25rem 0.5rem',
+            background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))',
+            borderRadius: 'var(--radius-pill)',
+            fontSize: '0.625rem',
+            fontWeight: '700',
+            color: 'white',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            <TrendingUp size={10} />
+            Popular
+          </div>
+        )
+      }
+    }
+    return null
+  }
+
   const getTimeAgo = () => {
     const now = new Date()
     const then = new Date(created_at)
@@ -54,8 +101,21 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
       background: 'var(--card-elevated)',
       borderRadius: 'var(--radius-xl)',
       boxShadow: 'var(--shadow)',
-      overflow: 'hidden'
-    }}>
+      overflow: 'hidden',
+      transition: 'all 0.2s ease',
+      border: '1px solid transparent'
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.borderColor = 'var(--accent)'
+      e.currentTarget.style.transform = 'translateY(-2px)'
+      e.currentTarget.style.boxShadow = 'var(--shadow-lg)'
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.borderColor = 'transparent'
+      e.currentTarget.style.transform = 'translateY(0)'
+      e.currentTarget.style.boxShadow = 'var(--shadow)'
+    }}
+    >
       {/* Header: User Info */}
       <div style={{
         padding: '1rem',
@@ -63,48 +123,35 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
         alignItems: 'center',
         gap: '0.75rem'
       }}>
-        <Link
-          href={`/profile/${user_id}`}
-          style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            flexShrink: 0,
-            background: 'var(--muted)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          {avatar_url ? (
-            <img
-              src={avatar_url}
-              alt={username}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover'
-              }}
-            />
-          ) : (
-            <User size={20} style={{ color: 'var(--muted-foreground)' }} />
-          )}
+        <Link href={`/profile/${user_id}`}>
+          <UserAvatar
+            profileImageUrl={avatar_url}
+            email={username || ''}
+            size="medium"
+          />
         </Link>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            gap: '0.375rem',
             flexWrap: 'wrap'
           }}>
+            {getActivityIcon()}
             <Link
               href={`/profile/${user_id}`}
               style={{
-                fontWeight: '600',
+                fontWeight: '700',
                 color: 'var(--foreground)',
                 textDecoration: 'none',
-                fontSize: '0.875rem'
+                fontSize: '0.875rem',
+                transition: 'color 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--accent)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--foreground)'
               }}
             >
               {username}
@@ -115,6 +162,7 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
             }}>
               {getActivityText()}
             </span>
+            {getActivityBadge()}
           </div>
           <div style={{
             color: 'var(--muted-foreground)',
@@ -225,19 +273,32 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
           alignItems: 'center',
           gap: '1rem',
           fontSize: '0.75rem',
-          color: 'var(--muted-foreground)'
+          color: 'var(--muted-foreground)',
+          padding: '0.75rem',
+          background: 'var(--surface-subtle)',
+          borderRadius: 'var(--radius)',
+          marginTop: '0.5rem'
         }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            <MapPin size={14} /> {target_data.pin_count} pins
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <MapPin size={14} />
+            <strong style={{ color: 'var(--foreground)' }}>{target_data.pin_count}</strong> pins
           </span>
           {target_data.stats && (
             <>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <Heart size={14} /> {target_data.stats.likes_count || 0}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <Heart size={14} />
+                <strong style={{ color: 'var(--foreground)' }}>{target_data.stats.likes_count || 0}</strong>
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <Bookmark size={14} /> {target_data.stats.saves_count || 0}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <Bookmark size={14} />
+                <strong style={{ color: 'var(--foreground)' }}>{target_data.stats.saves_count || 0}</strong>
               </span>
+              {target_data.stats.comments_count > 0 && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <MessageCircle size={14} />
+                  <strong style={{ color: 'var(--foreground)' }}>{target_data.stats.comments_count}</strong>
+                </span>
+              )}
             </>
           )}
         </div>
@@ -247,13 +308,15 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
       {target_data.stats && (
         <div style={{
           padding: '0.75rem 1rem',
-          background: 'var(--surface-subtle)'
+          background: 'var(--surface-subtle)',
+          borderTop: '1px solid var(--border)'
         }}>
           <CollectionActions
             collectionId={target_data.id}
             collectionName={target_data.title}
             stats={target_data.stats}
             currentUserId={currentUserId}
+            showShare={false}
           />
         </div>
       )}

@@ -13,6 +13,7 @@ import FollowingSuggestions from '@/components/Feed/FollowingSuggestions'
 import CollectionGrid from '@/components/Discover/CollectionGrid'
 import Auth from '@/components/Auth'
 import EmptyState from '@/components/EmptyState'
+import FeedEmptyState from '@/components/Feed/FeedEmptyState'
 import UserAvatar from '@/components/UserAvatar'
 import { Activity, Sparkles, Users, Search, Building2, TrendingUp, MapPin, Folder } from 'lucide-react'
 
@@ -810,20 +811,36 @@ export default function FeedPage() {
           {/* Empty State */}
           {activities.length === 0 && (
             filter === 'friends' && followingCount === 0 ? (
-              <EmptyState
+              <FeedEmptyState
                 icon={Users}
                 title="Follow People to See Their Activity"
-                description="Start following people to see their collections and activity in your feed."
-                actionLabel="Find People"
-                actionHref="/friends"
+                description="Your feed will come alive with collections, pins, and updates from people you follow. Start building your travel community!"
+                actions={[
+                  { label: 'Find People to Follow', href: '/friends', variant: 'primary' },
+                  { label: 'Explore Collections', onClick: () => setView('discover'), variant: 'secondary' }
+                ]}
+                tips={[
+                  'Follow travelers with similar interests',
+                  'Like collections to show appreciation',
+                  'Comment to start conversations',
+                  'Save collections to revisit them later'
+                ]}
               />
             ) : (
-              <EmptyState
+              <FeedEmptyState
                 icon={Activity}
-                title="No Activity Yet"
-                description="Create collections and add pins to see activity here. Your journey starts with your first collection!"
-                actionLabel="Create Collection"
-                actionHref="/map"
+                title="Start Your Travel Journey"
+                description="Create your first collection and add pins to share your favorite places with the world. Your travel story begins here!"
+                actions={[
+                  { label: 'Create Your First Collection', href: '/map', variant: 'primary' },
+                  { label: 'Explore Other Collections', onClick: () => setView('discover'), variant: 'secondary' }
+                ]}
+                tips={[
+                  'Double-click the map to add a pin',
+                  'Organize pins into themed collections',
+                  'Add photos and descriptions to make pins memorable',
+                  'Share collections with friends and family'
+                ]}
               />
             )
           )}
@@ -848,12 +865,20 @@ export default function FeedPage() {
           <FollowingSuggestions />
 
           {collections.length === 0 ? (
-            <EmptyState
+            <FeedEmptyState
               icon={Sparkles}
               title="Building Your Personalized Feed"
-              description="Like and save collections to help us learn your preferences. We'll show you more of what you love!"
-              actionLabel="Explore Collections"
-              onAction={() => setView('discover')}
+              description="We're curating content based on your interests. Engage with collections you love to help us understand your travel style!"
+              actions={[
+                { label: 'Explore Collections', onClick: () => setView('discover'), variant: 'primary' },
+                { label: 'Follow Travelers', href: '/friends', variant: 'secondary' }
+              ]}
+              tips={[
+                'Like collections that match your interests',
+                'Save collections to build your travel wishlist',
+                'Follow users with similar travel styles',
+                'The more you engage, the better your recommendations'
+              ]}
             />
           ) : (
             <div style={{ maxWidth: '1200px' }}>
