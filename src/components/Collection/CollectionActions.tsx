@@ -36,11 +36,14 @@ export default function CollectionActions({
 
     try {
       const rpcFunc = stats.user_liked ? 'unlike_collection' : 'like_collection'
-      const { data, error } = await supabase.rpc(rpcFunc, {
+      const { error } = await supabase.rpc(rpcFunc, {
         p_collection_id: collectionId
       })
 
-      if (error) throw error
+      if (error) {
+        logger.error('Error toggling like:', error)
+        throw error
+      }
 
       setStats(prev => ({
         ...prev,
@@ -49,6 +52,7 @@ export default function CollectionActions({
       }))
     } catch (error) {
       logger.error('Error toggling like:', error)
+      // Optionally show user-friendly error message
     } finally {
       setLoading(false)
     }
@@ -60,12 +64,15 @@ export default function CollectionActions({
 
     try {
       const rpcFunc = stats.user_saved ? 'unsave_collection' : 'save_collection'
-      const { data, error } = await supabase.rpc(rpcFunc, {
+      const { error } = await supabase.rpc(rpcFunc, {
         p_collection_id: collectionId,
         ...(rpcFunc === 'save_collection' && { p_folder: null })
       })
 
-      if (error) throw error
+      if (error) {
+        logger.error('Error toggling save:', error)
+        throw error
+      }
 
       setStats(prev => ({
         ...prev,
@@ -74,6 +81,7 @@ export default function CollectionActions({
       }))
     } catch (error) {
       logger.error('Error toggling save:', error)
+      // Optionally show user-friendly error message
     } finally {
       setLoading(false)
     }
