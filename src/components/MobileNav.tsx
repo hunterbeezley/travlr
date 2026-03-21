@@ -16,12 +16,24 @@ export default function MobileNav() {
   }
 
   const navItems = [
-    { path: '/', label: 'Feed', icon: Home },
-    { path: '/map', label: 'Map', icon: Map },
-    { path: '/search', label: 'Search', icon: Search },
-    { path: '/friends', label: 'Friends', icon: Users },
-    { path: '/profile', label: 'Profile', icon: User }
+    { path: '/', label: 'Feed' },
+    { path: '/map', label: 'Map' },
+    { path: '/search', label: 'Search' },
+    { path: '/friends', label: 'Friends' },
+    { path: '/profile', label: 'Profile' }
   ]
+
+  const renderIcon = (path: string, active: boolean) => {
+    const props = { size: 22, strokeWidth: active ? 2.5 : 2 }
+    switch (path) {
+      case '/': return <Home {...props} />
+      case '/map': return <Map {...props} />
+      case '/search': return <Search {...props} />
+      case '/friends': return <Users {...props} />
+      case '/profile': return <User {...props} />
+      default: return null
+    }
+  }
 
   return (
     <nav
@@ -42,7 +54,6 @@ export default function MobileNav() {
       }}>
       {navItems.map((item) => {
         const active = isActive(item.path)
-        const Icon = item.icon
 
         return (
           <button
@@ -64,10 +75,7 @@ export default function MobileNav() {
               minHeight: '48px'
             }}
           >
-            <Icon
-              size={22}
-              strokeWidth={active ? 2.5 : 2}
-            />
+            {renderIcon(item.path, active)}
           </button>
         )
       })}
