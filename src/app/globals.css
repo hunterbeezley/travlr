@@ -845,8 +845,52 @@ select option {
   color: var(--foreground) !important;
 }
 
+/* =============================================================================
+   EXTENDED GLASS MORPHISM SYSTEM
+   Issue #71: Multiple glass variants for design flexibility
+   ============================================================================= */
+
+/* Standard glass - balanced transparency with backdrop blur */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Strong glass - more prominent, higher contrast */
+.glass-strong {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Dark glass - darker background for overlays */
+.glass-dark {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Light mode glassmorphism overrides */
 @media (prefers-color-scheme: light) {
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+  }
+
   .glass-subtle {
     background: rgba(255, 255, 255, 0.9) !important;
     border: 1px solid rgba(0, 0, 0, 0.1) !important;
