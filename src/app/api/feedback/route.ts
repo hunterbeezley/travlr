@@ -1,4 +1,6 @@
 import { logger } from '@/lib/logger'
+import { checkRateLimit, RateLimitConfig } from '@/lib/rate-limit'
+import { sanitizeString, validateEmail, validateStringLength } from '@/lib/validation'
 import { NextRequest, NextResponse } from 'next/server'
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN
@@ -7,12 +9,43 @@ const GITHUB_REPO = process.env.GITHUB_REPO || 'travlr'
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - 5 feedback submissions per 15 minutes per IP
+    const rateLimitResponse = await checkRateLimit(request, RateLimitConfig.AUTH)
+    if (rateLimitResponse) return rateLimitResponse
+
     const body = await request.json()
     const { feedback, type, userEmail, username, currentPage, userAgent } = body
 
-    if (!feedback || !feedback.trim()) {
+    // Server-side validation
+    const feedbackValidation = validateStringLength(feedback, 10, 2000, 'Feedback')
+    if (!feedbackValidation.valid) {
       return NextResponse.json(
-        { error: 'Feedback is required' },
+        { error: feedbackValidation.error },
+        { status: 400 }
+      )
+    }
+
+    // Validate email if provided
+    if (userEmail) {
+      const emailValidation = validateEmail(userEmail)
+      if (!emailValidation.valid) {
+        return NextResponse.json(
+          { error: emailValidation.error },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Sanitize inputs to prevent XSS
+    const sanitizedFeedback = sanitizeString(feedback)
+    const sanitizedUsername = sanitizeString(username)
+    const sanitizedCurrentPage = sanitizeString(currentPage)
+
+    // Validate type
+    const validTypes = ['bug', 'feature', 'other']
+    if (!validTypes.includes(type)) {
+      return NextResponse.json(
+        { error: 'Invalid feedback type' },
         { status: 400 }
       )
     }
@@ -35,19 +68,19 @@ export async function POST(request: NextRequest) {
 
     const config = typeConfig[type as keyof typeof typeConfig] || typeConfig.other
 
-    const issueTitle = `${config.emoji} [${config.label.toUpperCase()}] ${feedback.slice(0, 60)}${feedback.length > 60 ? '...' : ''}`
+    const issueTitle = `${config.emoji} [${config.label.toUpperCase()}] ${sanitizedFeedback.slice(0, 60)}${sanitizedFeedback.length > 60 ? '...' : ''}`
 
     // Create issue body with metadata
     const issueBody = `## User Feedback
 
-${feedback}
+${sanitizedFeedback}
 
 ---
 
 ### Metadata
 - **Type**: ${type}
-- **Submitted by**: ${username} (${userEmail})
-- **Page**: \`${currentPage}\`
+- **Submitted by**: ${sanitizedUsername} (${userEmail})
+- **Page**: \`${sanitizedCurrentPage}\`
 - **User Agent**: \`${userAgent}\`
 - **Timestamp**: ${new Date().toISOString()}
 

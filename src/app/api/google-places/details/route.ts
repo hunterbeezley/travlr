@@ -1,4 +1,6 @@
 import { logger } from '@/lib/logger'
+import { checkRateLimit, RateLimitConfig } from '@/lib/rate-limit'
+import { sanitizeString } from '@/lib/validation'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -12,6 +14,10 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting - 30 requests per minute for search
+    const rateLimitResponse = await checkRateLimit(request, RateLimitConfig.SEARCH)
+    if (rateLimitResponse) return rateLimitResponse
+
     const { searchParams } = new URL(request.url)
     const placeId = searchParams.get('place_id')
 
@@ -19,6 +25,15 @@ export async function GET(request: NextRequest) {
     if (!placeId || placeId.trim().length === 0) {
       return NextResponse.json(
         { error: 'place_id parameter is required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate place_id format (alphanumeric, max 200 chars)
+    const sanitizedPlaceId = sanitizeString(placeId)
+    if (sanitizedPlaceId.length === 0 || sanitizedPlaceId.length > 200) {
+      return NextResponse.json(
+        { error: 'Invalid place_id format' },
         { status: 400 }
       )
     }
@@ -34,7 +49,7 @@ export async function GET(request: NextRequest) {
     }
 
     // NEW Places API endpoint
-    const googleUrl = `https://places.googleapis.com/v1/places/${placeId.trim()}`
+    const googleUrl = `https://places.googleapis.com/v1/places/${sanitizedPlaceId}`
 
     // Field mask for NEW API - specify which fields to return
     const fieldMask = [

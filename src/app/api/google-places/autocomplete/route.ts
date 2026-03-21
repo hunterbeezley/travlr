@@ -1,4 +1,6 @@
 import { logger } from '@/lib/logger'
+import { checkRateLimit, RateLimitConfig } from '@/lib/rate-limit'
+import { sanitizeString, validateCoordinates, validateNumber } from '@/lib/validation'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -14,18 +16,31 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting - 30 requests per minute for search
+    const rateLimitResponse = await checkRateLimit(request, RateLimitConfig.SEARCH)
+    if (rateLimitResponse) return rateLimitResponse
+
     const { searchParams } = new URL(request.url)
     const input = searchParams.get('input')
     const location = searchParams.get('location')
     const radius = searchParams.get('radius') || '50000' // Default 50km
 
-    // Validate required parameters
+    // Validate and sanitize input
     if (!input || input.trim().length === 0) {
       return NextResponse.json(
         { error: 'Input parameter is required' },
         { status: 400 }
       )
     }
+
+    if (input.length > 200) {
+      return NextResponse.json(
+        { error: 'Input parameter is too long (max 200 characters)' },
+        { status: 400 }
+      )
+    }
+
+    const sanitizedInput = sanitizeString(input)
 
     // Validate API key
     const apiKey = process.env.GOOGLE_PLACES_API_KEY
@@ -39,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     // Build request body for NEW Places API
     const requestBody: any = {
-      input: input.trim(),
+      input: sanitizedInput,
       languageCode: 'en',
       includedRegionCodes: ['us'] // Restrict to US
     }
@@ -47,13 +62,33 @@ export async function GET(request: NextRequest) {
     // Add location bias if provided
     if (location) {
       const [lat, lng] = location.split(',').map(Number)
+
+      // Validate coordinates
+      const coordValidation = validateCoordinates(lat, lng)
+      if (!coordValidation.valid) {
+        return NextResponse.json(
+          { error: coordValidation.error },
+          { status: 400 }
+        )
+      }
+
+      // Validate radius
+      const radiusNum = parseFloat(radius)
+      const radiusValidation = validateNumber(radiusNum, 1, 100000) // Max 100km
+      if (!radiusValidation.valid) {
+        return NextResponse.json(
+          { error: 'Invalid radius (must be between 1 and 100000 meters)' },
+          { status: 400 }
+        )
+      }
+
       requestBody.locationBias = {
         circle: {
           center: {
             latitude: lat,
             longitude: lng
           },
-          radius: parseFloat(radius)
+          radius: radiusNum
         }
       }
     }

@@ -1,4 +1,6 @@
 import { logger } from '@/lib/logger'
+import { checkRateLimit, RateLimitConfig } from '@/lib/rate-limit'
+import { validateCoordinates } from '@/lib/validation'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -13,6 +15,10 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting - 30 requests per minute for search
+    const rateLimitResponse = await checkRateLimit(request, RateLimitConfig.SEARCH)
+    if (rateLimitResponse) return rateLimitResponse
+
     const { searchParams } = new URL(request.url)
     const latlng = searchParams.get('latlng')
     const resultType = searchParams.get('result_type')
@@ -37,9 +43,11 @@ export async function GET(request: NextRequest) {
     const lat = parseFloat(coords[0])
     const lng = parseFloat(coords[1])
 
-    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    // Use validation utility
+    const coordValidation = validateCoordinates(lat, lng)
+    if (!coordValidation.valid) {
       return NextResponse.json(
-        { error: 'Invalid latitude or longitude values' },
+        { error: coordValidation.error },
         { status: 400 }
       )
     }

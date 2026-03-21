@@ -1,4 +1,6 @@
 import { logger } from '@/lib/logger'
+import { checkRateLimit, RateLimitConfig } from '@/lib/rate-limit'
+import { validateCoordinates, validateNumber } from '@/lib/validation'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -15,6 +17,10 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting - 30 requests per minute for search
+    const rateLimitResponse = await checkRateLimit(request, RateLimitConfig.SEARCH)
+    if (rateLimitResponse) return rateLimitResponse
+
     const { searchParams } = new URL(request.url)
     const lat = searchParams.get('lat')
     const lng = searchParams.get('lng')
@@ -25,6 +31,27 @@ export async function GET(request: NextRequest) {
     if (!lat || !lng) {
       return NextResponse.json(
         { error: 'lat and lng parameters are required' },
+        { status: 400 }
+      )
+    }
+
+    // Parse and validate coordinates
+    const latNum = parseFloat(lat)
+    const lngNum = parseFloat(lng)
+    const coordValidation = validateCoordinates(latNum, lngNum)
+    if (!coordValidation.valid) {
+      return NextResponse.json(
+        { error: coordValidation.error },
+        { status: 400 }
+      )
+    }
+
+    // Validate radius
+    const radiusNum = parseFloat(radius)
+    const radiusValidation = validateNumber(radiusNum, 1, 50000)
+    if (!radiusValidation.valid) {
+      return NextResponse.json(
+        { error: 'Invalid radius (must be between 1 and 50000 meters)' },
         { status: 400 }
       )
     }
@@ -57,10 +84,10 @@ export async function GET(request: NextRequest) {
       locationRestriction: {
         circle: {
           center: {
-            latitude: parseFloat(lat),
-            longitude: parseFloat(lng)
+            latitude: latNum,
+            longitude: lngNum
           },
-          radius: Math.min(parseFloat(radius), 50000) // Cap at 50km
+          radius: radiusNum
         }
       },
       maxResultCount: 20, // Reasonable limit for viewport
