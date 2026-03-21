@@ -1621,7 +1621,7 @@ function MapComponent({ onMapClick }: MapProps) {
             left: '1rem',
             top: '5rem',
             bottom: '1rem',
-            width: '280px',
+            width: '340px',
             backgroundColor: 'rgba(39, 39, 42, 0.7)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: 'var(--radius-lg)',
