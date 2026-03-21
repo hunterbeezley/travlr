@@ -1527,15 +1527,9 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={createCollectionLoading || !newCollectionForm.title.trim()}
+                  className="btn-gradient"
                   style={{
-                    padding: '0.75rem 1.5rem',
-                    background: createCollectionLoading ? 'var(--muted)' : 'var(--accent)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 'var(--radius)',
-                    cursor: createCollectionLoading ? 'not-allowed' : 'pointer',
-                    fontSize: '0.875rem',
-                    fontWeight: '500'
+                    width: '100%'
                   }}
                 >
                   {createCollectionLoading ? (

@@ -462,6 +462,64 @@ h3 {
   color: var(--color-white);
 }
 
+/* Gradient Button - Primary CTAs */
+.btn-gradient {
+  background: linear-gradient(135deg, var(--color-red) 0%, var(--accent-hover) 100%);
+  color: var(--color-white);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--accent-hover) 0%, var(--color-red) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.4);
+}
+
+.btn-gradient:hover::before {
+  opacity: 1;
+}
+
+.btn-gradient:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+}
+
+.btn-gradient:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-gradient:disabled:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+}
+
+/* Gradient button content needs relative positioning */
+.btn-gradient > * {
+  position: relative;
+  z-index: 1;
+}
+
 .btn-small {
   padding: var(--space-sm) var(--space-md);
   font-size: 0.75rem;

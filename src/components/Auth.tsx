@@ -392,7 +392,7 @@ export default function Auth() {
         <button
           type="submit"
           disabled={loading || !email || (mode !== 'reset' && !password)}
-          className="btn btn-primary w-full"
+          className={`btn ${mode === 'signup' ? 'btn-gradient' : 'btn-primary'} w-full`}
           style={{ marginTop: '0.5rem' }}
         >
           {loading ? (
