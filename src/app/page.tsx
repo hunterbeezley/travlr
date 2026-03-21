@@ -587,16 +587,7 @@ export default function FeedPage() {
     router.push(`/explore/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, '-'))}`)
   }
 
-  const popularCategories = [
-    '☕ Restaurants',
-    '🍺 Bars',
-    '🏨 Hotels',
-    '🎭 Entertainment',
-    '🛍️ Shopping',
-    '🏛️ Culture',
-    '🌳 Outdoors',
-    '🏃 Activities'
-  ]
+  // Categories removed - collections don't have categories (only pins do)
 
   const displayCities = showAllCities ? cities : cities.slice(0, 12)
 
@@ -1016,68 +1007,8 @@ export default function FeedPage() {
             </section>
           )}
 
-          {/* SECTION: Browse by Category */}
-          <section style={{ marginBottom: '3rem' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: '1rem',
-              paddingBottom: '1rem',
-              borderBottom: '2px solid var(--border)'
-            }}>
-              <h2 style={{
-                fontSize: '1.25rem',
-                fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                margin: 0
-              }}>
-                <span>📂</span>
-                <span>Browse by Category</span>
-              </h2>
-            </div>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-              gap: '0.75rem'
-            }}>
-              {popularCategories.map((category) => (
-                <Link
-                  key={category}
-                  href={`/explore/category/${encodeURIComponent(category.split(' ')[1].toLowerCase())}`}
-                  style={{
-                    padding: '1rem',
-                    background: 'var(--muted)',
-                    border: '2px solid var(--border)',
-                    borderRadius: 'var(--radius)',
-                    fontSize: '0.875rem',
-                    fontWeight: '600',
-                    fontFamily: 'var(--font-mono)',
-                    textDecoration: 'none',
-                    color: 'var(--foreground)',
-                    textAlign: 'center',
-                    transition: 'var(--transition)',
-                    display: 'block'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--accent)'
-                    e.currentTarget.style.transform = 'translateY(-2px)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border)'
-                    e.currentTarget.style.transform = 'translateY(0)'
-                  }}
-                >
-                  {category}
-                </Link>
-              ))}
-            </div>
-          </section>
+          {/* Category section removed - collections don't have categories (only pins do) */}
+          {/* Use search page to discover collections instead */}
         </>
       )}
 
