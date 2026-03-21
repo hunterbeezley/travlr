@@ -169,7 +169,7 @@ body::before {
   background-size: var(--dot-spacing) var(--dot-spacing);
   opacity: 0.2;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
 }
 
 /* Red accent line at top of page - more subtle */
