@@ -5,6 +5,7 @@ import ConsentBanner from "@/components/ConsentBanner";
 import FeedbackButton from "@/components/FeedbackButton";
 import PWARegister from "@/components/PWARegister";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import BackgroundOrbs from "@/components/BackgroundOrbs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -110,6 +111,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <PWARegister />
+        <BackgroundOrbs />
         {children}
         <ConsentBanner />
         <FeedbackButton />
