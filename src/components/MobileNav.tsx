@@ -2,11 +2,12 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Home, Map, Search, Users, User } from 'lucide-react'
+import UserAvatar from './UserAvatar'
 
 export default function MobileNav() {
   const router = useRouter()
   const pathname = usePathname()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
 
   const isActive = (path: string) => {
     if (path === '/') {
@@ -30,7 +31,22 @@ export default function MobileNav() {
       case '/map': return <Map {...props} />
       case '/search': return <Search {...props} />
       case '/friends': return <Users {...props} />
-      case '/profile': return <User {...props} />
+      case '/profile': return (
+        <div style={{
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          overflow: 'hidden',
+          border: active ? '2px solid white' : '2px solid transparent',
+          transition: 'all 0.2s ease'
+        }}>
+          <UserAvatar
+            profileImageUrl={profile?.profile_image}
+            email={user?.email || ''}
+            size="small"
+          />
+        </div>
+      )
       default: return null
     }
   }
