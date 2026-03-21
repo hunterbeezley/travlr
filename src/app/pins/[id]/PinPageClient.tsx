@@ -789,7 +789,7 @@ export default function PinPageClient({
       {showCopyToast && (
         <Toast
           message="Copied to clipboard!"
-          icon="📋"
+          variant="success"
           onClose={() => setShowCopyToast(false)}
         />
       )}

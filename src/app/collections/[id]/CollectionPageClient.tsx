@@ -1513,7 +1513,7 @@ export default function CollectionPageClient({
       {showShareToast && (
         <Toast
           message="Link copied to clipboard!"
-          icon="🔗"
+          variant="success"
           onClose={() => setShowShareToast(false)}
         />
       )}
