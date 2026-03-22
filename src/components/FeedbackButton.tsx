@@ -94,7 +94,7 @@ export default function FeedbackButton() {
             justify-content: center;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             transition: var(--transition);
-            z-index: 999;
+            z-index: 1100;
           }
 
           /* Mobile: Same positioning to stay above zoom controls */
@@ -122,7 +122,7 @@ export default function FeedbackButton() {
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.7)',
           backdropFilter: 'blur(4px)',
-          zIndex: 1000
+          zIndex: 2000
         }}
       />
 
@@ -139,7 +139,7 @@ export default function FeedbackButton() {
           padding: '2rem',
           maxWidth: '500px',
           width: 'calc(100% - 2rem)',
-          zIndex: 1001,
+          zIndex: 2001,
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
         }}
       >
