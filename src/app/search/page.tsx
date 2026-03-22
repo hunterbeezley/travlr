@@ -8,7 +8,7 @@ import CollectionGrid from '@/components/Discover/CollectionGrid'
 import UserAvatar from '@/components/UserAvatar'
 import EmptyState from '@/components/EmptyState'
 import { useAuth } from '@/hooks/useAuth'
-import { FolderOpen, Users, Search } from 'lucide-react'
+import { FolderOpen, Users, Search, UserPlus } from 'lucide-react'
 
 interface Collection {
   id: string
@@ -43,8 +43,8 @@ function SearchPageContent() {
   const { user } = useAuth()
 
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
-  const [activeTab, setActiveTab] = useState<'collections' | 'users'>(
-    (searchParams.get('type') as 'collections' | 'users') || 'collections'
+  const [activeTab, setActiveTab] = useState<'collections' | 'users' | 'suggestions'>(
+    (searchParams.get('type') as 'collections' | 'users' | 'suggestions') || 'collections'
   )
 
   // Collections state
@@ -58,6 +58,10 @@ function SearchPageContent() {
   const [users, setUsers] = useState<User[]>([])
   const [usersLoading, setUsersLoading] = useState(false)
   const [following, setFollowing] = useState<Set<string>>(new Set())
+
+  // Suggestions state
+  const [suggestions, setSuggestions] = useState<User[]>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
 
   // Load following state
   useEffect(() => {
@@ -79,6 +83,46 @@ function SearchPageContent() {
       logger.error('Error loading following state:', error)
     }
   }
+
+  // Load friend suggestions
+  const loadSuggestions = async () => {
+    if (!user) return
+
+    setSuggestionsLoading(true)
+    try {
+      // Try to use RPC function for better suggestions
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_following_suggestions', { p_limit: 20 })
+
+      if (!rpcError && rpcData) {
+        setSuggestions(rpcData)
+      } else {
+        // Fallback: Get users not followed by current user
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, username, full_name, bio, email, profile_image, location')
+          .neq('id', user.id)
+          .limit(20)
+
+        if (error) throw error
+
+        // Filter out users already followed
+        const unfollowedUsers = data?.filter((u: any) => !following.has(u.id)) || []
+        setSuggestions(unfollowedUsers as User[])
+      }
+    } catch (error) {
+      logger.error('Error loading suggestions:', error)
+    } finally {
+      setSuggestionsLoading(false)
+    }
+  }
+
+  // Load suggestions when tab is activated
+  useEffect(() => {
+    if (activeTab === 'suggestions' && user && suggestions.length === 0) {
+      loadSuggestions()
+    }
+  }, [activeTab, user])
 
   // Search collections
   const searchCollections = useCallback(async (query: string) => {
@@ -121,13 +165,15 @@ function SearchPageContent() {
     }
   }, [])
 
-  // Debounced search
+  // Debounced search (not applicable to suggestions tab)
   useEffect(() => {
+    if (activeTab === 'suggestions') return // Skip search for suggestions tab
+
     const timer = setTimeout(() => {
       if (searchQuery) {
         if (activeTab === 'collections') {
           searchCollections(searchQuery)
-        } else {
+        } else if (activeTab === 'users') {
           searchUsers(searchQuery)
         }
       } else {
@@ -207,7 +253,7 @@ function SearchPageContent() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search for collections or users..."
+            placeholder={activeTab === 'suggestions' ? "Browse friend suggestions..." : "Search for collections or users..."}
             autoFocus
             style={{
               width: '100%',
@@ -290,6 +336,26 @@ function SearchPageContent() {
             }}
           >
             👥 Users {users.length > 0 && `(${users.length})`}
+          </button>
+          <button
+            onClick={() => setActiveTab('suggestions')}
+            style={{
+              flex: 1,
+              padding: '0.75rem',
+              background: activeTab === 'suggestions' ? 'var(--accent)' : 'transparent',
+              color: activeTab === 'suggestions' ? 'white' : 'var(--foreground)',
+              border: 'none',
+              borderRadius: 'var(--radius)',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              fontFamily: 'var(--font-mono)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              transition: 'var(--transition)'
+            }}
+          >
+            ✨ Suggestions {suggestions.length > 0 && `(${suggestions.length})`}
           </button>
         </div>
 
@@ -385,7 +451,7 @@ function SearchPageContent() {
               />
             )}
           </div>
-        ) : (
+        ) : activeTab === 'users' ? (
           <div>
             {usersLoading ? (
               <div style={{
@@ -521,6 +587,139 @@ function SearchPageContent() {
                           }}
                         >
                           {following.has(searchUser.id) ? 'Following' : 'Follow'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            {suggestionsLoading ? (
+              <div style={{
+                padding: '3rem',
+                textAlign: 'center'
+              }}>
+                <div className="spinner" style={{ width: '2rem', height: '2rem', margin: '0 auto 1rem' }} />
+                <p style={{ color: 'var(--muted-foreground)' }}>Loading suggestions...</p>
+              </div>
+            ) : suggestions.length === 0 ? (
+              <EmptyState
+                icon={UserPlus}
+                title="No Suggestions Yet"
+                description="Check back later for personalized suggestions based on your activity and connections."
+                variant="subtle"
+              />
+            ) : (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+              }}>
+                {suggestions.map((suggestedUser) => (
+                  <div
+                    key={suggestedUser.id}
+                    style={{
+                      padding: '1rem',
+                      background: 'var(--card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-lg)',
+                      transition: 'var(--transition)'
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '1rem'
+                    }}>
+                      <div
+                        onClick={() => router.push(`/profile/${suggestedUser.id}`)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <UserAvatar
+                          profileImageUrl={suggestedUser.profile_image}
+                          email={suggestedUser.email || suggestedUser.username || ''}
+                          size="large"
+                        />
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          onClick={() => router.push(`/profile/${suggestedUser.id}`)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <h3 style={{
+                            fontSize: '1rem',
+                            fontWeight: '700',
+                            marginBottom: '0.25rem',
+                            fontFamily: 'var(--font-mono)',
+                            textTransform: 'uppercase'
+                          }}>
+                            {suggestedUser.full_name || suggestedUser.username || suggestedUser.email}
+                          </h3>
+                          <p style={{
+                            fontSize: '0.875rem',
+                            color: 'var(--muted-foreground)',
+                            marginBottom: '0.5rem'
+                          }}>
+                            {suggestedUser.username ? `@${suggestedUser.username}` : suggestedUser.email}
+                          </p>
+                        </div>
+
+                        {suggestedUser.bio && (
+                          <p style={{
+                            fontSize: '0.875rem',
+                            color: 'var(--foreground)',
+                            marginBottom: '0.75rem',
+                            lineHeight: '1.5'
+                          }}>
+                            {suggestedUser.bio}
+                          </p>
+                        )}
+
+                        {suggestedUser.location && (
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--muted-foreground)',
+                            marginBottom: '0.75rem'
+                          }}>
+                            📍 {suggestedUser.location}
+                          </div>
+                        )}
+
+                        <div style={{
+                          display: 'flex',
+                          gap: '1rem',
+                          fontSize: '0.75rem',
+                          color: 'var(--muted-foreground)'
+                        }}>
+                          <span>👥 {suggestedUser.follower_count || 0} followers</span>
+                          <span>📂 {suggestedUser.collection_count || 0} collections</span>
+                        </div>
+                      </div>
+
+                      {user && user.id !== suggestedUser.id && (
+                        <button
+                          onClick={() => following.has(suggestedUser.id) ? handleUnfollow(suggestedUser.id) : handleFollow(suggestedUser.id)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            background: following.has(suggestedUser.id) ? 'var(--muted)' : 'var(--accent)',
+                            color: following.has(suggestedUser.id) ? 'var(--muted-foreground)' : 'white',
+                            border: 'none',
+                            borderRadius: 'var(--radius)',
+                            cursor: 'pointer',
+                            fontSize: '0.8125rem',
+                            fontWeight: '600',
+                            fontFamily: 'var(--font-mono)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            flexShrink: 0,
+                            transition: 'var(--transition)'
+                          }}
+                        >
+                          {following.has(suggestedUser.id) ? 'Following' : 'Follow'}
                         </button>
                       )}
                     </div>
