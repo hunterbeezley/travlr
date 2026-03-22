@@ -1719,6 +1719,11 @@ a:focus-visible {
     display: none !important;
   }
 
+  /* Hide user avatar in top-right on mobile (use bottom nav instead) */
+  .navbar-user {
+    display: none !important;
+  }
+
   /* Add padding to body/main to account for bottom nav */
   main,
   .main-content {

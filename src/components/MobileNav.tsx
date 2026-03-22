@@ -9,6 +9,14 @@ export default function MobileNav() {
   const pathname = usePathname()
   const { user, profile } = useAuth()
 
+  // Debug: Log profile data
+  console.log('MobileNav - Profile data:', {
+    hasProfile: !!profile,
+    hasProfileImage: !!profile?.profile_image,
+    profileImageUrl: profile?.profile_image,
+    email: user?.email
+  })
+
   const isActive = (path: string) => {
     if (path === '/') {
       return pathname === '/'
