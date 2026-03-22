@@ -109,6 +109,13 @@ export default function ProfilePage() {
     }
   }, [profile])
 
+  // Redirect to home if user is not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/')
+    }
+  }, [loading, user, router])
+
   // Check if profile is incomplete and show completion modal
   useEffect(() => {
     if (user && profile && !loading) {
@@ -356,9 +363,8 @@ export default function ProfilePage() {
     )
   }
 
-  // Redirect to home if user is not logged in (better UX than showing auth on profile page)
+  // Show loading state if user is not logged in (redirect happens in useEffect)
   if (!user) {
-    router.push('/')
     return (
       <div style={{
         minHeight: '100vh',

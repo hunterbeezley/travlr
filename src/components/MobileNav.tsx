@@ -32,6 +32,18 @@ export default function MobileNav() {
     { path: '/profile', label: 'Profile' }
   ]
 
+  const handleNavClick = (path: string, label: string, index: number) => {
+    console.log('MobileNav - Button clicked:', {
+      index,
+      path,
+      label,
+      currentPathname: pathname,
+      totalButtons: navItems.length
+    })
+    router.push(path)
+    console.log('MobileNav - router.push() called with:', path)
+  }
+
   const renderIcon = (path: string, active: boolean) => {
     const props = { size: 22, strokeWidth: active ? 2.5 : 2 }
     switch (path) {
@@ -76,14 +88,16 @@ export default function MobileNav() {
         zIndex: 1000,
         paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'
       }}>
-      {navItems.map((item) => {
+      {navItems.map((item, index) => {
         const active = isActive(item.path)
 
         return (
           <button
             key={item.path}
-            onClick={() => router.push(item.path)}
+            onClick={() => handleNavClick(item.path, item.label, index)}
             aria-label={item.label}
+            data-nav-path={item.path}
+            data-nav-index={index}
             style={{
               display: 'flex',
               alignItems: 'center',
