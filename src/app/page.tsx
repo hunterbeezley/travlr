@@ -14,8 +14,7 @@ import CollectionGrid from '@/components/Discover/CollectionGrid'
 import Auth from '@/components/Auth'
 import EmptyState from '@/components/EmptyState'
 import FeedEmptyState from '@/components/Feed/FeedEmptyState'
-import UserAvatar from '@/components/UserAvatar'
-import { Activity, Sparkles, Users, Search, Building2, TrendingUp, MapPin, Folder } from 'lucide-react'
+import { Activity, Sparkles, Users, Building2, TrendingUp, MapPin, Folder } from 'lucide-react'
 
 export default function FeedPage() {
   const { user, loading: authLoading } = useAuth()
@@ -23,19 +22,11 @@ export default function FeedPage() {
   const [activities, setActivities] = useState<any[]>([])
   const [collections, setCollections] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState<'activity' | 'foryou' | 'discover' | 'search'>('activity')
+  const [view, setView] = useState<'activity' | 'foryou' | 'discover'>('activity')
   const [filter, setFilter] = useState<'all' | 'friends' | 'self'>('all')
   const [followingCount, setFollowingCount] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
-
-  // Search tab state
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchTab, setSearchTab] = useState<'collections' | 'users'>('collections')
-  const [searchCollections, setSearchCollections] = useState<any[]>([])
-  const [searchUsers, setSearchUsers] = useState<any[]>([])
-  const [searchLoading, setSearchLoading] = useState(false)
-  const [searchFollowing, setSearchFollowing] = useState<Set<string>>(new Set())
 
   // Discover tab state
   const [trendingCollections, setTrendingCollections] = useState<any[]>([])
@@ -578,7 +569,7 @@ export default function FeedPage() {
       } else if (view === 'foryou') {
         loadForYouFeed()
       } else {
-        // Discover and Search tabs don't need initial loading (done by individual useEffects)
+        // Discover tab doesn't need initial loading (done by individual useEffects)
         setLoading(false)
       }
     }
@@ -597,100 +588,6 @@ export default function FeedPage() {
     router.push(`/explore/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, '-'))}`)
   }
 
-  // Search functions
-  const performSearch = async (query: string) => {
-    if (!query.trim()) {
-      setSearchCollections([])
-      setSearchUsers([])
-      return
-    }
-
-    setSearchLoading(true)
-    try {
-      if (searchTab === 'collections') {
-        const { data, error } = await supabase.rpc('search_collections', {
-          search_query: query.trim(),
-          filter_category: null,
-          filter_location: null,
-          sort_by: 'relevance',
-          result_limit: 50
-        })
-        if (error) throw error
-        setSearchCollections(data || [])
-      } else {
-        const { data, error } = await supabase.rpc('search_users', {
-          search_query: query.trim(),
-          result_limit: 50
-        })
-        if (error) throw error
-        setSearchUsers(data || [])
-      }
-    } catch (error) {
-      logger.error('Error searching:', error)
-      setSearchCollections([])
-      setSearchUsers([])
-    } finally {
-      setSearchLoading(false)
-    }
-  }
-
-  const loadSearchFollowing = async () => {
-    if (!user) return
-    try {
-      const { data, error } = await supabase
-        .from('user_follows')
-        .select('following_id')
-        .eq('follower_id', user.id)
-      if (error) throw error
-      setSearchFollowing(new Set(data?.map((f: any) => f.following_id) || []))
-    } catch (error) {
-      logger.error('Error loading following state:', error)
-    }
-  }
-
-  const handleFollow = async (userId: string) => {
-    try {
-      const { error } = await supabase
-        .from('user_follows')
-        .insert({ follower_id: user?.id, following_id: userId })
-      if (error) throw error
-      setSearchFollowing(prev => new Set(prev).add(userId))
-    } catch (error) {
-      logger.error('Error following user:', error)
-    }
-  }
-
-  const handleUnfollow = async (userId: string) => {
-    try {
-      const { error } = await supabase
-        .from('user_follows')
-        .delete()
-        .eq('follower_id', user?.id)
-        .eq('following_id', userId)
-      if (error) throw error
-      setSearchFollowing(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(userId)
-        return newSet
-      })
-    } catch (error) {
-      logger.error('Error unfollowing user:', error)
-    }
-  }
-
-  // Load search following when switching to search view
-  useEffect(() => {
-    if (view === 'search' && user) {
-      loadSearchFollowing()
-    }
-  }, [view, user])
-
-  // Trigger search when query or tab changes
-  useEffect(() => {
-    if (view === 'search') {
-      performSearch(searchQuery)
-    }
-  }, [searchQuery, searchTab, view])
 
   // Categories removed - collections don't have categories (only pins do)
 
@@ -761,8 +658,7 @@ export default function FeedPage() {
           {[
             { value: 'activity', label: 'Following' },
             { value: 'foryou', label: 'For You' },
-            { value: 'discover', label: 'Discover' },
-            { value: 'search', label: 'Search' }
+            { value: 'discover', label: 'Discover' }
           ].map((v) => (
             <button
               key={v.value}
@@ -798,7 +694,6 @@ export default function FeedPage() {
               {v.value === 'activity' && <Users size={16} />}
               {v.value === 'foryou' && <Sparkles size={16} />}
               {v.value === 'discover' && <Activity size={16} />}
-              {v.value === 'search' && <Search size={16} />}
               <span>{v.label}</span>
             </button>
           ))}
@@ -1120,283 +1015,6 @@ export default function FeedPage() {
         </>
       )}
 
-      {/* Search View */}
-      {view === 'search' && (
-        <>
-          {/* Search Input - Tidal-style pill */}
-          <div style={{
-            marginBottom: '1.5rem',
-            position: 'relative'
-          }}>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search collections and users..."
-              style={{
-                width: '100%',
-                padding: '1rem 1.5rem',
-                paddingLeft: '3.5rem',
-                border: 'none',
-                borderRadius: 'var(--radius-pill)',
-                fontSize: '1rem',
-                background: 'var(--card-elevated)',
-                color: 'var(--foreground)',
-                outline: 'none',
-                boxShadow: 'var(--shadow)',
-                transition: 'all 0.2s ease'
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.boxShadow = 'var(--shadow-lg), 0 0 0 2px var(--accent)'
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.boxShadow = 'var(--shadow)'
-              }}
-            />
-            <Search
-              size={20}
-              style={{
-                position: 'absolute',
-                left: '1.25rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--muted-foreground)'
-              }}
-            />
-            {searchLoading && (
-              <div style={{
-                position: 'absolute',
-                right: '1.25rem',
-                top: '50%',
-                transform: 'translateY(-50%)'
-              }}>
-                <div className="spinner" style={{ width: '1.25rem', height: '1.25rem' }} />
-              </div>
-            )}
-          </div>
-
-          {/* Search Tabs - Pill style */}
-          <div style={{
-            display: 'flex',
-            gap: '0.5rem',
-            marginBottom: '1.5rem',
-            background: 'var(--card-elevated)',
-            padding: '0.375rem',
-            borderRadius: 'var(--radius-pill)',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            {[
-              { value: 'collections', label: 'Collections' },
-              { value: 'users', label: 'Users' }
-            ].map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setSearchTab(tab.value as any)}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  background: searchTab === tab.value ? 'var(--accent)' : 'transparent',
-                  color: searchTab === tab.value ? 'white' : 'var(--muted-foreground)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-pill)',
-                  cursor: 'pointer',
-                  fontSize: '0.8125rem',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                {tab.value === 'collections' && <Folder size={16} />}
-                {tab.value === 'users' && <Users size={16} />}
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Search Results */}
-          {searchQuery ? (
-            <>
-              {/* Collections Results */}
-              {searchTab === 'collections' && (
-                <>
-                  {searchCollections.length === 0 && !searchLoading && (
-                    <EmptyState
-                      icon={Search}
-                      title="No Collections Found"
-                      description={`No collections found matching "${searchQuery}"`}
-                      variant="subtle"
-                    />
-                  )}
-                  {searchCollections.length > 0 && (
-                    <CollectionGrid collections={searchCollections} currentUserId={user.id} />
-                  )}
-                </>
-              )}
-
-              {/* Users Results */}
-              {searchTab === 'users' && (
-                <>
-                  {searchUsers.length === 0 && !searchLoading && (
-                    <EmptyState
-                      icon={Users}
-                      title="No Users Found"
-                      description={`No users found matching "${searchQuery}"`}
-                      variant="subtle"
-                    />
-                  )}
-                  {searchUsers.length > 0 && (
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '1rem'
-                    }}>
-                      {searchUsers.map((searchUser: any) => (
-                        <div
-                          key={searchUser.id}
-                          style={{
-                            padding: '1.25rem',
-                            background: 'var(--card-elevated)',
-                            borderRadius: 'var(--radius-xl)',
-                            boxShadow: 'var(--shadow)',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: '1rem'
-                          }}>
-                            <div
-                              onClick={() => router.push(`/profile/${searchUser.id}`)}
-                              style={{ cursor: 'pointer' }}
-                            >
-                              <UserAvatar
-                                profileImageUrl={searchUser.profile_image}
-                                email={searchUser.email || searchUser.username || ''}
-                                size="large"
-                              />
-                            </div>
-
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div
-                                onClick={() => router.push(`/profile/${searchUser.id}`)}
-                                style={{ cursor: 'pointer' }}
-                              >
-                                <h3 style={{
-                                  fontSize: '1rem',
-                                  fontWeight: '700',
-                                  marginBottom: '0.25rem'
-                                }}>
-                                  {searchUser.full_name || searchUser.username || searchUser.email}
-                                </h3>
-                                <p style={{
-                                  fontSize: '0.875rem',
-                                  color: 'var(--muted-foreground)',
-                                  marginBottom: '0.5rem'
-                                }}>
-                                  {searchUser.username ? `@${searchUser.username}` : searchUser.email}
-                                </p>
-                              </div>
-
-                              {searchUser.bio && (
-                                <p style={{
-                                  fontSize: '0.875rem',
-                                  color: 'var(--foreground)',
-                                  marginBottom: '0.75rem',
-                                  lineHeight: '1.5'
-                                }}>
-                                  {searchUser.bio}
-                                </p>
-                              )}
-
-                              {searchUser.location && (
-                                <div style={{
-                                  fontSize: '0.75rem',
-                                  color: 'var(--muted-foreground)',
-                                  marginBottom: '0.75rem'
-                                }}>
-                                  📍 {searchUser.location}
-                                </div>
-                              )}
-
-                              <div style={{
-                                display: 'flex',
-                                gap: '1rem',
-                                fontSize: '0.75rem',
-                                color: 'var(--muted-foreground)',
-                                marginBottom: '0.75rem'
-                              }}>
-                                <span>👥 {searchUser.follower_count || 0} followers</span>
-                                <span>📂 {searchUser.collection_count || 0} collections</span>
-                              </div>
-                            </div>
-
-                            <button
-                              onClick={() => searchFollowing.has(searchUser.id) ? handleUnfollow(searchUser.id) : handleFollow(searchUser.id)}
-                              style={{
-                                padding: '0.625rem 1.25rem',
-                                background: searchFollowing.has(searchUser.id) ? 'var(--muted)' : 'var(--accent)',
-                                color: searchFollowing.has(searchUser.id) ? 'var(--muted-foreground)' : 'white',
-                                border: 'none',
-                                borderRadius: 'var(--radius-pill)',
-                                cursor: 'pointer',
-                                fontSize: '0.8125rem',
-                                fontWeight: '600',
-                                whiteSpace: 'nowrap',
-                                flexShrink: 0,
-                                transition: 'all 0.2s ease',
-                                boxShadow: searchFollowing.has(searchUser.id) ? 'none' : 'var(--shadow-sm)'
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!searchFollowing.has(searchUser.id)) {
-                                  e.currentTarget.style.background = 'var(--accent-hover)'
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!searchFollowing.has(searchUser.id)) {
-                                  e.currentTarget.style.background = 'var(--accent)'
-                                }
-                              }}
-                            >
-                              {searchFollowing.has(searchUser.id) ? 'Following' : 'Follow'}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </>
-          ) : (
-            <div style={{
-              padding: '3rem',
-              textAlign: 'center',
-              background: 'var(--card-elevated)',
-              borderRadius: 'var(--radius-xl)',
-              boxShadow: 'var(--shadow-sm)'
-            }}>
-              <Search size={48} style={{ color: 'var(--muted-foreground)', marginBottom: '1rem' }} />
-              <h3 style={{
-                fontSize: '1.125rem',
-                fontWeight: '700',
-                marginBottom: '0.5rem'
-              }}>
-                Search for Content
-              </h3>
-              <p style={{
-                color: 'var(--muted-foreground)',
-                fontSize: '0.875rem'
-              }}>
-                Find collections and users across Travlr
-              </p>
-            </div>
-          )}
-        </>
-      )}
 
       {/* Load More */}
       {hasMore && (
