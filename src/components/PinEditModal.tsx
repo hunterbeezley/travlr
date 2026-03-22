@@ -88,6 +88,9 @@ export default function PinEditModal({
   // Initialize form data when pin changes
   useEffect(() => {
     if (pin && isOpen) {
+      // Clear previous pin's images immediately to prevent cross-contamination
+      setPinImages([])
+
       setFormData({
         title: pin.title || '',
         description: pin.description || '',
@@ -100,6 +103,13 @@ export default function PinEditModal({
       loadPinImages()
     }
   }, [pin, isOpen])
+
+  // Clear images when modal closes to prevent showing old images when reopening
+  useEffect(() => {
+    if (!isOpen) {
+      setPinImages([])
+    }
+  }, [isOpen])
 
   const loadPinImages = async () => {
     if (!pin) return
