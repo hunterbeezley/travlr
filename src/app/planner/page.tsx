@@ -501,6 +501,7 @@ function CreateItineraryModal({
   onClose: () => void
   onCreated: (itinerary: Itinerary) => void
 }) {
+  const { user } = useAuth()
   const [title, setTitle] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -508,6 +509,11 @@ function CreateItineraryModal({
   const [saving, setSaving] = useState(false)
 
   const handleCreate = async () => {
+    if (!user) {
+      alert('You must be logged in to create a trip')
+      return
+    }
+
     if (!title.trim() || !startDate || !endDate) {
       alert('Please fill in all required fields')
       return
@@ -523,6 +529,7 @@ function CreateItineraryModal({
       const { data, error } = await supabase
         .from('itineraries')
         .insert({
+          user_id: user.id,
           title: title.trim(),
           start_date: startDate,
           end_date: endDate,
