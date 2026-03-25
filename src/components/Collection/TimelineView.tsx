@@ -1,8 +1,10 @@
 'use client'
-import React from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Pin } from '@/lib/types/collection'
+import SchedulePinModal from './SchedulePinModal'
+import { supabase } from '@/lib/supabase'
 
 interface TimelineViewProps {
   pins: Pin[]
@@ -66,6 +68,30 @@ export default function TimelineView({
   onOpenSettings
 }: TimelineViewProps) {
   const router = useRouter()
+  const [schedulingPin, setSchedulingPin] = useState<Pin | null>(null)
+
+  // Handle saving pin schedule
+  const handleSaveSchedule = async (
+    pinId: string,
+    scheduling: {
+      scheduled_date: string | null
+      scheduled_time: string | null
+      duration_minutes: number | null
+      timeline_notes: string | null
+    }
+  ) => {
+    const { error } = await supabase
+      .from('pins')
+      .update(scheduling)
+      .eq('id', pinId)
+
+    if (error) {
+      throw error
+    }
+
+    // Refresh the page to show updated schedule
+    router.refresh()
+  }
 
   // Check if we have date range
   if (!startDate || !endDate) {
@@ -306,10 +332,33 @@ export default function TimelineView({
                               fontWeight: '600',
                               color: 'var(--foreground)',
                               margin: 0,
-                              fontFamily: 'var(--font-mono)'
+                              fontFamily: 'var(--font-mono)',
+                              flex: 1
                             }}>
                               {pin.title}
                             </h3>
+                            {isOwner && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSchedulingPin(pin)
+                                }}
+                                style={{
+                                  padding: '0.25rem 0.5rem',
+                                  background: 'var(--muted)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: 'var(--radius)',
+                                  fontSize: '0.625rem',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  fontFamily: 'var(--font-mono)',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.05em'
+                                }}
+                              >
+                                Edit
+                              </button>
+                            )}
                           </div>
 
                           {pin.timeline_notes && (
@@ -400,7 +449,8 @@ export default function TimelineView({
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem'
+                      gap: '0.5rem',
+                      marginBottom: '0.5rem'
                     }}>
                       <span style={{ fontSize: '1rem' }}>{emoji}</span>
                       <h3 style={{
@@ -408,17 +458,53 @@ export default function TimelineView({
                         fontWeight: '600',
                         color: 'var(--foreground)',
                         margin: 0,
-                        fontFamily: 'var(--font-mono)'
+                        fontFamily: 'var(--font-mono)',
+                        flex: 1
                       }}>
                         {pin.title}
                       </h3>
                     </div>
+                    {isOwner && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSchedulingPin(pin)
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          background: collectionColor,
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 'var(--radius)',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          fontFamily: 'var(--font-mono)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em'
+                        }}
+                      >
+                        📅 Schedule
+                      </button>
+                    )}
                   </div>
                 </div>
               )
             })}
           </div>
         </div>
+      )}
+
+      {/* Schedule Pin Modal */}
+      {schedulingPin && startDate && endDate && (
+        <SchedulePinModal
+          pin={schedulingPin}
+          collectionStartDate={startDate}
+          collectionEndDate={endDate}
+          onClose={() => setSchedulingPin(null)}
+          onSave={handleSaveSchedule}
+        />
       )}
     </div>
   )
