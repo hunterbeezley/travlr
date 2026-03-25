@@ -46,7 +46,7 @@ export default function POISearch({ onPlaceSelect }: POISearchProps) {
             ) {
               // Get details for each prediction
               const detailsPromises = predictions.slice(0, 5).map((prediction) => {
-                return new Promise<GooglePlaceResult>((resolve) => {
+                return new Promise<GooglePlaceResult>((resolve, reject) => {
                   placesService.getDetails(
                     {
                       placeId: prediction.place_id,
@@ -65,16 +65,39 @@ export default function POISearch({ onPlaceSelect }: POISearchProps) {
                     (place, detailStatus) => {
                       if (
                         detailStatus === google.maps.places.PlacesServiceStatus.OK &&
-                        place
+                        place &&
+                        place.geometry?.location
                       ) {
-                        resolve(place as GooglePlaceResult)
+                        // Convert Google PlaceResult to our GooglePlaceResult type
+                        const result: GooglePlaceResult = {
+                          place_id: place.place_id || prediction.place_id,
+                          name: place.name || '',
+                          formatted_address: place.formatted_address || '',
+                          geometry: {
+                            location: {
+                              lat: place.geometry.location.lat(),
+                              lng: place.geometry.location.lng()
+                            }
+                          },
+                          types: place.types || [],
+                          rating: place.rating,
+                          user_ratings_total: place.user_ratings_total
+                        }
+                        resolve(result)
+                      } else {
+                        reject(new Error('Place details not found'))
                       }
                     }
                   )
                 })
               })
 
-              Promise.all(detailsPromises).then((places) => {
+              Promise.allSettled(detailsPromises).then((results) => {
+                const places = results
+                  .filter((result): result is PromiseFulfilledResult<GooglePlaceResult> =>
+                    result.status === 'fulfilled'
+                  )
+                  .map(result => result.value)
                 setResults(places)
                 setLoading(false)
               })

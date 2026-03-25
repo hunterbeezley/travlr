@@ -46,10 +46,4 @@ export interface GooglePlaceResult {
   types: string[]
   rating?: number
   user_ratings_total?: number
-  opening_hours?: {
-    open_now: boolean
-  }
-  photos?: Array<{
-    photo_reference: string
-  }>
 }

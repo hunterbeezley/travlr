@@ -56,9 +56,14 @@ export default function PlannerPage() {
 
   // Load items for selected itinerary
   useEffect(() => {
-    if (!selectedItinerary) return
+    if (!selectedItinerary) {
+      setItems([])
+      return
+    }
 
     async function loadItems() {
+      if (!selectedItinerary) return
+
       const { data, error } = await supabase
         .from('itinerary_items')
         .select('*')
