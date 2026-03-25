@@ -9,6 +9,8 @@ interface TimelineViewProps {
   startDate: string | null
   endDate: string | null
   collectionColor: string
+  isOwner?: boolean
+  onOpenSettings?: () => void
 }
 
 const categoryEmojis: Record<string, string> = {
@@ -59,7 +61,9 @@ export default function TimelineView({
   pins,
   startDate,
   endDate,
-  collectionColor
+  collectionColor,
+  isOwner = false,
+  onOpenSettings
 }: TimelineViewProps) {
   const router = useRouter()
 
@@ -73,19 +77,46 @@ export default function TimelineView({
         borderRadius: 'var(--radius)',
         border: '1px solid var(--border)'
       }}>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📅</div>
+        <h3 style={{
+          fontSize: '1.25rem',
+          fontWeight: '600',
+          color: 'var(--foreground)',
+          marginBottom: '0.5rem'
+        }}>
+          Set Trip Dates
+        </h3>
         <p style={{
           color: 'var(--muted-foreground)',
-          fontSize: '1rem',
-          marginBottom: '1rem'
+          fontSize: '0.875rem',
+          marginBottom: '1.5rem'
         }}>
-          Set a start and end date to enable timeline view
+          {isOwner
+            ? 'Add start and end dates to organize your pins on a timeline'
+            : 'This collection needs trip dates configured'
+          }
         </p>
-        <p style={{
-          color: 'var(--muted-foreground)',
-          fontSize: '0.875rem'
-        }}>
-          Click the settings icon to configure your trip dates
-        </p>
+        {isOwner && onOpenSettings && (
+          <button
+            onClick={onOpenSettings}
+            className="btn btn-primary"
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: collectionColor,
+              border: 'none',
+              borderRadius: 'var(--radius)',
+              color: 'white',
+              fontWeight: '600',
+              fontFamily: 'var(--font-mono)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              fontSize: '0.875rem',
+              cursor: 'pointer'
+            }}
+          >
+            Set Trip Dates
+          </button>
+        )}
       </div>
     )
   }

@@ -102,7 +102,9 @@ export default function CollectionPageClient({
     title: collection.title,
     description: collection.description || '',
     is_public: collection.is_public,
-    color: collection.color
+    color: collection.color,
+    start_date: collection.start_date || '',
+    end_date: collection.end_date || ''
   })
   const [savingCollection, setSavingCollection] = useState(false)
 
@@ -157,6 +159,17 @@ export default function CollectionPageClient({
 
     setSavingCollection(true)
     try {
+      // Validate date range
+      if (editForm.start_date && editForm.end_date) {
+        const start = new Date(editForm.start_date)
+        const end = new Date(editForm.end_date)
+        if (end < start) {
+          alert('End date must be after start date')
+          setSavingCollection(false)
+          return
+        }
+      }
+
       const { error } = await supabase
         .from('collections')
         .update({
@@ -164,6 +177,8 @@ export default function CollectionPageClient({
           description: editForm.description.trim() || null,
           is_public: editForm.is_public,
           color: editForm.color,
+          start_date: editForm.start_date || null,
+          end_date: editForm.end_date || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', collection.id)
@@ -175,6 +190,8 @@ export default function CollectionPageClient({
       collection.description = editForm.description.trim() || null
       collection.is_public = editForm.is_public
       collection.color = editForm.color
+      collection.start_date = editForm.start_date || null
+      collection.end_date = editForm.end_date || null
 
       setIsEditingCollection(false)
       router.refresh()
@@ -1051,6 +1068,8 @@ export default function CollectionPageClient({
                 startDate={collection.start_date}
                 endDate={collection.end_date}
                 collectionColor={collection.color}
+                isOwner={isOwner}
+                onOpenSettings={() => setIsEditingCollection(true)}
               />
             ) : (
               <div style={{
@@ -1714,6 +1733,99 @@ export default function CollectionPageClient({
                 </label>
               </div>
 
+              {/* Trip Dates (for Timeline View) */}
+              <div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem'
+                }}>
+                  <label style={{
+                    fontSize: '0.875rem',
+                    fontWeight: '600'
+                  }}>
+                    Trip Dates
+                  </label>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--muted-foreground)',
+                    fontStyle: 'italic'
+                  }}>
+                    (Required for Timeline view)
+                  </span>
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '0.75rem'
+                }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      marginBottom: '0.375rem',
+                      color: 'var(--muted-foreground)'
+                    }}>
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={editForm.start_date}
+                      onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '0.625rem',
+                        background: 'var(--muted)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        fontSize: '0.875rem',
+                        color: 'var(--foreground)',
+                        fontFamily: 'var(--font-mono)'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      marginBottom: '0.375rem',
+                      color: 'var(--muted-foreground)'
+                    }}>
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={editForm.end_date}
+                      onChange={(e) => setEditForm({ ...editForm, end_date: e.target.value })}
+                      min={editForm.start_date || undefined}
+                      style={{
+                        width: '100%',
+                        padding: '0.625rem',
+                        background: 'var(--muted)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        fontSize: '0.875rem',
+                        color: 'var(--foreground)',
+                        fontFamily: 'var(--font-mono)'
+                      }}
+                    />
+                  </div>
+                </div>
+                {editForm.start_date && editForm.end_date && (
+                  <p style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--muted-foreground)',
+                    marginTop: '0.5rem',
+                    fontStyle: 'italic'
+                  }}>
+                    {Math.ceil((new Date(editForm.end_date).getTime() - new Date(editForm.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1} day trip
+                  </p>
+                )}
+              </div>
+
               {/* Actions */}
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button
@@ -1723,7 +1835,9 @@ export default function CollectionPageClient({
                       title: collection.title,
                       description: collection.description || '',
                       is_public: collection.is_public,
-                      color: collection.color
+                      color: collection.color,
+                      start_date: collection.start_date || '',
+                      end_date: collection.end_date || ''
                     })
                   }}
                   disabled={savingCollection}
