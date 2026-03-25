@@ -1,11 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Script from 'next/script'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import Navbar from '@/components/Navbar'
 import DayView from '@/components/Planner/DayView'
 import POISearch from '@/components/Planner/POISearch'
+import ManualAddItemModal from '@/components/Planner/ManualAddItemModal'
 import { Itinerary, ItineraryItem, GooglePlaceResult } from '@/lib/types/itinerary'
 
 export default function PlannerPage() {
@@ -19,6 +21,8 @@ export default function PlannerPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedPlace, setSelectedPlace] = useState<GooglePlaceResult | null>(null)
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<number | null>(null)
+  const [showManualAddModal, setShowManualAddModal] = useState(false)
+  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -163,6 +167,7 @@ export default function PlannerPage() {
   // Handle time slot click
   const handleTimeSlotClick = (hour: number) => {
     setSelectedTimeSlot(hour)
+    setShowManualAddModal(true)
   }
 
   // Handle item click
@@ -190,6 +195,13 @@ export default function PlannerPage() {
 
   return (
     <>
+      {/* Load Google Maps API */}
+      <Script
+        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
+        onLoad={() => setGoogleMapsLoaded(true)}
+        strategy="afterInteractive"
+      />
+
       <Navbar />
       <div style={{
         minHeight: '100vh',
@@ -486,6 +498,24 @@ export default function PlannerPage() {
             setSelectedItinerary(newItinerary)
             setSelectedDate(new Date(newItinerary.start_date))
             setShowCreateModal(false)
+          }}
+        />
+      )}
+
+      {/* Manual Add Item Modal */}
+      {showManualAddModal && selectedItinerary && selectedTimeSlot !== null && (
+        <ManualAddItemModal
+          itineraryId={selectedItinerary.id}
+          date={selectedDate}
+          timeSlot={selectedTimeSlot}
+          onClose={() => {
+            setShowManualAddModal(false)
+            setSelectedTimeSlot(null)
+          }}
+          onAdded={(newItem) => {
+            setItems([...items, newItem])
+            setShowManualAddModal(false)
+            setSelectedTimeSlot(null)
           }}
         />
       )}
