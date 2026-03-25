@@ -7,53 +7,10 @@ import Toast from '@/components/Toast'
 import ReportCommentModal from '@/components/ReportCommentModal'
 import Navbar from '@/components/Navbar'
 import CollectionActions from '@/components/Collection/CollectionActions'
+import TimelineView from '@/components/Collection/TimelineView'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-
-interface Profile {
-  username: string | null
-  full_name: string | null
-  profile_image: string | null
-}
-
-interface Collection {
-  id: string
-  title: string
-  description: string | null
-  is_public: boolean
-  color: string
-  created_at: string
-  user_id: string
-  profiles: Profile
-}
-
-interface PinImage {
-  image_url: string
-  upload_order: number
-}
-
-interface Pin {
-  id: string
-  title: string
-  description: string | null
-  latitude: number
-  longitude: number
-  category: string | null
-  created_at: string
-  pin_images: PinImage[]
-}
-
-interface Comment {
-  id: string
-  collection_id: string
-  user_id: string
-  comment_text: string
-  created_at: string
-  updated_at: string
-  username?: string
-  profile_image?: string | null
-  full_name?: string | null
-}
+import { Collection, Pin, Comment } from '@/lib/types/collection'
 
 interface CollectionPageClientProps {
   collection: Collection
@@ -996,136 +953,222 @@ export default function CollectionPageClient({
           </div>
         </div>
 
-        {/* Pins Grid */}
+        {/* Pins Section with View Toggle */}
         {pins.length > 0 ? (
           <>
-            <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              color: 'var(--foreground)',
-              marginBottom: '1.5rem',
-              fontFamily: 'var(--font-display)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              Pins in this Collection
-            </h2>
-
+            {/* Header with View Toggle */}
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: '1.5rem'
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
             }}>
-              {pins.map((pin) => {
-                const firstImage = pin.pin_images.sort((a, b) => a.upload_order - b.upload_order)[0]
-                const emoji = categoryEmojis[pin.category || 'other'] || '📍'
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: 'var(--foreground)',
+                fontFamily: 'var(--font-display)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                margin: 0
+              }}>
+                {collection.view_mode === 'timeline' ? 'Itinerary Timeline' : 'Pins in this Collection'}
+              </h2>
 
-                return (
-                  <div
-                    key={pin.id}
-                    onClick={() => router.push(`/pins/${pin.id}`)}
-                    style={{
-                      background: 'var(--card)',
-                      borderRadius: 'var(--radius)',
-                      border: '1px solid var(--border)',
-                      overflow: 'hidden',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-4px)'
-                      e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.3)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)'
-                      e.currentTarget.style.boxShadow = 'none'
-                    }}
-                  >
-                    {/* Pin Image */}
-                    {firstImage ? (
-                      <div style={{
-                        position: 'relative',
-                        width: '100%',
-                        paddingTop: '75%',
-                        background: 'var(--muted)',
-                        overflow: 'hidden'
-                      }}>
-                        <Image
-                          src={firstImage.image_url}
-                          alt={pin.title}
-                          fill
-                          style={{
-                            objectFit: 'cover'
-                          }}
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        />
-                      </div>
-                    ) : (
-                      <div style={{
-                        width: '100%',
-                        paddingTop: '75%',
-                        background: 'linear-gradient(135deg, var(--muted) 0%, var(--accent) 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '4rem',
-                        position: 'relative'
-                      }}>
+              {/* View Mode Toggle */}
+              <div style={{
+                display: 'flex',
+                gap: '0.5rem',
+                background: 'var(--muted)',
+                borderRadius: 'var(--radius)',
+                padding: '0.25rem'
+              }}>
+                <button
+                  onClick={() => {
+                    // Update collection view_mode in database
+                    supabase
+                      .from('collections')
+                      .update({ view_mode: 'list' })
+                      .eq('id', collection.id)
+                      .then(() => {
+                        collection.view_mode = 'list'
+                        router.refresh()
+                      })
+                  }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: 'calc(var(--radius) - 2px)',
+                    border: 'none',
+                    background: collection.view_mode === 'list' ? 'var(--card)' : 'transparent',
+                    color: collection.view_mode === 'list' ? 'var(--foreground)' : 'var(--muted-foreground)',
+                    fontWeight: collection.view_mode === 'list' ? '600' : '400',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  📋 List
+                </button>
+                <button
+                  onClick={() => {
+                    // Update collection view_mode in database
+                    supabase
+                      .from('collections')
+                      .update({ view_mode: 'timeline' })
+                      .eq('id', collection.id)
+                      .then(() => {
+                        collection.view_mode = 'timeline'
+                        router.refresh()
+                      })
+                  }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: 'calc(var(--radius) - 2px)',
+                    border: 'none',
+                    background: collection.view_mode === 'timeline' ? 'var(--card)' : 'transparent',
+                    color: collection.view_mode === 'timeline' ? 'var(--foreground)' : 'var(--muted-foreground)',
+                    fontWeight: collection.view_mode === 'timeline' ? '600' : '400',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  📅 Timeline
+                </button>
+              </div>
+            </div>
+
+            {/* Conditional View Rendering */}
+            {collection.view_mode === 'timeline' ? (
+              <TimelineView
+                pins={pins}
+                startDate={collection.start_date}
+                endDate={collection.end_date}
+                collectionColor={collection.color}
+              />
+            ) : (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                gap: '1.5rem'
+              }}>
+                {pins.map((pin) => {
+                  const firstImage = pin.pin_images.sort((a, b) => a.upload_order - b.upload_order)[0]
+                  const emoji = categoryEmojis[pin.category || 'other'] || '📍'
+
+                  return (
+                    <div
+                      key={pin.id}
+                      onClick={() => router.push(`/pins/${pin.id}`)}
+                      style={{
+                        background: 'var(--card)',
+                        borderRadius: 'var(--radius)',
+                        border: '1px solid var(--border)',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)'
+                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.3)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    >
+                      {/* Pin Image */}
+                      {firstImage ? (
                         <div style={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%, -50%)'
-                        }}>
-                          {emoji}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Pin Info */}
-                    <div style={{ padding: '1.25rem' }}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        marginBottom: '0.5rem'
-                      }}>
-                        <span style={{ fontSize: '1.25rem' }}>{emoji}</span>
-                        <h3 style={{
-                          fontSize: '1rem',
-                          fontWeight: '600',
-                          color: 'var(--foreground)',
-                          margin: 0,
-                          fontFamily: 'var(--font-mono)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {pin.title}
-                        </h3>
-                      </div>
-
-                      {pin.description && (
-                        <p style={{
-                          fontSize: '0.875rem',
-                          color: 'var(--muted-foreground)',
-                          lineHeight: '1.5',
-                          margin: 0,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
+                          position: 'relative',
+                          width: '100%',
+                          paddingTop: '75%',
+                          background: 'var(--muted)',
                           overflow: 'hidden'
                         }}>
-                          {pin.description}
-                        </p>
+                          <Image
+                            src={firstImage.image_url}
+                            alt={pin.title}
+                            fill
+                            style={{
+                              objectFit: 'cover'
+                            }}
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          />
+                        </div>
+                      ) : (
+                        <div style={{
+                          width: '100%',
+                          paddingTop: '75%',
+                          background: 'linear-gradient(135deg, var(--muted) 0%, var(--accent) 100%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '4rem',
+                          position: 'relative'
+                        }}>
+                          <div style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)'
+                          }}>
+                            {emoji}
+                          </div>
+                        </div>
                       )}
+
+                      {/* Pin Info */}
+                      <div style={{ padding: '1.25rem' }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          marginBottom: '0.5rem'
+                        }}>
+                          <span style={{ fontSize: '1.25rem' }}>{emoji}</span>
+                          <h3 style={{
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            color: 'var(--foreground)',
+                            margin: 0,
+                            fontFamily: 'var(--font-mono)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {pin.title}
+                          </h3>
+                        </div>
+
+                        {pin.description && (
+                          <p style={{
+                            fontSize: '0.875rem',
+                            color: 'var(--muted-foreground)',
+                            lineHeight: '1.5',
+                            margin: 0,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}>
+                            {pin.description}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            )}
           </>
         ) : (
           // Empty state

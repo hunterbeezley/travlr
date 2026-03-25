@@ -58,7 +58,8 @@ export default function MobileNav() {
           borderRadius: '50%',
           overflow: 'hidden',
           border: active ? '2px solid white' : '2px solid transparent',
-          transition: 'all 0.2s ease'
+          transition: 'all 0.2s ease',
+          pointerEvents: 'none'
         }}>
           <UserAvatar
             profileImageUrl={profile?.profile_image}
@@ -98,6 +99,7 @@ export default function MobileNav() {
             aria-label={item.label}
             data-nav-path={item.path}
             data-nav-index={index}
+            type="button"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -110,7 +112,9 @@ export default function MobileNav() {
               color: active ? 'white' : 'var(--muted-foreground)',
               transition: 'all 0.2s ease',
               minWidth: '48px',
-              minHeight: '48px'
+              minHeight: '48px',
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent'
             }}
           >
             {renderIcon(item.path, active)}

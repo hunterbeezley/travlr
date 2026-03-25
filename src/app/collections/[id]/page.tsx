@@ -38,7 +38,7 @@ export default function CollectionPage({ params }: PageProps) {
         // Get current user
         const { data: { user } } = await supabase.auth.getUser()
 
-        // Fetch collection data
+        // Fetch collection data (including timeline fields)
         const { data: collectionData, error: collectionError } = await supabase
           .from('collections')
           .select(`
@@ -48,7 +48,10 @@ export default function CollectionPage({ params }: PageProps) {
             is_public,
             color,
             created_at,
-            user_id
+            user_id,
+            view_mode,
+            start_date,
+            end_date
           `)
           .eq('id', collectionId)
           .single()
@@ -110,10 +113,10 @@ export default function CollectionPage({ params }: PageProps) {
 
         setCollection(collectionWithProfile)
 
-        // Fetch pins in collection
+        // Fetch pins in collection (including timeline fields)
         const { data: pinsData } = await supabase
           .from('pins')
-          .select('id, title, description, latitude, longitude, category, created_at')
+          .select('id, title, description, latitude, longitude, category, created_at, scheduled_date, scheduled_time, duration_minutes, timeline_notes')
           .eq('collection_id', collectionId)
           .order('created_at', { ascending: false })
 
