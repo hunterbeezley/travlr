@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
-import FeedCard from '@/components/Feed/FeedCard'
+import BentoFeedCard from '@/components/Feed/BentoFeedCard'
 import FeedFilters from '@/components/Feed/FeedFilters'
 import FeedSkeleton from '@/components/Feed/FeedSkeleton'
 import FollowingSuggestions from '@/components/Feed/FollowingSuggestions'
@@ -102,6 +102,12 @@ export default function FeedPage() {
             .not('image_url', 'is', null)
             .limit(3)
 
+          // Fetch all pins with lat/lng for map rendering in Bento card
+          const { data: allPins } = await supabase
+            .from('pins')
+            .select('latitude, longitude')
+            .eq('collection_id', collection.id)
+
           return {
             id: `collection-${collection.id}`,
             activity_type: 'collection_created',
@@ -120,6 +126,7 @@ export default function FeedPage() {
               created_at: collection.created_at,
               pin_count: pinCount || 0,
               sample_images: samplePins?.map((p: any) => p.image_url).filter(Boolean) || [],
+              pins: allPins || [],
               stats
             }
           }
@@ -200,12 +207,19 @@ export default function FeedPage() {
                 .not('image_url', 'is', null)
                 .limit(3)
 
+              // Fetch all pins with lat/lng for map rendering in Bento card
+              const { data: allPins } = await supabase
+                .from('pins')
+                .select('latitude, longitude')
+                .eq('collection_id', collection.id)
+
               return {
                 ...activity,
                 target_data: {
                   ...collection,
                   pin_count: pinCount || 0,
                   sample_images: samplePins?.map((p: any) => p.image_url).filter(Boolean) || [],
+                  pins: allPins || [],
                   stats
                 }
               }
@@ -743,7 +757,7 @@ export default function FeedPage() {
           {/* Feed Items */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {activities.map((activity) => (
-              <FeedCard
+              <BentoFeedCard
                 key={activity.id}
                 activity={activity}
                 currentUserId={user.id}

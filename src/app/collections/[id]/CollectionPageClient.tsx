@@ -627,11 +627,11 @@ export default function CollectionPageClient({
                         </span>
                       </div>
                       <h1 className="collection-hero-title" style={{
-                        fontSize: '3rem',
+                        fontSize: '2.5rem',
                         fontWeight: '700',
-                        color: 'white',
+                        color: 'var(--accent)',
                         margin: 0,
-                        fontFamily: 'var(--font-display)',
+                        fontFamily: 'var(--font-mono)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
@@ -640,6 +640,27 @@ export default function CollectionPageClient({
                       </h1>
                     </div>
                   </div>
+                  {/* Corner brackets on hero image */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '30px',
+                    height: '30px',
+                    borderTop: '2px solid var(--color-red-muted)',
+                    borderLeft: '2px solid var(--color-red-muted)',
+                    zIndex: 10
+                  }} />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    width: '30px',
+                    height: '30px',
+                    borderBottom: '2px solid var(--color-red-muted)',
+                    borderRight: '2px solid var(--color-red-muted)',
+                    zIndex: 10
+                  }} />
                 </>
               )
             } else {
@@ -709,11 +730,11 @@ export default function CollectionPageClient({
                         </span>
                       </div>
                       <h1 className="collection-hero-title" style={{
-                        fontSize: '3rem',
+                        fontSize: '2.5rem',
                         fontWeight: '700',
-                        color: 'white',
+                        color: 'var(--accent)',
                         margin: 0,
-                        fontFamily: 'var(--font-display)',
+                        fontFamily: 'var(--font-mono)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
@@ -722,6 +743,27 @@ export default function CollectionPageClient({
                       </h1>
                     </div>
                   </div>
+                  {/* Corner brackets on hero map */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '30px',
+                    height: '30px',
+                    borderTop: '2px solid var(--color-red-muted)',
+                    borderLeft: '2px solid var(--color-red-muted)',
+                    zIndex: 10
+                  }} />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    width: '30px',
+                    height: '30px',
+                    borderBottom: '2px solid var(--color-red-muted)',
+                    borderRight: '2px solid var(--color-red-muted)',
+                    zIndex: 10
+                  }} />
                 </>
               )
             }
@@ -1091,15 +1133,26 @@ export default function CollectionPageClient({
                         border: '1px solid var(--border)',
                         overflow: 'hidden',
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        position: 'relative'
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-4px)'
                         e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.3)'
+                        // Show corner brackets
+                        const brackets = e.currentTarget.querySelectorAll('.pin-corner-bracket')
+                        brackets.forEach((b) => {
+                          (b as HTMLElement).style.opacity = '1'
+                        })
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)'
                         e.currentTarget.style.boxShadow = 'none'
+                        // Hide corner brackets
+                        const brackets = e.currentTarget.querySelectorAll('.pin-corner-bracket')
+                        brackets.forEach((b) => {
+                          (b as HTMLElement).style.opacity = '0'
+                        })
                       }}
                     >
                       {/* Pin Image */}
@@ -1183,6 +1236,37 @@ export default function CollectionPageClient({
                           </p>
                         )}
                       </div>
+                      {/* Corner brackets (shown on hover) */}
+                      <div
+                        className="pin-corner-bracket"
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '20px',
+                          height: '20px',
+                          borderTop: '2px solid var(--color-red-muted)',
+                          borderLeft: '2px solid var(--color-red-muted)',
+                          zIndex: 10,
+                          opacity: 0,
+                          transition: 'opacity 0.2s ease'
+                        }}
+                      />
+                      <div
+                        className="pin-corner-bracket"
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          width: '20px',
+                          height: '20px',
+                          borderBottom: '2px solid var(--color-red-muted)',
+                          borderRight: '2px solid var(--color-red-muted)',
+                          zIndex: 10,
+                          opacity: 0,
+                          transition: 'opacity 0.2s ease'
+                        }}
+                      />
                     </div>
                   )
                 })}
