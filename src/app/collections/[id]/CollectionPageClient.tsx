@@ -8,6 +8,7 @@ import ReportCommentModal from '@/components/ReportCommentModal'
 import Navbar from '@/components/Navbar'
 import CollectionActions from '@/components/Collection/CollectionActions'
 import TimelineView from '@/components/Collection/TimelineView'
+import ForkPinModal from '@/components/ForkPinModal'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Collection, Pin, Comment } from '@/lib/types/collection'
@@ -95,6 +96,10 @@ export default function CollectionPageClient({
 
   // Avatar state
   const [avatarLoadError, setAvatarLoadError] = useState(false)
+
+  // Fork modal state
+  const [forkingPinId, setForkingPinId] = useState<string | null>(null)
+  const [forkingPinTitle, setForkingPinTitle] = useState('')
 
   // Edit collection state
   const [isEditingCollection, setIsEditingCollection] = useState(false)
@@ -1230,10 +1235,64 @@ export default function CollectionPageClient({
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            marginBottom: '0.75rem'
                           }}>
                             {pin.description}
                           </p>
+                        )}
+
+                        {/* Fork attribution - shown when this pin was copied in via Discover */}
+                        {pin.forked_from && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/collections/${pin.forked_from!.collectionId}`)
+                            }}
+                            style={{
+                              fontSize: '0.7rem',
+                              color: 'var(--muted-foreground)',
+                              marginBottom: '0.75rem',
+                              cursor: 'pointer',
+                              fontStyle: 'italic',
+                            }}
+                          >
+                            Forked from {pin.forked_from.username}&apos;s &ldquo;{pin.forked_from.collectionTitle}&rdquo;
+                          </div>
+                        )}
+
+                        {/* Fork button - only show if not owner and user is logged in */}
+                        {!isOwner && user && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setForkingPinId(pin.id)
+                              setForkingPinTitle(pin.title)
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '0.5rem 0.75rem',
+                              background: 'var(--accent)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 'var(--radius)',
+                              fontSize: '0.75rem',
+                              fontWeight: '700',
+                              fontFamily: 'var(--font-mono)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.opacity = '0.9'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.opacity = '1'
+                            }}
+                          >
+                            + Add to collection
+                          </button>
                         )}
                       </div>
                       {/* Corner brackets (shown on hover) */}
@@ -1967,6 +2026,20 @@ export default function CollectionPageClient({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Fork Pin Modal */}
+      {forkingPinId && (
+        <ForkPinModal
+          pinTitle={forkingPinTitle}
+          sourcePinId={forkingPinId}
+          isOpen={!!forkingPinId}
+          onClose={() => setForkingPinId(null)}
+          onSuccess={() => {
+            setShowShareToast(true)
+            setTimeout(() => setShowShareToast(false), 3000)
+          }}
+        />
       )}
     </div>
   )

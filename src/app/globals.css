@@ -1350,6 +1350,23 @@ select option {
   }
 }
 
+/* Search bar was centered on the full map width, ignoring the sidebar
+   occupying the left side - at anything short of a very wide window their
+   edges collided. Shift the search bar's center point to sit in the space
+   actually left of the sidebar, matching the same breakpoints/widths as
+   .map-sidebar above. */
+@media (min-width: 1024px) {
+  .map-search-bar-container {
+    left: calc(50% + 186px) !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .map-search-bar-container {
+    left: calc(50% + 136px) !important;
+  }
+}
+
 /* Utility Classes */
 .text-red {
   color: var(--color-red);
