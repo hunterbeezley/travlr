@@ -777,7 +777,7 @@ export default function CollectionPageClient({
       )}
 
       {/* Content Section */}
-      <div style={{
+      <div className="collection-page-content" style={{
         maxWidth: '1200px',
         margin: '0 auto',
         padding: '2rem',
@@ -786,7 +786,7 @@ export default function CollectionPageClient({
         zIndex: 1,
         minHeight: '100vh'
       }}>
-        <div style={{
+        <div className="collection-page-card" style={{
           background: 'var(--card)',
           borderRadius: 'var(--radius)',
           border: '1px solid var(--border)',
@@ -802,7 +802,7 @@ export default function CollectionPageClient({
             gap: '2rem',
             flexWrap: 'wrap'
           }}>
-            <div style={{ flex: 1, minWidth: '300px' }}>
+            <div style={{ flex: 1, minWidth: 'min(300px, 100%)' }}>
               {/* Only show title if no pins (no hero section) */}
               {pins.length === 0 && (
                 <>
