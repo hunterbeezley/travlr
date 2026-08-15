@@ -2028,3 +2028,16 @@ a.card,
     display: none !important;
   }
 }
+
+/* Collection detail page - the desktop padding (2rem outer + 3rem inner
+   card = 5rem/80px per side) was unresponsive, eating ~43% of a 375px-wide
+   screen's width before any content even starts. */
+@media (max-width: 767px) {
+  .collection-page-content {
+    padding: 1rem !important;
+  }
+
+  .collection-page-card {
+    padding: 1.5rem !important;
+  }
+}

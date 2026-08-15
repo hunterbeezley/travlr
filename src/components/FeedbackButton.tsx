@@ -1,6 +1,7 @@
 'use client'
 import { logger } from '@/lib/logger'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { usePathname } from 'next/navigation'
 import { Z_INDEX } from '@/lib/mapUiConstants'
@@ -78,7 +79,12 @@ export default function FeedbackButton() {
     )
   }
 
-  return (
+  // Portaled to document.body: the trigger lives inside Navbar, and .navbar
+  // has backdrop-filter set - which (like transform/filter/will-change)
+  // creates a containing block for position:fixed descendants. Without the
+  // portal, this modal would fix-position relative to the navbar's own tiny
+  // box instead of the viewport, clipping it to a sliver above the page.
+  return createPortal(
     <>
       {/* Backdrop - also owns centering the modal via flex, so the modal's
           own height never has to be guessed (a fixed top:50%/translate
@@ -304,6 +310,7 @@ export default function FeedbackButton() {
         </form>
       </div>
       </div>
-    </>
+    </>,
+    document.body
   )
 }
