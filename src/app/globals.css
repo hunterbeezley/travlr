@@ -21,6 +21,11 @@ html {
   -moz-osx-font-smoothing: grayscale;
   touch-action: pan-x pan-y;
   overscroll-behavior: none;
+  /* Defensive: nothing in this app is meant to scroll horizontally. A
+     descendant with unshrinkable content (long text, a grid item ignoring
+     its track's min-width:auto, etc.) can otherwise widen the whole
+     document and make the entire page pannable sideways on mobile. */
+  overflow-x: hidden;
 }
 
 body {
@@ -28,6 +33,7 @@ body {
   -webkit-text-size-adjust: 100%;
   touch-action: pan-x pan-y;
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 
 img,
