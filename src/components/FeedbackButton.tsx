@@ -80,7 +80,12 @@ export default function FeedbackButton() {
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop - also owns centering the modal via flex, so the modal's
+          own height never has to be guessed (a fixed top:50%/translate
+          centering trick clips top AND bottom equally off-screen when
+          content is taller than the visible viewport, which is common on
+          mobile Safari once its own chrome eats into viewport height - that
+          previously made the close button unreachable). */}
       <div
         onClick={() => setIsOpen(false)}
         style={{
@@ -91,23 +96,25 @@ export default function FeedbackButton() {
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.7)',
           backdropFilter: 'blur(4px)',
-          zIndex: Z_INDEX.feedbackModalBackdrop
+          zIndex: Z_INDEX.feedbackModalBackdrop,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
         }}
-      />
-
+      >
       {/* Modal */}
       <div
+        onClick={(e) => e.stopPropagation()}
         style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
           background: 'var(--card)',
           border: '2px solid var(--border)',
           borderRadius: 'var(--radius-lg)',
           padding: '2rem',
           maxWidth: '500px',
-          width: 'calc(100% - 2rem)',
+          width: '100%',
+          maxHeight: '100%',
+          overflowY: 'auto',
           zIndex: Z_INDEX.feedbackModalContent,
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
         }}
@@ -295,6 +302,7 @@ export default function FeedbackButton() {
             </div>
           )}
         </form>
+      </div>
       </div>
     </>
   )

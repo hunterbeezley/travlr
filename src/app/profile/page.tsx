@@ -977,8 +977,12 @@ export default function ProfilePage() {
             gap: '2rem',
             gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))'
           }}>
-            {/* Collections */}
+            {/* Collections - minWidth:0 overrides the grid item's default
+                min-width:auto, which otherwise lets wide unshrinkable content
+                (e.g. the stats row below) force this track past the viewport
+                even though gridTemplateColumns caps it at 100%. */}
             <div style={{
+              minWidth: 0,
               background: 'var(--card-elevated)',
               borderRadius: 'var(--radius-xl)',
               padding: '1.5rem',
@@ -1190,6 +1194,7 @@ export default function ProfilePage() {
 
             {/* Pins */}
             <div style={{
+              minWidth: 0,
               background: 'var(--card-elevated)',
               borderRadius: 'var(--radius-xl)',
               padding: '1.5rem',
