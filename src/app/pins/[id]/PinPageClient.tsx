@@ -28,18 +28,19 @@ interface Pin {
   id: string
   title: string
   description: string | null
+  editorial_summary: string | null
   latitude: number
   longitude: number
   category: string | null
   place_id: string | null
   place_name: string | null
-  place_rating: number | null
-  place_user_ratings_total: number | null
-  place_business_status: string | null
-  place_website: string | null
-  place_phone: string | null
-  place_price_level: number | null
-  place_opening_hours: any
+  rating: number | null
+  rating_count: number | null
+  business_status: string | null
+  website: string | null
+  phone_number: string | null
+  price_level: number | null
+  opening_hours: any
   created_at: string
   collection_id: string | null
   user_id: string
@@ -391,16 +392,58 @@ export default function PinPageClient({
                 </h1>
               </div>
 
-              {/* Description */}
+              {/* About - Google's own description of the place, never
+                  overwritten by or mixed with the user's notes below */}
+              {currentPin.editorial_summary && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: 'var(--muted-foreground)',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: '0.5rem'
+                  }}>
+                    About
+                  </h3>
+                  <p style={{
+                    fontSize: '1rem',
+                    color: 'var(--foreground)',
+                    lineHeight: '1.6',
+                    margin: 0
+                  }}>
+                    {currentPin.editorial_summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Notes - the user's own text, distinct from Google's About
+                  section above (Phase 3 stops defaulting this field to the
+                  formatted address for search-created pins, so presence
+                  here now reliably means the user wrote something). */}
               {currentPin.description && (
-                <p style={{
-                  fontSize: '1rem',
-                  color: 'var(--muted-foreground)',
-                  lineHeight: '1.6',
-                  marginBottom: '1.5rem'
-                }}>
-                  {currentPin.description}
-                </p>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: 'var(--muted-foreground)',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: '0.5rem'
+                  }}>
+                    Notes
+                  </h3>
+                  <p style={{
+                    fontSize: '1rem',
+                    color: 'var(--muted-foreground)',
+                    lineHeight: '1.6',
+                    margin: 0
+                  }}>
+                    {currentPin.description}
+                  </p>
+                </div>
               )}
 
               {/* Creator Info */}
@@ -480,45 +523,45 @@ export default function PinPageClient({
                   display: 'grid',
                   gap: '1rem'
                 }}>
-                  {currentPin.place_rating && (
+                  {currentPin.rating && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>⭐</span>
                       <span style={{ color: 'var(--foreground)', fontWeight: '600' }}>
-                        {currentPin.place_rating.toFixed(1)}
+                        {currentPin.rating.toFixed(1)}
                       </span>
-                      {currentPin.place_user_ratings_total && (
+                      {currentPin.rating_count && (
                         <span style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem' }}>
-                          ({currentPin.place_user_ratings_total.toLocaleString()} reviews)
+                          ({currentPin.rating_count.toLocaleString()} reviews)
                         </span>
                       )}
                     </div>
                   )}
 
-                  {currentPin.place_price_level && (
+                  {currentPin.price_level && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>💰</span>
                       <span style={{ color: 'var(--foreground)' }}>
-                        {'$'.repeat(currentPin.place_price_level)}
+                        {'$'.repeat(currentPin.price_level)}
                       </span>
                     </div>
                   )}
 
-                  {currentPin.place_business_status && (
+                  {currentPin.business_status && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>
-                        {currentPin.place_business_status === 'OPERATIONAL' ? '✅' : '⚠️'}
+                        {currentPin.business_status === 'OPERATIONAL' ? '✅' : '⚠️'}
                       </span>
                       <span style={{ color: 'var(--foreground)' }}>
-                        {currentPin.place_business_status === 'OPERATIONAL' ? 'Open' : 'Closed'}
+                        {currentPin.business_status === 'OPERATIONAL' ? 'Open' : 'Closed'}
                       </span>
                     </div>
                   )}
 
-                  {currentPin.place_website && (
+                  {currentPin.website && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>🌐</span>
                       <a
-                        href={currentPin.place_website}
+                        href={currentPin.website}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -532,18 +575,18 @@ export default function PinPageClient({
                     </div>
                   )}
 
-                  {currentPin.place_phone && (
+                  {currentPin.phone_number && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>📞</span>
                       <a
-                        href={`tel:${currentPin.place_phone.replace(/[^0-9+]/g, '')}`}
+                        href={`tel:${currentPin.phone_number.replace(/[^0-9+]/g, '')}`}
                         style={{
                           color: 'var(--accent)',
                           textDecoration: 'underline',
                           fontSize: '0.875rem'
                         }}
                       >
-                        {currentPin.place_phone}
+                        {currentPin.phone_number}
                       </a>
                     </div>
                   )}

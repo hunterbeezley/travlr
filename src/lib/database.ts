@@ -125,6 +125,7 @@ export interface CompletePinData {
   id: string
   title: string
   description: string | null
+  editorial_summary?: string | null
   category: string | null
   latitude: number
   longitude: number
@@ -156,6 +157,10 @@ export interface CompletePinData {
   price_level?: number | null
   opening_hours?: any | null
   last_place_refresh?: string | null
+  city?: string | null
+  state?: string | null
+  country?: string | null
+  country_code?: string | null
 }
 
 export interface FollowingUser {
@@ -1001,6 +1006,7 @@ export class DatabaseService {
         id: pinData.id,
         title: pinData.title,
         description: pinData.description,
+        editorial_summary: pinData.editorial_summary,
         category: pinData.category,
         latitude: pinData.latitude,
         longitude: pinData.longitude,
@@ -1018,7 +1024,25 @@ export class DatabaseService {
         collection_color: collectionData?.color || '#3b82f6',
 
         // Images
-        images: images
+        images: images,
+
+        // Google Places enriched data (pinData already has these via
+        // select('*') above - just wasn't being copied onto the return value)
+        place_id: pinData.place_id,
+        place_name: pinData.place_name,
+        place_types: pinData.place_types,
+        business_status: pinData.business_status,
+        rating: pinData.rating,
+        rating_count: pinData.rating_count,
+        phone_number: pinData.phone_number,
+        website: pinData.website,
+        price_level: pinData.price_level,
+        opening_hours: pinData.opening_hours,
+        last_place_refresh: pinData.last_place_refresh,
+        city: pinData.city,
+        state: pinData.state,
+        country: pinData.country,
+        country_code: pinData.country_code
       }
 
       logger.log('✅ Complete pin data fetched successfully')

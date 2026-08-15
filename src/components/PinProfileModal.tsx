@@ -560,7 +560,35 @@ export default function PinProfileModal({
                 </div>
               </div>
 
-              {/* Description Card */}
+              {/* About Card - Google's own description of the place */}
+              {(pinData as any).editorial_summary && (
+                <div style={{
+                  padding: '1rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)'
+                }}>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--muted-foreground)',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '0.1em',
+                    marginBottom: '0.5rem'
+                  }}>
+                    ℹ️ ABOUT
+                  </div>
+                  <div style={{
+                    fontSize: '0.875rem',
+                    lineHeight: '1.5',
+                    whiteSpace: 'pre-wrap'
+                  }}>
+                    {(pinData as any).editorial_summary}
+                  </div>
+                </div>
+              )}
+
+              {/* Notes Card - the user's own text, kept separate from
+                  Google's About card above so neither ever overwrites the other */}
               {pinData.description && (
                 <div style={{
                   padding: '1rem',
@@ -575,7 +603,7 @@ export default function PinProfileModal({
                     letterSpacing: '0.1em',
                     marginBottom: '0.5rem'
                   }}>
-                    📝 DESCRIPTION
+                    📝 NOTES
                   </div>
                   <div style={{
                     fontSize: '0.875rem',

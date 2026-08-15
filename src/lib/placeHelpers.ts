@@ -179,6 +179,12 @@ export function formatRating(rating: number | null): string {
 /**
  * Extract place data from Google Places Details API response
  */
+export interface PlacePhoto {
+  name: string
+  width_px?: number
+  height_px?: number
+}
+
 export interface PlaceData {
   place_id: string
   place_name: string
@@ -190,6 +196,8 @@ export interface PlaceData {
   website: string | null
   price_level: number | null
   opening_hours: any | null
+  editorial_summary: string | null
+  photos: PlacePhoto[]
 }
 
 export function extractPlaceData(googleResult: any): PlaceData {
@@ -203,8 +211,18 @@ export function extractPlaceData(googleResult: any): PlaceData {
     phone_number: googleResult.formatted_phone_number || googleResult.international_phone_number || null,
     website: googleResult.website || null,
     price_level: convertPriceLevel(googleResult.price_level),
-    opening_hours: googleResult.opening_hours || null
+    opening_hours: googleResult.opening_hours || null,
+    editorial_summary: googleResult.editorial_summary || null,
+    photos: googleResult.photos || []
   }
+}
+
+/**
+ * Build a proxy URL for a Places API (New) photo resource name, served
+ * through /api/google-places/photo so the API key never reaches the client.
+ */
+export function buildPlacePhotoUrl(photoName: string, maxWidthPx: number = 800): string {
+  return `/api/google-places/photo?name=${encodeURIComponent(photoName)}&maxWidthPx=${maxWidthPx}`
 }
 
 /**
