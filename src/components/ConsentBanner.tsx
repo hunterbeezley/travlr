@@ -65,6 +65,7 @@ export default function ConsentBanner() {
       backdropFilter: 'blur(10px)',
       borderTop: '2px solid rgba(255, 255, 255, 0.1)',
       padding: '20px',
+      paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
       zIndex: 9999,
       animation: 'slideUp 0.3s ease-out'
     }}>

@@ -374,6 +374,36 @@ h3 {
   gap: var(--space-md);
 }
 
+/* Wraps navbar-user plus Feedback - always visible (unlike navbar-user,
+   which is hidden on mobile) so Feedback has a permanent, non-colliding home
+   on every viewport. */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.navbar-feedback-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.navbar-feedback-trigger:hover {
+  border-color: var(--accent);
+  background: rgba(230, 57, 70, 0.1);
+}
+
 .user-avatar {
   width: 40px;
   height: 40px;
@@ -1450,16 +1480,11 @@ select option {
   }
 }
 
-/* Map Layers Button - Responsive positioning */
+/* Map Layers Button - bottom offset is set inline in Map.tsx (needs
+   env(safe-area-inset-bottom) on mobile to actually clear the collections
+   FAB below it on notched devices, which a CSS media query can't compute) */
 .map-layers-button {
   display: flex;
-  bottom: 2rem; /* Bottom left on desktop */
-}
-
-@media (max-width: 767px) {
-  .map-layers-button {
-    bottom: 9rem !important; /* Above collections FAB on mobile */
-  }
 }
 
 /* Map Search Bar - Avoid overlapping location button on mobile */

@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase'
 import { DatabaseService, FriendsCollection, DiscoverCollectionInBounds, CollectionPin } from '@/lib/database'
 import { logger } from '@/lib/logger'
 import { getCachedPlaces, setCachedPlaces } from '@/lib/placesCache'
-import { Z_INDEX } from '@/lib/mapUiConstants'
+import { Z_INDEX, FAB } from '@/lib/mapUiConstants'
 import PinCreationModal from './PinCreationModal'
 import PinEditModal from './PinEditModal'
 import PinImageViewerModal from './PinImageViewerModal'
@@ -2540,6 +2540,7 @@ function MapComponent() {
           style={{
             position: 'fixed',
             left: '1rem',
+            bottom: isMobileViewport ? FAB.mapLayersBottomMobile : '2rem',
             width: '56px',
             height: '56px',
             borderRadius: '50%',
@@ -2688,7 +2689,7 @@ function MapComponent() {
           className="mobile-only"
           style={{
             position: 'fixed',
-            bottom: 'calc(5rem + env(safe-area-inset-bottom))', // Above mobile nav with safe area
+            bottom: FAB.mobileCollectionsBottom,
             left: '1rem',
             width: '56px',
             height: '56px',

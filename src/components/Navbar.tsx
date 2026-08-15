@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import UserAvatar from '@/components/UserAvatar'
 import { supabase } from '@/lib/supabase'
 import MobileNav from './MobileNav'
+import FeedbackButton from './FeedbackButton'
 
 export default function Navbar() {
   const router = useRouter()
@@ -58,28 +59,33 @@ export default function Navbar() {
           </button>
         </div>
 
-        {!loading && user && (
-          <div className="navbar-user">
-            <div
-              onClick={() => router.push('/profile')}
-              style={{ cursor: 'pointer' }}
-              title="Go to profile"
-            >
-              <UserAvatar
-                profileImageUrl={profile?.profile_image}
-                email={user.email || ''}
-                size="medium"
-              />
+        {/* Always visible (mobile + desktop) so Feedback has one safe,
+            never-colliding home instead of floating over page content */}
+        <div className="navbar-actions">
+          <FeedbackButton />
+          {!loading && user && (
+            <div className="navbar-user">
+              <div
+                onClick={() => router.push('/profile')}
+                style={{ cursor: 'pointer' }}
+                title="Go to profile"
+              >
+                <UserAvatar
+                  profileImageUrl={profile?.profile_image}
+                  email={user.email || ''}
+                  size="medium"
+                />
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="btn btn-destructive btn-small navbar-logout-desktop"
+                title="Sign out"
+              >
+                LOGOUT
+              </button>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="btn btn-destructive btn-small navbar-logout-desktop"
-              title="Sign out"
-            >
-              LOGOUT
-            </button>
-          </div>
-        )}
+          )}
+        </div>
         </div>
       </nav>
 

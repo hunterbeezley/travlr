@@ -14,20 +14,17 @@ export const Z_INDEX = {
   mobileNav: 1100,
   discoverDetailModalBackdrop: 1200,
   discoverDetailModalContent: 1201,
-  feedbackButton: 1300,
   feedbackModalBackdrop: 2000,
   feedbackModalContent: 2001,
 } as const
 
-// The working left-side FAB stack (Map Layers + mobile collections button)
-// uses a 4rem gap between two 56px circular buttons with no overlap - the
-// canonical spacing pattern for any future stacked FABs.
+// Left-side FAB stack (Map Layers + mobile collections button). Both bottom
+// offsets must add env(safe-area-inset-bottom) individually - a plain 4rem
+// gap between two 56px buttons looks fine in desktop devtools emulation
+// (no simulated safe area) but overlaps for real on notched iPhones, where
+// the safe-area inset eats into the gap between the two offsets.
 export const FAB = {
   size: 56, // px
-  gap: '4rem',
+  mobileCollectionsBottom: 'calc(5rem + env(safe-area-inset-bottom))',
+  mapLayersBottomMobile: 'calc(9rem + env(safe-area-inset-bottom))',
 } as const
-
-// Below the sticky navbar (which collapses to a single brand-only row on
-// mobile, so its rendered height varies slightly by breakpoint) with enough
-// clearance to comfortably clear it at every breakpoint.
-export const BELOW_NAVBAR_TOP = 'calc(env(safe-area-inset-top) + 4.5rem)'
