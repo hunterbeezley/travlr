@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConsentBanner from "@/components/ConsentBanner";
-import FeedbackButton from "@/components/FeedbackButton";
 import PWARegister from "@/components/PWARegister";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import BackgroundOrbs from "@/components/BackgroundOrbs";
@@ -114,7 +113,6 @@ export default function RootLayout({
         <BackgroundOrbs />
         {children}
         <ConsentBanner />
-        <FeedbackButton />
         <PWAInstallPrompt />
       </body>
     </html>

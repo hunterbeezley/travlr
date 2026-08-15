@@ -3,7 +3,7 @@ import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePathname } from 'next/navigation'
-import { Z_INDEX, BELOW_NAVBAR_TOP } from '@/lib/mapUiConstants'
+import { Z_INDEX } from '@/lib/mapUiConstants'
 
 export default function FeedbackButton() {
   const { user, profile } = useAuth()
@@ -62,42 +62,18 @@ export default function FeedbackButton() {
   }
 
   if (!isOpen) {
+    // Rendered inline inside Navbar's actions row - not fixed/floating.
+    // A floating position was tried and reliably collided with page content
+    // (map search bar, first dashboard card, etc.) on real mobile devices,
+    // since there's no screen region that's guaranteed empty on every page.
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="feedback-button"
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.1)'
-          e.currentTarget.style.boxShadow = '0 6px 20px rgba(230, 57, 70, 0.5)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)'
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)'
-        }}
+        className="navbar-feedback-trigger"
         title="Send Feedback"
+        aria-label="Send Feedback"
       >
         💬
-        <style jsx>{`
-          .feedback-button {
-            position: fixed;
-            top: ${BELOW_NAVBAR_TOP};
-            right: 1rem;
-            width: 56px;
-            height: 56px;
-            borderRadius: 50%;
-            background: var(--accent);
-            color: white;
-            border: none;
-            cursor: pointer;
-            fontSize: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            transition: var(--transition);
-            z-index: ${Z_INDEX.feedbackButton};
-          }
-        `}</style>
       </button>
     )
   }

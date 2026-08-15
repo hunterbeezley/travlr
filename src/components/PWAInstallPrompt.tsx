@@ -90,12 +90,14 @@ export default function PWAInstallPrompt() {
     <div
       style={{
         position: 'fixed',
-        bottom: '1rem',
+        // Clear the mobile bottom nav bar (~70px + safe area) instead of
+        // sitting underneath/behind it.
+        bottom: 'calc(5.5rem + env(safe-area-inset-bottom))',
         left: '1rem',
         right: '1rem',
         maxWidth: '500px',
         margin: '0 auto',
-        zIndex: 9999,
+        zIndex: 1150,
         animation: 'slideUp 0.3s ease-out'
       }}
     >
