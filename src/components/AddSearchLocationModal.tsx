@@ -2,7 +2,7 @@
 import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { extractPlaceData, mapGoogleTypeToCategory } from '@/lib/placeHelpers'
+import { extractPlaceData, mapGoogleTypeToCategory, buildPlacePhotoUrl } from '@/lib/placeHelpers'
 
 interface SearchResult {
   id: string
@@ -124,10 +124,16 @@ export default function AddSearchLocationModal({
         ? mapGoogleTypeToCategory(placeData.place_types)
         : category
 
-      // Create the pin with enriched place data
+      // Create the pin with enriched place data. description is left null
+      // here (not defaulted to the address) - this flow has no note-taking
+      // input, and the address already appears in the location card, so a
+      // fake "description" would just be redundant noise. Google's own
+      // editorial_summary is a separate field, shown as a distinct "About"
+      // section rather than mixed into the user-note field.
       const pinInsertData: any = {
         title: placeData?.place_name || placeName,
-        description: searchLocation.placeDetails?.formatted_address || searchLocation.place_name,
+        description: null,
+        editorial_summary: placeData?.editorial_summary || null,
         latitude: searchLocation.center[1],
         longitude: searchLocation.center[0],
         category: appCategory,
@@ -152,9 +158,11 @@ export default function AddSearchLocationModal({
 
       logger.log('Inserting pin with data:', pinInsertData)
 
-      const { error: pinError } = await supabase
+      const { data: newPin, error: pinError } = await supabase
         .from('pins')
         .insert(pinInsertData)
+        .select('id')
+        .single()
 
       if (pinError) {
         logger.error('Pin insert error:', {
@@ -164,6 +172,30 @@ export default function AddSearchLocationModal({
           hint: pinError.hint
         })
         throw pinError
+      }
+
+      // Auto-import a few of Google's own photos for this place, alongside
+      // (not replacing) any user uploads added later - same pin_images
+      // table, image_url just points at our photo proxy route instead of
+      // Supabase Storage.
+      if (placeData && placeData.photos.length > 0 && newPin) {
+        const photosToImport = placeData.photos.slice(0, 5)
+        const { error: photosError } = await supabase
+          .from('pin_images')
+          .insert(
+            photosToImport.map((photo, index) => ({
+              pin_id: newPin.id,
+              user_id: userId,
+              image_url: buildPlacePhotoUrl(photo.name),
+              image_path: `google-photo:${photo.name}`,
+              upload_order: index
+            }))
+          )
+
+        if (photosError) {
+          // Non-fatal - the pin itself saved fine, just log and move on
+          logger.warn('Failed to import Google photos for pin:', photosError)
+        }
       }
 
       // Success!

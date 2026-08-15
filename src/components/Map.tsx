@@ -1446,30 +1446,46 @@ function MapComponent() {
           addButton.style.letterSpacing = '0.05em'
           addButton.style.textTransform = 'uppercase'
 
-          addButton.addEventListener('click', () => {
-            // Pre-fill location for pin creation
-            setSelectedLocation({
-              lat: poi.geometry.location.lat,
-              lng: poi.geometry.location.lng
-            })
-            // Store POI details for auto-fill
-            setSelectedSearchLocation({
-              id: poi.place_id,
-              place_name: poi.name,
-              center: [poi.geometry.location.lng, poi.geometry.location.lat],
-              place_type: poi.types,
-              properties: { category: poi.types[0] },
-              placeDetails: {
-                name: poi.name,
-                geometry: poi.geometry,
-                rating: poi.rating,
-                user_ratings_total: poi.user_ratings_total,
-                business_status: poi.business_status
+          addButton.addEventListener('click', async () => {
+            // Fetch full Details for this POI (the nearby-search data backing
+            // `poi` is deliberately lightweight - no address, editorial
+            // summary, or photos - so it can't drive pin enrichment on its
+            // own). Mirrors selectSearchResult's fetch for search results,
+            // then opens the same AddSearchLocationModal flow they use, so
+            // POI-click and search-result pin creation both get the same
+            // Google-data enrichment (rating, hours, photos, etc.).
+            addButton.textContent = 'Loading...'
+            addButton.disabled = true
+
+            try {
+              const response = await fetch(`/api/google-places/details?place_id=${poi.place_id}`)
+              const data = await response.json()
+
+              if (!response.ok || data.error || !data.result) {
+                logger.error('Failed to fetch POI details:', data.error)
+                alert('Failed to load place details. Please try again.')
+                return
               }
-            })
-            setShowPinModal(true)
-            if (activeInfoWindowRef.current) {
-              activeInfoWindowRef.current.close()
+
+              setSelectedLocation({
+                lat: poi.geometry.location.lat,
+                lng: poi.geometry.location.lng
+              })
+              setSelectedSearchLocation({
+                id: poi.place_id,
+                place_name: poi.name,
+                center: [poi.geometry.location.lng, poi.geometry.location.lat],
+                place_type: poi.types,
+                properties: { category: poi.types[0] },
+                placeDetails: data.result
+              })
+              setShowAddLocationModal(true)
+              if (activeInfoWindowRef.current) {
+                activeInfoWindowRef.current.close()
+              }
+            } catch (error) {
+              logger.error('Error fetching POI details:', error)
+              alert('Failed to load place details. Please try again.')
             }
           })
 

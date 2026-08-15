@@ -66,7 +66,9 @@ export async function GET(request: NextRequest) {
       'websiteUri',
       'priceLevel',
       'regularOpeningHours',
-      'googleMapsUri'
+      'googleMapsUri',
+      'editorialSummary',
+      'photos'
     ].join(',')
 
     logger.log('📍 Google Places API (New) Details request:', { placeId })
@@ -113,7 +115,13 @@ export async function GET(request: NextRequest) {
         open_now: data.regularOpeningHours.openNow,
         weekday_text: data.regularOpeningHours.weekdayDescriptions || []
       } : null,
-      url: data.googleMapsUri || ''
+      url: data.googleMapsUri || '',
+      editorial_summary: data.editorialSummary?.text || null,
+      photos: (data.photos || []).map((photo: { name: string; widthPx?: number; heightPx?: number }) => ({
+        name: photo.name,
+        width_px: photo.widthPx,
+        height_px: photo.heightPx
+      }))
     }
 
     logger.log('✅ Place details retrieved:', transformedResult.name)
