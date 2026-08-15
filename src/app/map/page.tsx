@@ -1,119 +1,17 @@
 'use client'
 import { logger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
-import { useRouter } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Map from '@/components/Map'
-import UserAvatar from '@/components/UserAvatar'
 import ProfileCompletion from '@/components/ProfileCompletion'
 import Auth from '@/components/Auth'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
 
-interface Pin {
-  id: string
-  title: string
-  description?: string
-  latitude: number
-  longitude: number
-  collection_id?: string
-  user_id: string
-  created_at: string
-}
-
-const getDisplayName = (profile: any, user: any) => {
-  if (profile?.full_name) return profile.full_name
-  if (profile?.username) return `@${profile.username}`
-  // Generate anonymous name based on user ID
-  if (profile?.id) {
-    const shortId = profile.id.slice(0, 8)
-    return `anon${shortId}`
-  }
-  return user?.email || 'User'
-}
-
 export default function HomePage() {
   const { user, profile, loading, refreshProfile } = useAuth()
-  const router = useRouter()
-  const [showPinForm, setShowPinForm] = useState(false)
-  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null)
-  const [pins, setPins] = useState<Pin[]>([])
   const [showProfileCompletion, setShowProfileCompletion] = useState(false)
-  const [selectedPin, setSelectedPin] = useState<Pin | null>(null)
-  const [isDraggingPin, setIsDraggingPin] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
-  
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
-  }
-
-  const handleMapClick = (lat: number, lng: number) => {
-    if (!user) return
-    
-    setSelectedLocation({ lat, lng })
-    setShowPinForm(true)
-  }
-
-  const handleLocationSelect = (lat: number, lng: number) => {
-    if (!user) return
-    
-    setSelectedLocation({ lat, lng })
-    setShowPinForm(true)
-  }
-
-  const handlePinSaved = (newPin: Pin) => {
-    setPins(prevPins => [...prevPins, newPin])
-    setShowPinForm(false)
-    setSelectedLocation(null)
-  }
-
-  const handlePinClick = (pin: Pin) => {
-    setSelectedPin(pin)
-  }
-
-  const handlePinDragStart = () => {
-    setIsDraggingPin(true)
-  }
-
-  const handlePinDragEnd = () => {
-    setIsDraggingPin(false)
-  }
-
-  const handlePinUpdate = (updatedPin: Pin) => {
-    setPins(prevPins => 
-      prevPins.map(pin => 
-        pin.id === updatedPin.id ? updatedPin : pin
-      )
-    )
-    setSelectedPin(updatedPin)
-  }
-
-  const handlePinDelete = (deletedPinId: string) => {
-    setPins(prevPins => prevPins.filter(pin => pin.id !== deletedPinId))
-    setSelectedPin(null)
-  }
-
-  const fetchPins = async () => {
-    if (!user) return
-
-    try {
-      const { data, error } = await supabase
-        .from('pins')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        logger.error('Error fetching pins:', error)
-        return
-      }
-
-      setPins(data || [])
-    } catch (error) {
-      logger.error('Error fetching pins:', error)
-    }
-  }
 
   // Verify authentication state before showing Auth screen
   // This prevents premature Auth display on page load
@@ -144,8 +42,6 @@ export default function HomePage() {
 
   useEffect(() => {
     if (user && !loading) {
-      fetchPins()
-
       // Only check for profile completion after auth loading is complete
       // and we have confirmed the profile data
       if (profile !== null && !profile?.username) {
@@ -252,7 +148,7 @@ export default function HomePage() {
         <div className="map-container-full">
           <div className="map-card-full fade-in">
             <div className="map-wrapper-full">
-              <Map onMapClick={handleMapClick} />
+              <Map />
             </div>
           </div>
         </div>

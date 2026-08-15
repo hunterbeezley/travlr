@@ -186,6 +186,33 @@ export interface FriendsCollection {
 // DiscoverCollection has the same structure as FriendsCollection
 export type DiscoverCollection = FriendsCollection
 
+// Viewport-bounded Discover feed result. Deliberately its own shape rather
+// than extending FriendsCollection - the bounds RPC returns list-view fields
+// only (no is_public/updated_at, every row is implicitly public) plus the
+// representative pin location used to place the collection's marker.
+export interface DiscoverCollectionInBounds {
+  id: string
+  title: string
+  description: string | null
+  user_id: string
+  username: string
+  user_profile_image: string | null
+  pin_count: number
+  first_pin_image: string | null
+  color: string
+  net_score: number
+  created_at: string
+  rep_latitude: number
+  rep_longitude: number
+}
+
+export interface CollectionPin {
+  id: string
+  title: string
+  latitude: number
+  longitude: number
+}
+
 // City-based feed interfaces
 export interface CityFeedCollection {
   id: string
@@ -1095,21 +1122,62 @@ export class DatabaseService {
   }
 
   /**
-   * Get recently created public collections from other users for Discover tab
+   * Get public collections with a pin inside the given map bounds, for the
+   * /map Discover tab's viewport-driven feed. Re-run as the user pans/zooms.
    */
-  static async getDiscoverCollections(limit: number = 50): Promise<DiscoverCollection[]> {
-    logger.log('🔧 DatabaseService.getDiscoverCollections called')
+  static async getDiscoverCollectionsInBounds(
+    bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number },
+    limit: number = 100
+  ): Promise<DiscoverCollectionInBounds[]> {
+    logger.log('🔧 DatabaseService.getDiscoverCollectionsInBounds called', { bounds, limit })
 
     try {
-      const { data, error } = await supabase.rpc('get_discover_collections', { limit_count: limit })
+      const { data, error } = await supabase.rpc('get_discover_collections_in_bounds', {
+        min_lat: bounds.minLat,
+        max_lat: bounds.maxLat,
+        min_lng: bounds.minLng,
+        max_lng: bounds.maxLng,
+        limit_count: limit
+      })
 
       if (error) {
-        logger.error('❌ Error getting discover collections:', error)
+        logger.error('❌ Error getting discover collections in bounds:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
         return []
       }
 
-      logger.log('✅ Discover collections fetched:', data?.length || 0)
-      return data as DiscoverCollection[]
+      logger.log('✅ Discover collections in bounds fetched:', data?.length || 0)
+      return data as DiscoverCollectionInBounds[]
+    } catch (error) {
+      logger.error('💥 DatabaseService error:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get a collection's pins on demand - used by the Discover detail modal,
+   * which no longer receives full pin arrays eagerly from the bounds feed.
+   */
+  static async getCollectionPins(collectionId: string): Promise<CollectionPin[]> {
+    logger.log('🔧 DatabaseService.getCollectionPins called', { collectionId })
+
+    try {
+      const { data, error } = await supabase
+        .from('pins')
+        .select('id, title, latitude, longitude')
+        .eq('collection_id', collectionId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        logger.error('❌ Error getting collection pins:', error)
+        return []
+      }
+
+      return data || []
     } catch (error) {
       logger.error('💥 DatabaseService error:', error)
       return []
