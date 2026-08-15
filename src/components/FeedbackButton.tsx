@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePathname } from 'next/navigation'
+import { Z_INDEX, BELOW_NAVBAR_TOP } from '@/lib/mapUiConstants'
 
 export default function FeedbackButton() {
   const { user, profile } = useAuth()
@@ -79,7 +80,7 @@ export default function FeedbackButton() {
         <style jsx>{`
           .feedback-button {
             position: fixed;
-            bottom: 7rem;
+            top: ${BELOW_NAVBAR_TOP};
             right: 1rem;
             width: 56px;
             height: 56px;
@@ -94,15 +95,7 @@ export default function FeedbackButton() {
             justify-content: center;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             transition: var(--transition);
-            z-index: 1100;
-          }
-
-          /* Mobile: Same positioning to stay above zoom controls */
-          @media (max-width: 767px) {
-            .feedback-button {
-              bottom: 7rem;
-              right: 1rem;
-            }
+            z-index: ${Z_INDEX.feedbackButton};
           }
         `}</style>
       </button>
@@ -122,7 +115,7 @@ export default function FeedbackButton() {
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.7)',
           backdropFilter: 'blur(4px)',
-          zIndex: 2000
+          zIndex: Z_INDEX.feedbackModalBackdrop
         }}
       />
 
@@ -139,7 +132,7 @@ export default function FeedbackButton() {
           padding: '2rem',
           maxWidth: '500px',
           width: 'calc(100% - 2rem)',
-          zIndex: 2001,
+          zIndex: Z_INDEX.feedbackModalContent,
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
         }}
       >

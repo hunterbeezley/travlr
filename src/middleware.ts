@@ -53,16 +53,6 @@ export async function middleware(request: NextRequest) {
     '/friends',
   ]
 
-  // Define protected routes that REQUIRE authentication
-  const protectedRoutes = [
-    '/profile',
-    '/saved',
-    '/settings',
-    '/analytics',
-    '/debug-profile',
-    '/debug-pin',
-  ]
-
   // Check if current path should be allowed through
   const shouldAllowThrough =
     publicRoutes.some((route) => pathname === route) ||
@@ -75,15 +65,15 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/') || // All API routes handle their own auth
     pathname.includes('.') // Static files
 
-  // Only block if explicitly trying to access a protected route without auth
-  const isProtectedRoute = protectedRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'))
-
-  if (!user && isProtectedRoute) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/'
-    redirectUrl.searchParams.set('redirect', pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
+  // NOTE: no server-side redirect for "protected" routes here. The
+  // browser client (src/lib/supabase.ts) stores sessions in localStorage,
+  // not cookies, so this middleware's supabase.auth.getUser() call never
+  // sees a logged-in user - it would incorrectly redirect real, logged-in
+  // users away from every one of these pages, every time. Each protected
+  // page already does its own client-side useAuth() check (which reads
+  // localStorage correctly) and redirects/gates unauthenticated users
+  // itself - so gating here would only be redundant, and in this app's
+  // case, actively wrong.
 
   // Allow everything else through (pages will handle their own auth checks)
   if (shouldAllowThrough) {

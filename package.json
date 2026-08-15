@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@googlemaps/markerclustererplus": "^1.2.10",
     "@googlemaps/react-wrapper": "^1.1.42",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.50.2",

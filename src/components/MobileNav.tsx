@@ -1,8 +1,9 @@
 'use client'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { Home, Map, Search, Users, User } from 'lucide-react'
+import { Map, Users } from 'lucide-react'
 import UserAvatar from './UserAvatar'
+import { Z_INDEX } from '@/lib/mapUiConstants'
 
 export default function MobileNav() {
   const router = useRouter()
@@ -25,9 +26,7 @@ export default function MobileNav() {
   }
 
   const navItems = [
-    { path: '/', label: 'Feed' },
     { path: '/map', label: 'Map' },
-    { path: '/search', label: 'Search' },
     { path: '/friends', label: 'Friends' },
     { path: '/profile', label: 'Profile' }
   ]
@@ -47,9 +46,7 @@ export default function MobileNav() {
   const renderIcon = (path: string, active: boolean) => {
     const props = { size: 22, strokeWidth: active ? 2.5 : 2 }
     switch (path) {
-      case '/': return <Home {...props} />
       case '/map': return <Map {...props} />
-      case '/search': return <Search {...props} />
       case '/friends': return <Users {...props} />
       case '/profile': return (
         <div style={{
@@ -86,7 +83,7 @@ export default function MobileNav() {
         justifyContent: 'space-around',
         alignItems: 'center',
         padding: '0.75rem 0',
-        zIndex: 1000,
+        zIndex: Z_INDEX.mobileNav,
         paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))'
       }}>
       {navItems.map((item, index) => {

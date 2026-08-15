@@ -1,12 +1,15 @@
 'use client'
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Wrapper } from '@googlemaps/react-wrapper'
 import { useAuth } from '@/hooks/useAuth'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { supabase } from '@/lib/supabase'
-import { DatabaseService, FriendsCollection } from '@/lib/database'
+import { DatabaseService, FriendsCollection, DiscoverCollectionInBounds, CollectionPin } from '@/lib/database'
 import { logger } from '@/lib/logger'
+import { getCachedPlaces, setCachedPlaces } from '@/lib/placesCache'
+import { Z_INDEX } from '@/lib/mapUiConstants'
 import PinCreationModal from './PinCreationModal'
 import PinEditModal from './PinEditModal'
 import PinImageViewerModal from './PinImageViewerModal'
@@ -15,11 +18,45 @@ import FollowButton from './FollowButton'
 import AddSearchLocationModal from './AddSearchLocationModal'
 import BottomSheet from './BottomSheet'
 import MapLayersModal from './MapLayersModal'
+import ForkPinModal from './ForkPinModal'
+import CollectionTabs, { CollectionTabId } from './Map/CollectionTabs'
+import DiscoverTab from './Map/DiscoverTab'
+import MineTab from './Map/MineTab'
+import DiscoverCollectionDetailModal from './Map/DiscoverCollectionDetailModal'
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!
 
-interface MapProps {
-  onMapClick?: (lng: number, lat: number) => void
+type DiscoverCollection = DiscoverCollectionInBounds
+
+// Simple v1 ranking heuristic for the Discover feed: net_score (votes) plus
+// a recency bonus that decays from full weight in the first 24h to ~0 by two
+// weeks. Tuning constants, not derived from data - revisit after shipping.
+function recencyBoost(createdAt: string, now: number): number {
+  const ageHours = (now - new Date(createdAt).getTime()) / 3_600_000
+  return Math.max(0, 5 - ageHours / 67.2)
+}
+
+function rankDiscoverCollections(collections: DiscoverCollection[]): DiscoverCollection[] {
+  const now = Date.now()
+  return [...collections].sort((a, b) => {
+    const scoreA = (a.net_score ?? 0) + recencyBoost(a.created_at, now)
+    const scoreB = (b.net_score ?? 0) + recencyBoost(b.created_at, now)
+    return scoreB - scoreA
+  })
+}
+
+interface CollectionSearchResult {
+  id: string
+  title: string
+  description: string | null
+  pin_count?: number
+}
+
+interface PersonSearchResult {
+  id: string
+  username: string | null
+  full_name: string | null
+  profile_image: string | null
 }
 
 interface GooglePlacesPrediction {
@@ -195,20 +232,27 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
   }
 ]
 
-function MapComponent({ onMapClick }: MapProps) {
+function MapComponent() {
   const { user, profile, loading: authLoading } = useAuth()
   const { preferences, updatePreference } = useUserPreferences()
+  const isMobileViewport = useIsMobile()
+  // Desktop sidebar only renders once auth resolves to a logged-in user -
+  // used to decide whether Map Layers lives in the sidebar or floats as a FAB.
+  const showsSidebar = !authLoading && !!user && !isMobileViewport
   const router = useRouter()
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<google.maps.Map | null>(null)
   const markersRef = useRef<google.maps.Marker[]>([])
+  const discoverMarkersRef = useRef<google.maps.Marker[]>([])
   const activeInfoWindowRef = useRef<google.maps.InfoWindow | null>(null)
   const searchMarkerRef = useRef<google.maps.Marker | null>(null)
   const isInfoWindowInteractionRef = useRef(false)
 
-  const [lng, setLng] = useState(-122.6765)
-  const [lat, setLat] = useState(45.5152)
-  const [zoom, setZoom] = useState(11)
+  // Refs (not state) since these are only read once at map-init and would
+  // otherwise force a full re-render on every tick of a pan/zoom gesture.
+  const lngRef = useRef(-122.6765)
+  const latRef = useRef(45.5152)
+  const zoomRef = useRef(11)
   const [mapStyle, setMapStyle] = useState(preferences.map_style || 'roadmap')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
@@ -217,6 +261,17 @@ function MapComponent({ onMapClick }: MapProps) {
   const [hasSearched, setHasSearched] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [isMapLoaded, setIsMapLoaded] = useState(false)
+
+  // Unified search - collections and people (alongside Places, above)
+  const [collectionSearchResults, setCollectionSearchResults] = useState<CollectionSearchResult[]>([])
+  const [peopleSearchResults, setPeopleSearchResults] = useState<PersonSearchResult[]>([])
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set())
+
+  // Create a blank collection directly from the map (no place required yet -
+  // covers "I'm traveling but don't know what to add" before any pins exist)
+  const [creatingBlankCollection, setCreatingBlankCollection] = useState(false)
+  const [newBlankCollectionTitle, setNewBlankCollectionTitle] = useState('')
+  const [savingBlankCollection, setSavingBlankCollection] = useState(false)
 
   // Pin creation state
   const [showPinModal, setShowPinModal] = useState(false)
@@ -227,7 +282,9 @@ function MapComponent({ onMapClick }: MapProps) {
   // POI state
   const [pois, setPois] = useState<POI[]>([])
   const [showPOIs, setShowPOIs] = useState(true)
-  const [poiCategories, setPoiCategories] = useState<string[]>([
+  // No longer user-editable (category filter UI was removed from MapLayersModal) -
+  // fixed default category list used for the nearby-POI fetch.
+  const [poiCategories] = useState<string[]>([
     'restaurant',
     'cafe',
     'bar',
@@ -243,6 +300,7 @@ function MapComponent({ onMapClick }: MapProps) {
   useEffect(() => {
     userRef.current = user
   }, [user])
+
 
   // Image viewer modal state
   const [showImageViewer, setShowImageViewer] = useState(false)
@@ -269,12 +327,36 @@ function MapComponent({ onMapClick }: MapProps) {
   const [loadingCollections, setLoadingCollections] = useState(false)
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
   const [allPins, setAllPins] = useState<Pin[]>([])
+  // addPinsToMap only needs collection colors, not the whole array - this keeps
+  // its identity stable across collection refetches that don't touch color,
+  // so personal pin markers aren't torn down/rebuilt unnecessarily.
+  const collectionColorSignature = useMemo(
+    () => collections.map(c => `${c.id}:${c.color}`).join('|'),
+    [collections]
+  )
 
   // Friends/Follow state
-  const [activeTab, setActiveTab] = useState<'my-collections' | 'friends'>('my-collections')
+  const [activeTab, setActiveTab] = useState<'my-collections' | 'friends' | 'discover'>('discover')
+  // Ref to track active tab for the bounds-changed listener, so switching
+  // tabs doesn't require re-subscribing the underlying Maps event listeners.
+  const activeTabRef = useRef(activeTab)
+  useEffect(() => {
+    activeTabRef.current = activeTab
+  }, [activeTab])
   const [friendsCollections, setFriendsCollections] = useState<FriendsCollection[]>([])
   const [loadingFriendsCollections, setLoadingFriendsCollections] = useState(false)
   const [friendsPins, setFriendsPins] = useState<Pin[]>([])
+
+  // Discover state (public collections from any user)
+  const [discoverCollections, setDiscoverCollections] = useState<DiscoverCollection[]>([])
+  const [loadingDiscoverCollections, setLoadingDiscoverCollections] = useState(false)
+  const [selectedDiscoverCollection, setSelectedDiscoverCollection] = useState<DiscoverCollection | null>(null)
+  // Pins for the selected Discover collection's detail modal - fetched on
+  // demand when opened rather than eagerly for every collection in bounds.
+  const [discoverDetailPins, setDiscoverDetailPins] = useState<CollectionPin[]>([])
+  const [loadingDiscoverDetailPins, setLoadingDiscoverDetailPins] = useState(false)
+  const [forkingPinId, setForkingPinId] = useState<string | null>(null)
+  const [forkingPinTitle, setForkingPinTitle] = useState('')
 
   // Search location state
   const [selectedSearchLocation, setSelectedSearchLocation] = useState<SearchResult | null>(null)
@@ -401,6 +483,8 @@ function MapComponent({ onMapClick }: MapProps) {
 
     if (!query.trim()) {
       setSearchResults([])
+      setCollectionSearchResults([])
+      setPeopleSearchResults([])
       setIsSearching(false)
       setHasSearched(false)
       return
@@ -421,41 +505,78 @@ function MapComponent({ onMapClick }: MapProps) {
         })
 
         logger.log('🔍 Searching for:', query)
-        const response = await fetch(`/api/google-places/autocomplete?${params.toString()}`)
-        const data = await response.json()
 
-        logger.log('🔍 Search response:', data)
+        // Search places, collections, and people in parallel - one search
+        // bar covers everything (replaces the old standalone /search and
+        // /friends pages)
+        const [placesResponse, collectionsResult, peopleResult] = await Promise.all([
+          fetch(`/api/google-places/autocomplete?${params.toString()}`).then(r => r.json()),
+          supabase.rpc('search_collections', {
+            search_query: query.trim(),
+            filter_category: null,
+            filter_location: null,
+            sort_by: 'relevance',
+            result_limit: 5
+          }),
+          supabase.rpc('search_users', {
+            search_query: query.trim(),
+            result_limit: 5
+          })
+        ])
 
-        if (data.error) {
-          logger.error('Google Places API error:', data.error)
+        if (placesResponse.error) {
+          logger.error('Google Places API error:', placesResponse.error)
           setSearchResults([])
-          setHasSearched(true)
-          return
+        } else {
+          const transformedResults: SearchResult[] = (placesResponse.predictions || [])
+            .slice(0, 5)
+            .map((pred: GooglePlacesPrediction) => ({
+              id: pred.place_id,
+              place_name: pred.description,
+              center: [0, 0] as [number, number],
+              place_type: pred.types || ['establishment'],
+              properties: {
+                category: pred.types?.[0] || 'establishment'
+              }
+            }))
+          setSearchResults(transformedResults)
         }
 
-        const transformedResults: SearchResult[] = (data.predictions || [])
-          .slice(0, 5)
-          .map((pred: GooglePlacesPrediction) => ({
-            id: pred.place_id,
-            place_name: pred.description,
-            center: [0, 0] as [number, number],
-            place_type: pred.types || ['establishment'],
-            properties: {
-              category: pred.types?.[0] || 'establishment'
-            }
-          }))
+        if (collectionsResult.error) {
+          logger.error('Collection search error:', collectionsResult.error)
+          setCollectionSearchResults([])
+        } else {
+          setCollectionSearchResults(collectionsResult.data || [])
+        }
 
-        logger.log('🔍 Transformed results:', transformedResults)
-        setSearchResults(transformedResults)
+        if (peopleResult.error) {
+          logger.error('People search error:', peopleResult.error)
+          setPeopleSearchResults([])
+        } else {
+          setPeopleSearchResults(peopleResult.data || [])
+        }
+
         setHasSearched(true)
       } catch (error) {
         logger.error('Search error:', error)
         setSearchResults([])
+        setCollectionSearchResults([])
+        setPeopleSearchResults([])
         setHasSearched(true)
       } finally {
         setIsSearching(false)
       }
     }, 300)
+  }
+
+  const handleFollowPerson = async (userId: string) => {
+    try {
+      const { error } = await supabase.rpc('follow_user', { p_following_id: userId })
+      if (error) throw error
+      setFollowingIds(prev => new Set(prev).add(userId))
+    } catch (error) {
+      logger.error('Error following user:', error)
+    }
   }
 
   const selectSearchResult = async (result: SearchResult) => {
@@ -633,7 +754,7 @@ function MapComponent({ onMapClick }: MapProps) {
     try {
       const { data, error } = await supabase
         .from('pins')
-        .select('*')
+        .select('id, title, description, latitude, longitude, image_url, category, created_at, user_id, collection_id')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
@@ -672,6 +793,31 @@ function MapComponent({ onMapClick }: MapProps) {
     }
   }
 
+  const handleCreateBlankCollection = async () => {
+    if (!user || !newBlankCollectionTitle.trim()) return
+
+    setSavingBlankCollection(true)
+    try {
+      const { data, error } = await supabase
+        .from('collections')
+        .insert({ user_id: user.id, title: newBlankCollectionTitle.trim(), is_public: false })
+        .select()
+        .single()
+
+      if (error || !data) {
+        logger.error('Error creating collection:', error)
+        return
+      }
+
+      await loadCollections()
+      setSelectedCollectionId(data.id)
+      setNewBlankCollectionTitle('')
+      setCreatingBlankCollection(false)
+    } finally {
+      setSavingBlankCollection(false)
+    }
+  }
+
   // Fetch nearby POIs from Google Places
   const fetchNearbyPOIs = async () => {
     if (!map.current || !showPOIs) return
@@ -692,11 +838,21 @@ function MapComponent({ onMapClick }: MapProps) {
       return
     }
 
+    const radius = 1500 // 1.5km radius
+    const lat = center.lat()
+    const lng = center.lng()
+
+    const cached = getCachedPlaces<POI[]>(lat, lng, radius, poiCategories)
+    if (cached) {
+      setPois(cached)
+      return
+    }
+
     try {
       const params = new URLSearchParams({
-        lat: center.lat().toString(),
-        lng: center.lng().toString(),
-        radius: '1500', // 1.5km radius
+        lat: lat.toString(),
+        lng: lng.toString(),
+        radius: radius.toString(),
         types: poiCategories.join(',')
       })
 
@@ -708,7 +864,9 @@ function MapComponent({ onMapClick }: MapProps) {
         return
       }
 
-      setPois(data.results || [])
+      const results = data.results || []
+      setCachedPlaces(lat, lng, radius, poiCategories, results)
+      setPois(results)
     } catch (error) {
       logger.error('Error fetching nearby POIs:', error)
     }
@@ -726,6 +884,33 @@ function MapComponent({ onMapClick }: MapProps) {
       logger.error('Error loading friends collections:', error)
     } finally {
       setLoadingFriendsCollections(false)
+    }
+  }
+
+  // Load public collections with a pin inside the current map bounds
+  // (Discover tab) - re-run as the user pans/zooms while Discover is active.
+  const fetchDiscoverCollectionsInBounds = async () => {
+    if (!map.current) return
+    const bounds = map.current.getBounds()
+    if (!bounds) return
+
+    const ne = bounds.getNorthEast()
+    const sw = bounds.getSouthWest()
+
+    setLoadingDiscoverCollections(true)
+    try {
+      const results = await DatabaseService.getDiscoverCollectionsInBounds({
+        minLat: sw.lat(),
+        maxLat: ne.lat(),
+        minLng: sw.lng(),
+        maxLng: ne.lng(),
+      })
+      setDiscoverCollections(rankDiscoverCollections(results))
+    } catch (error) {
+      logger.error('Error loading discover collections in bounds:', error)
+      setDiscoverCollections([])
+    } finally {
+      setLoadingDiscoverCollections(false)
     }
   }
 
@@ -749,6 +934,17 @@ function MapComponent({ onMapClick }: MapProps) {
       fitMapToPins(friendPins)
     } catch (error) {
       logger.error('Error loading friend collection pins:', error)
+    }
+  }
+
+  // Fetch a Discover collection's pins on demand when its detail modal opens
+  const loadDiscoverDetailPins = async (collectionId: string) => {
+    setLoadingDiscoverDetailPins(true)
+    try {
+      const collectionPins = await DatabaseService.getCollectionPins(collectionId)
+      setDiscoverDetailPins(collectionPins)
+    } finally {
+      setLoadingDiscoverDetailPins(false)
     }
   }
 
@@ -835,6 +1031,39 @@ function MapComponent({ onMapClick }: MapProps) {
     }
   }
 
+  // Shared Discover/Mine/tab-switcher handlers - used by both the desktop
+  // sidebar and the mobile bottom sheet, which render the same
+  // CollectionTabs/DiscoverTab/MineTab elements. Mobile variants additionally
+  // close the bottom sheet after acting, matching the pre-extraction behavior.
+  const handleTabChange = (tab: CollectionTabId) => {
+    setActiveTab(tab)
+    setSelectedCollectionId(null)
+  }
+
+  const handleDiscoverCardSelect = (collection: DiscoverCollection) => {
+    setSelectedDiscoverCollection(collection)
+  }
+
+  const handleMineSelectAllPins = () => handleCollectionSelect(null, false)
+  const handleMineSelectAllPinsMobile = () => {
+    handleCollectionSelect(null, false)
+    setIsBottomSheetOpen(false)
+  }
+
+  const handleMineSelect = (collection: Collection) => handleCollectionSelect(collection.id, false)
+  const handleMineSelectMobile = (collection: Collection) => {
+    handleCollectionSelect(collection.id, false)
+    setIsBottomSheetOpen(false)
+  }
+
+  const handleMineViewDetails = (collection: Collection) => router.push(`/collections/${collection.id}`)
+  const handleMineViewDetailsMobile = (collection: Collection) => {
+    router.push(`/collections/${collection.id}`)
+    setIsBottomSheetOpen(false)
+  }
+
+  const handleMineDelete = (collection: Collection) => handleDeleteCollection(collection.id, collection.title)
+
   // Add pins to map as individual markers
   const addPinsToMap = useCallback(() => {
     if (!map.current || !isMapLoaded) {
@@ -842,13 +1071,26 @@ function MapComponent({ onMapClick }: MapProps) {
       return
     }
 
-    logger.log('🔧 Adding pins to map:', pins.length, 'pins')
+    // Discover tab renders its own markers (see addDiscoverMarkersToMap) -
+    // clear personal pin markers so the two modes don't overlap
+    if (activeTab === 'discover') {
+      markersRef.current.forEach(marker => marker.setMap(null))
+      markersRef.current = []
+      return
+    }
+
+    // Friends tab shows friends' pins, not the user's own - these were
+    // being fetched (setFriendsPins) but never actually rendered, so
+    // switching to Friends silently kept showing your own pins
+    const pinsToRender = activeTab === 'friends' ? friendsPins : pins
+
+    logger.log('🔧 Adding pins to map:', pinsToRender.length, 'pins')
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null))
     markersRef.current = []
 
-    if (pins.length === 0) {
+    if (pinsToRender.length === 0) {
       logger.log('⚠️ No pins to display')
       return
     }
@@ -860,7 +1102,7 @@ function MapComponent({ onMapClick }: MapProps) {
     })
 
     // Create markers for each pin
-    pins.forEach(pin => {
+    pinsToRender.forEach(pin => {
       // Get the collection color for this pin, default to red if not found
       const pinColor = collectionColorMap[pin.collection_id] || '#E63946'
 
@@ -1077,7 +1319,37 @@ function MapComponent({ onMapClick }: MapProps) {
     })
 
     logger.log('🎯 Pin display setup complete')
-  }, [pins, isMapLoaded, user, collections])
+  }, [pins, friendsPins, isMapLoaded, user, collectionColorSignature, activeTab])
+
+  // Add discover (public collection) markers to map
+  const addDiscoverMarkersToMap = useCallback(() => {
+    if (!map.current || !isMapLoaded) return
+
+    // Clear existing discover markers
+    discoverMarkersRef.current.forEach(marker => marker.setMap(null))
+    discoverMarkersRef.current = []
+
+    if (activeTab !== 'discover') return
+
+    discoverCollections
+      .forEach(col => {
+        const marker = new google.maps.Marker({
+          position: { lat: col.rep_latitude, lng: col.rep_longitude },
+          map: map.current!,
+          title: col.title,
+        })
+
+        marker.addListener('click', () => {
+          setSelectedDiscoverCollection(col)
+        })
+
+        discoverMarkersRef.current.push(marker)
+      })
+  }, [discoverCollections, activeTab, isMapLoaded])
+
+  useEffect(() => {
+    addDiscoverMarkersToMap()
+  }, [addDiscoverMarkersToMap])
 
   // Add POIs to map as markers
   const addPOIsToMap = useCallback(() => {
@@ -1228,7 +1500,8 @@ function MapComponent({ onMapClick }: MapProps) {
     logger.log('📍 POI display setup complete')
   }, [pois, isMapLoaded, showPOIs, user])
 
-  // Fetch POIs when map moves or zoom changes (with debouncing)
+  // Fetch POIs, and Discover collections when that tab is active, as the map
+  // moves or zoom changes (debounced together on the same listeners).
   useEffect(() => {
     if (!map.current || !isMapLoaded) return
 
@@ -1244,6 +1517,9 @@ function MapComponent({ onMapClick }: MapProps) {
       clearTimeout(debounceTimer)
       debounceTimer = setTimeout(() => {
         fetchNearbyPOIs()
+        if (activeTabRef.current === 'discover') {
+          fetchDiscoverCollectionsInBounds()
+        }
       }, 500) // Debounce for 500ms
     }
 
@@ -1329,6 +1605,24 @@ function MapComponent({ onMapClick }: MapProps) {
     }
   }, [user])
 
+  // Fetch discover collections for the current bounds the moment the
+  // Discover tab becomes active - the bounds-changed effect above owns all
+  // subsequent refetches while the tab stays active.
+  useEffect(() => {
+    if (activeTab === 'discover' && isMapLoaded) {
+      fetchDiscoverCollectionsInBounds()
+    }
+  }, [activeTab, isMapLoaded])
+
+  // Fetch the selected Discover collection's pins when its detail modal opens
+  useEffect(() => {
+    if (selectedDiscoverCollection) {
+      loadDiscoverDetailPins(selectedDiscoverCollection.id)
+    } else {
+      setDiscoverDetailPins([])
+    }
+  }, [selectedDiscoverCollection])
+
   // Filter pins whenever allPins or selectedCollectionId changes
   useEffect(() => {
     filterPinsByCollection(selectedCollectionId)
@@ -1346,8 +1640,8 @@ function MapComponent({ onMapClick }: MapProps) {
     if (!mapContainer.current || map.current) return
 
     const mapInstance = new google.maps.Map(mapContainer.current, {
-      center: { lat, lng },
-      zoom,
+      center: { lat: latRef.current, lng: lngRef.current },
+      zoom: zoomRef.current,
       mapTypeId: mapStyle === 'dark' ? google.maps.MapTypeId.ROADMAP : mapStyle as google.maps.MapTypeId,
       disableDoubleClickZoom: false, // Enable double-click/tap to zoom
       zoomControl: true,
@@ -1414,13 +1708,13 @@ function MapComponent({ onMapClick }: MapProps) {
     mapInstance.addListener('center_changed', () => {
       const center = mapInstance.getCenter()
       if (center) {
-        setLng(Number(center.lng().toFixed(4)))
-        setLat(Number(center.lat().toFixed(4)))
+        lngRef.current = Number(center.lng().toFixed(4))
+        latRef.current = Number(center.lat().toFixed(4))
       }
     })
 
     mapInstance.addListener('zoom_changed', () => {
-      setZoom(Number(mapInstance.getZoom()?.toFixed(2) || 11))
+      zoomRef.current = Number(mapInstance.getZoom()?.toFixed(2) || 11)
     })
 
     // Handle map clicks to close InfoWindows
@@ -1452,8 +1746,6 @@ function MapComponent({ onMapClick }: MapProps) {
           lng: e.latLng.lng()
         })
         setShowPinModal(true)
-
-        onMapClick?.(e.latLng.lng(), e.latLng.lat())
       }
     })
 
@@ -1511,8 +1803,6 @@ function MapComponent({ onMapClick }: MapProps) {
             lng: longPressLatLng.lng()
           })
           setShowPinModal(true)
-
-          onMapClick?.(longPressLatLng.lng(), longPressLatLng.lat())
         }
       }, 500)
     }
@@ -1612,8 +1902,10 @@ function MapComponent({ onMapClick }: MapProps) {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {/* Collections Sidebar with Tabs */}
-      {!authLoading && user && (
+      {/* Collections Sidebar with Tabs - not just CSS-hidden on mobile, but
+          unmounted entirely so its tab-content JSX doesn't reconcile behind
+          the scenes on every mobile render. */}
+      {showsSidebar && (
         <div
           className="map-sidebar"
           style={{
@@ -1635,363 +1927,64 @@ function MapComponent({ onMapClick }: MapProps) {
             maxHeight: 'calc(100vh - 12rem)',
             overflow: 'hidden'
           }}>
-          {/* Tab Headers */}
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-            marginBottom: '1rem',
-            borderBottom: '2px solid var(--border)'
-          }}>
+          {/* View filter - one continuous view, filtered (not 3 separate destinations) */}
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1 }}>
+              <CollectionTabs activeTab={activeTab} onTabChange={handleTabChange} />
+            </div>
             <button
-              onClick={() => {
-                setActiveTab('my-collections')
-                setSelectedCollectionId(null)
-              }}
+              onClick={() => setShowMapLayersModal(true)}
+              aria-label="Map layers"
+              title="Map layers"
               style={{
-                flex: '1 1 auto',
-                minWidth: '50px',
-                padding: '0.75rem 0.25rem',
-                backgroundColor: activeTab === 'my-collections' ? 'var(--accent)' : 'transparent',
-                color: activeTab === 'my-collections' ? 'white' : 'var(--foreground)',
-                border: 'none',
-                borderBottom: activeTab === 'my-collections' ? '2px solid var(--color-red)' : '2px solid transparent',
+                flexShrink: 0,
+                width: '40px',
+                height: '40px',
+                marginBottom: '1rem',
+                borderRadius: 'var(--radius)',
+                border: '1px solid var(--border)',
+                background: 'var(--muted)',
+                color: 'var(--foreground)',
                 cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.625rem',
-                fontWeight: '700',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                transition: 'var(--transition)',
-                marginBottom: '-2px'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.1rem',
+                transition: 'var(--transition)'
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)' }}
             >
-              MY COLLECTIONS
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('friends')
-                setSelectedCollectionId(null)
-              }}
-              style={{
-                flex: '1 1 auto',
-                minWidth: '50px',
-                padding: '0.75rem 0.25rem',
-                backgroundColor: activeTab === 'friends' ? 'var(--accent)' : 'transparent',
-                color: activeTab === 'friends' ? 'white' : 'var(--foreground)',
-                border: 'none',
-                borderBottom: activeTab === 'friends' ? '2px solid var(--color-red)' : '2px solid transparent',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.625rem',
-                fontWeight: '700',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                transition: 'var(--transition)',
-                marginBottom: '-2px'
-              }}
-            >
-              FRIENDS
+              🗺️
             </button>
           </div>
 
           {/* Tab Content */}
-          {activeTab === 'my-collections' ? (
-            <>
-              {/* Header */}
-              <div style={{
-                fontSize: '0.875rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em'
-              }}>
-                Collections
-                <span style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  color: 'var(--color-red)',
-                  backgroundColor: 'var(--muted)',
-                  padding: '0.125rem 0.5rem',
-                  marginLeft: 'auto',
-                  fontFamily: 'var(--font-mono)'
-                }}>
-                  {allPins.length}
-                </span>
-              </div>
-
-              {/* Collection List */}
-              <div style={{
-                overflowY: 'auto',
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-                scrollBehavior: 'smooth',
-                WebkitOverflowScrolling: 'touch',
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'var(--accent) var(--muted)'
-              }}>
-                {/* All Pins Button */}
-                <button
-                  onClick={() => handleCollectionSelect(null, false)}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid var(--border)',
-                    backgroundColor: selectedCollectionId === null ? 'var(--accent)' : 'transparent',
-                    color: selectedCollectionId === null ? 'white' : 'var(--foreground)',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'var(--transition)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    fontWeight: '600',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem',
-                    letterSpacing: '0.05em'
-                  }}
-                >
-                  All Pins
-                  <span style={{
-                    fontSize: '0.75rem',
-                    marginLeft: 'auto',
-                    backgroundColor: selectedCollectionId === null ? 'rgba(255,255,255,0.2)' : 'var(--muted)',
-                    padding: '0.125rem 0.5rem',
-                    fontFamily: 'var(--font-mono)'
-                  }}>
-                    {allPins.length}
-                  </span>
-                </button>
-
-                {/* Loading State */}
-                {loadingCollections && (
-                  <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>
-                    Loading collections...
-                  </div>
-                )}
-
-                {/* Collection Items */}
-                {!loadingCollections && collections.map(collection => (
-                  <div
-                    key={collection.id}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid var(--border)',
-                      backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
-                      color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
-                      transition: 'var(--transition)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      position: 'relative'
-                    }}
-                  >
-                    {/* Clickable area for selection */}
-                    <button
-                      onClick={() => handleCollectionSelect(collection.id, false)}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: '60px',
-                        bottom: 0,
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: 0
-                      }}
-                      aria-label={`Select ${collection.title}`}
-                    />
-
-                    {/* Thumbnail */}
-                    {collection.first_pin_image ? (
-                      <img
-                        src={collection.first_pin_image}
-                        alt=""
-                        style={{
-                          width: '48px',
-                          height: '48px',
-                          borderRadius: 'var(--radius)',
-                          objectFit: 'cover',
-                          pointerEvents: 'none'
-                        }}
-                      />
-                    ) : (
-                      <div style={{
-                        width: '48px',
-                        height: '48px',
-                        border: '2px solid var(--border)',
-                        backgroundColor: 'var(--muted)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1rem',
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: '700',
-                        color: 'var(--color-red)',
-                        pointerEvents: 'none'
-                      }}>
-                        [ ]
-                      </div>
-                    )}
-
-                    {/* Collection Info */}
-                    <div style={{ flex: 1, minWidth: 0, pointerEvents: 'none' }}>
-                      <div style={{
-                        fontWeight: '500',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {collection.title}
-                      </div>
-                      <div style={{
-                        fontSize: '0.75rem',
-                        opacity: 0.8,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}>
-                        <span>{collection.pin_count || 0} pins</span>
-                        {collection.is_public && (
-                          <span style={{
-                            backgroundColor: selectedCollectionId === collection.id ? 'rgba(255,255,255,0.2)' : 'rgba(34,197,94,0.1)',
-                            color: selectedCollectionId === collection.id ? 'white' : '#22c55e',
-                            padding: '0.125rem 0.375rem',
-                            borderRadius: 'var(--radius)',
-                            fontSize: '0.625rem'
-                          }}>
-                            Public
-                          </span>
-                        )}
-                        {collection.net_score !== undefined && collection.net_score !== 0 && (
-                          <span style={{
-                            backgroundColor: collection.net_score > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                            color: collection.net_score > 0 ? '#22c55e' : '#ef4444',
-                            padding: '0.125rem 0.375rem',
-                            borderRadius: 'var(--radius)',
-                            fontSize: '0.625rem',
-                            fontWeight: '700'
-                          }}>
-                            {collection.net_score > 0 ? '+' : ''}{collection.net_score}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Details Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        router.push(`/collections/${collection.id}`)
-                      }}
-                      style={{
-                        position: 'relative',
-                        zIndex: 1,
-                        width: '24px',
-                        height: '24px',
-                        padding: 0,
-                        border: '1px solid var(--border)',
-                        backgroundColor: 'transparent',
-                        color: 'var(--foreground)',
-                        borderRadius: 'var(--radius)',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'var(--transition)',
-                        flexShrink: 0
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--accent)'
-                        e.currentTarget.style.color = 'var(--accent)'
-                        e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--border)'
-                        e.currentTarget.style.color = 'var(--foreground)'
-                        e.currentTarget.style.backgroundColor = 'transparent'
-                      }}
-                      title={`View details for ${collection.title}`}
-                    >
-                      ⓘ
-                    </button>
-
-                    {/* Delete Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteCollection(collection.id, collection.title)
-                      }}
-                      style={{
-                        position: 'relative',
-                        zIndex: 1,
-                        width: '24px',
-                        height: '24px',
-                        padding: 0,
-                        border: '1px solid var(--border)',
-                        backgroundColor: 'transparent',
-                        color: 'var(--foreground)',
-                        borderRadius: 'var(--radius)',
-                        cursor: 'pointer',
-                        fontSize: '16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'var(--transition)',
-                        flexShrink: 0
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--color-red)'
-                        e.currentTarget.style.color = 'var(--color-red)'
-                        e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--border)'
-                        e.currentTarget.style.color = 'var(--foreground)'
-                        e.currentTarget.style.backgroundColor = 'transparent'
-                      }}
-                      title={`Delete ${collection.title}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-
-                {/* Empty State */}
-                {!loadingCollections && collections.length === 0 && (
-                  <div style={{
-                    padding: '2rem 1rem',
-                    textAlign: 'center',
-                    color: 'var(--muted-foreground)',
-                    fontSize: '0.75rem',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
-                    <div style={{
-                      marginBottom: '0.5rem',
-                      fontSize: '1.5rem',
-                      fontWeight: '700',
-                      color: 'var(--color-red)'
-                    }}>[ ]</div>
-                    <div>No collections yet</div>
-                    <div style={{ fontSize: '0.65rem', marginTop: '0.5rem', opacity: 0.7 }}>
-                      Create pins to organize them
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
+          {activeTab === 'discover' ? (
+            <DiscoverTab
+              collections={discoverCollections}
+              loading={loadingDiscoverCollections}
+              selectedId={selectedDiscoverCollection?.id ?? null}
+              onSelect={handleDiscoverCardSelect}
+            />
+          ) : activeTab === 'my-collections' ? (
+            <MineTab
+              collections={collections}
+              loading={loadingCollections}
+              allPinsCount={allPins.length}
+              selectedCollectionId={selectedCollectionId}
+              onSelectAllPins={handleMineSelectAllPins}
+              onSelectCollection={handleMineSelect}
+              onViewDetails={handleMineViewDetails}
+              onDelete={handleMineDelete}
+              creatingBlankCollection={creatingBlankCollection}
+              onStartCreating={() => setCreatingBlankCollection(true)}
+              newBlankCollectionTitle={newBlankCollectionTitle}
+              onNewBlankCollectionTitleChange={setNewBlankCollectionTitle}
+              onCreateBlankCollection={handleCreateBlankCollection}
+              onCancelCreating={() => { setCreatingBlankCollection(false); setNewBlankCollectionTitle('') }}
+              savingBlankCollection={savingBlankCollection}
+            />
           ) : (
             <>
               {/* Friends Tab Content */}
@@ -2290,7 +2283,7 @@ function MapComponent({ onMapClick }: MapProps) {
           </div>
 
           {/* Search Results Dropdown */}
-          {showSearch && (searchResults.length > 0 || (hasSearched && searchQuery)) && (
+          {showSearch && (searchResults.length > 0 || collectionSearchResults.length > 0 || peopleSearchResults.length > 0 || (hasSearched && searchQuery)) && (
             <div style={{
               position: 'absolute',
               top: 'calc(100% + 0.5rem)',
@@ -2307,24 +2300,116 @@ function MapComponent({ onMapClick }: MapProps) {
               overflowY: 'auto',
               animation: 'slideDown 0.2s ease'
             }}>
-              {/* Results Header */}
+              {/* People Results */}
+              {peopleSearchResults.length > 0 && (
+                <>
+                  <div style={{
+                    padding: '0.75rem 1rem 0.25rem',
+                    fontSize: '0.7rem',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    color: 'var(--muted-foreground)',
+                    fontWeight: '700'
+                  }}>
+                    People
+                  </div>
+                  {peopleSearchResults.map(person => (
+                    <div
+                      key={person.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.6rem 1rem',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>
+                        {person.full_name || person.username || 'Unnamed user'}
+                      </span>
+                      {!followingIds.has(person.id) ? (
+                        <button
+                          onClick={() => handleFollowPerson(person.id)}
+                          style={{
+                            padding: '0.3rem 0.6rem',
+                            background: 'var(--accent)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 'var(--radius)',
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            fontFamily: 'var(--font-mono)',
+                            textTransform: 'uppercase',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Follow
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+                          Following
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Collection Results */}
+              {collectionSearchResults.length > 0 && (
+                <>
+                  <div style={{
+                    padding: '0.75rem 1rem 0.25rem',
+                    fontSize: '0.7rem',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    color: 'var(--muted-foreground)',
+                    fontWeight: '700'
+                  }}>
+                    Collections
+                  </div>
+                  {collectionSearchResults.map(col => (
+                    <button
+                      key={col.id}
+                      onClick={() => router.push(`/collections/${col.id}`)}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '0.6rem 1rem',
+                        background: 'none',
+                        border: 'none',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        color: 'var(--foreground)',
+                      }}
+                    >
+                      {col.title}
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {/* Places Results Header */}
               {searchResults.length > 0 && (
                 <div style={{
-                  padding: '0.75rem 1rem',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                  fontSize: '0.75rem',
+                  padding: '0.75rem 1rem 0.25rem',
+                  fontSize: '0.7rem',
                   fontFamily: 'var(--font-mono)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.1em',
                   color: 'var(--muted-foreground)',
                   fontWeight: '700'
                 }}>
-                  {searchResults.length} Result{searchResults.length !== 1 ? 's' : ''}
+                  Places
                 </div>
               )}
 
               {/* No Results Message */}
-              {searchResults.length === 0 && hasSearched && searchQuery && (
+              {searchResults.length === 0 && collectionSearchResults.length === 0 && peopleSearchResults.length === 0 && hasSearched && searchQuery && (
                 <div style={{
                   padding: '2rem 1.5rem',
                   textAlign: 'center'
@@ -2445,37 +2530,41 @@ function MapComponent({ onMapClick }: MapProps) {
         </div>
       </div>
 
-      {/* Map Layers Button - Bottom left on desktop, above collections FAB on mobile */}
-      <button
-        onClick={() => setShowMapLayersModal(true)}
-        className="map-layers-button"
-        style={{
-          position: 'fixed',
-          left: '1rem',
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          background: 'var(--accent)',
-          color: 'white',
-          border: '2px solid var(--border)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-          cursor: 'pointer',
-          zIndex: 997,
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '1.5rem',
-          transition: 'all 0.2s ease'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.1)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)'
-        }}
-        aria-label="Map layers"
-      >
-        🗺️
-      </button>
+      {/* Map Layers Button - floating FAB only where there's no sidebar to
+          hold the icon-button version (mobile, or logged-out desktop).
+          Bottom left on desktop, above collections FAB on mobile. */}
+      {!showsSidebar && (
+        <button
+          onClick={() => setShowMapLayersModal(true)}
+          className="map-layers-button"
+          style={{
+            position: 'fixed',
+            left: '1rem',
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'var(--accent)',
+            color: 'white',
+            border: '2px solid var(--border)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            cursor: 'pointer',
+            zIndex: Z_INDEX.mapControls,
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.5rem',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)'
+          }}
+          aria-label="Map layers"
+        >
+          🗺️
+        </button>
+      )}
 
       {/* User Instructions - Only show for new users (within 7 days of signup) */}
       {!authLoading && user && (() => {
@@ -2609,7 +2698,7 @@ function MapComponent({ onMapClick }: MapProps) {
             border: '2px solid var(--border)',
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
             cursor: 'pointer',
-            zIndex: 999, // Below mobile nav but visible
+            zIndex: Z_INDEX.mapControls,
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '1.5rem',
@@ -2635,307 +2724,38 @@ function MapComponent({ onMapClick }: MapProps) {
           snapPoints={[40, 85]}
           defaultSnap={0}
         >
-          {/* Tab Headers */}
-          <div style={{
-            display: 'flex',
-            gap: '0.5rem',
-            marginBottom: '1rem',
-            borderBottom: '2px solid var(--border)',
-            paddingBottom: '0.5rem'
-          }}>
-            <button
-              onClick={() => {
-                setActiveTab('my-collections')
-                setSelectedCollectionId(null)
-              }}
-              style={{
-                flex: 1,
-                padding: '0.75rem 0.5rem',
-                backgroundColor: activeTab === 'my-collections' ? 'var(--accent)' : 'transparent',
-                color: activeTab === 'my-collections' ? 'white' : 'var(--foreground)',
-                border: 'none',
-                borderRadius: 'var(--radius)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.625rem',
-                fontWeight: '700',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                transition: 'var(--transition)'
-              }}
-            >
-              MY COLLECTIONS
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('friends')
-                setSelectedCollectionId(null)
-              }}
-              style={{
-                flex: 1,
-                padding: '0.75rem 0.5rem',
-                backgroundColor: activeTab === 'friends' ? 'var(--accent)' : 'transparent',
-                color: activeTab === 'friends' ? 'white' : 'var(--foreground)',
-                border: 'none',
-                borderRadius: 'var(--radius)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.625rem',
-                fontWeight: '700',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                transition: 'var(--transition)'
-              }}
-            >
-              FRIENDS
-            </button>
-          </div>
+          {/* View filter - one continuous view, filtered (not 3 separate destinations) */}
+          <CollectionTabs activeTab={activeTab} onTabChange={handleTabChange} buttonPadding="0.6rem 0.5rem" />
+
+          {/* Tab Content - Discover */}
+          {activeTab === 'discover' && (
+            <DiscoverTab
+              collections={discoverCollections}
+              loading={loadingDiscoverCollections}
+              selectedId={selectedDiscoverCollection?.id ?? null}
+              onSelect={handleDiscoverCardSelect}
+            />
+          )}
 
           {/* Tab Content - My Collections */}
           {activeTab === 'my-collections' && (
-            <>
-              <div style={{
-                fontSize: '0.875rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em'
-              }}>
-                Collections
-                <span style={{
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  color: 'var(--color-red)',
-                  backgroundColor: 'var(--muted)',
-                  padding: '0.125rem 0.5rem',
-                  marginLeft: 'auto',
-                  fontFamily: 'var(--font-mono)',
-                  borderRadius: 'var(--radius)'
-                }}>
-                  {allPins.length}
-                </span>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem'
-              }}>
-                {/* All Pins Button */}
-                <button
-                  onClick={() => {
-                    handleCollectionSelect(null, false)
-                    setIsBottomSheetOpen(false)
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid var(--border)',
-                    borderRadius: 'var(--radius)',
-                    backgroundColor: selectedCollectionId === null ? 'var(--accent)' : 'transparent',
-                    color: selectedCollectionId === null ? 'white' : 'var(--foreground)',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'var(--transition)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    fontWeight: '600',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem',
-                    letterSpacing: '0.05em'
-                  }}
-                >
-                  All Pins
-                  <span style={{
-                    fontSize: '0.75rem',
-                    marginLeft: 'auto',
-                    backgroundColor: selectedCollectionId === null ? 'rgba(255,255,255,0.2)' : 'var(--muted)',
-                    padding: '0.125rem 0.5rem',
-                    borderRadius: 'var(--radius)',
-                    fontFamily: 'var(--font-mono)'
-                  }}>
-                    {allPins.length}
-                  </span>
-                </button>
-
-                {/* Collection Items */}
-                {!loadingCollections && collections.map(collection => (
-                  <div
-                    key={collection.id}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid var(--border)',
-                      borderRadius: 'var(--radius)',
-                      backgroundColor: selectedCollectionId === collection.id ? 'var(--accent)' : 'transparent',
-                      color: selectedCollectionId === collection.id ? 'white' : 'var(--foreground)',
-                      transition: 'var(--transition)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      position: 'relative'
-                    }}
-                  >
-                    {/* Clickable area for selection */}
-                    <button
-                      onClick={() => {
-                        handleCollectionSelect(collection.id, false)
-                        setIsBottomSheetOpen(false)
-                      }}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: '60px',
-                        bottom: 0,
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: 0
-                      }}
-                      aria-label={`Select ${collection.title}`}
-                    />
-                    {collection.first_pin_image ? (
-                      <img
-                        src={collection.first_pin_image}
-                        alt=""
-                        style={{
-                          width: '48px',
-                          height: '48px',
-                          borderRadius: 'var(--radius)',
-                          objectFit: 'cover',
-                          pointerEvents: 'none'
-                        }}
-                      />
-                    ) : (
-                      <div style={{
-                        width: '48px',
-                        height: '48px',
-                        border: '2px solid var(--border)',
-                        borderRadius: 'var(--radius)',
-                        backgroundColor: collection.color || 'var(--muted)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1.5rem',
-                        pointerEvents: 'none'
-                      }}>
-                        📂
-                      </div>
-                    )}
-
-                    <div style={{ flex: 1, minWidth: 0, pointerEvents: 'none' }}>
-                      <div style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: '0.75rem',
-                        fontWeight: '700',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        marginBottom: '0.25rem',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {collection.title}
-                      </div>
-                      <div style={{
-                        fontSize: '0.625rem',
-                        color: selectedCollectionId === collection.id ? 'rgba(255,255,255,0.8)' : 'var(--muted-foreground)',
-                        fontFamily: 'var(--font-mono)'
-                      }}>
-                        {collection.pin_count || 0} pins
-                      </div>
-                    </div>
-
-                    {/* Details Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        router.push(`/collections/${collection.id}`)
-                        setIsBottomSheetOpen(false)
-                      }}
-                      style={{
-                        position: 'relative',
-                        zIndex: 1,
-                        width: '28px',
-                        height: '28px',
-                        padding: 0,
-                        border: '1px solid var(--border)',
-                        backgroundColor: 'transparent',
-                        color: 'var(--foreground)',
-                        borderRadius: 'var(--radius)',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'var(--transition)',
-                        flexShrink: 0
-                      }}
-                      title={`View details for ${collection.title}`}
-                    >
-                      ⓘ
-                    </button>
-
-                    {/* Delete Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteCollection(collection.id, collection.title)
-                      }}
-                      style={{
-                        position: 'relative',
-                        zIndex: 1,
-                        width: '28px',
-                        height: '28px',
-                        padding: 0,
-                        border: '1px solid var(--border)',
-                        backgroundColor: 'transparent',
-                        color: 'var(--foreground)',
-                        borderRadius: 'var(--radius)',
-                        cursor: 'pointer',
-                        fontSize: '16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'var(--transition)',
-                        flexShrink: 0
-                      }}
-                      title={`Delete ${collection.title}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-
-                {loadingCollections && (
-                  <div style={{
-                    padding: '2rem',
-                    textAlign: 'center',
-                    color: 'var(--muted-foreground)'
-                  }}>
-                    Loading collections...
-                  </div>
-                )}
-
-                {!loadingCollections && collections.length === 0 && (
-                  <div style={{
-                    padding: '2rem',
-                    textAlign: 'center',
-                    color: 'var(--muted-foreground)',
-                    fontSize: '0.75rem'
-                  }}>
-                    No collections yet. Start creating collections to organize your pins!
-                  </div>
-                )}
-              </div>
-            </>
+            <MineTab
+              collections={collections}
+              loading={loadingCollections}
+              allPinsCount={allPins.length}
+              selectedCollectionId={selectedCollectionId}
+              onSelectAllPins={handleMineSelectAllPinsMobile}
+              onSelectCollection={handleMineSelectMobile}
+              onViewDetails={handleMineViewDetailsMobile}
+              onDelete={handleMineDelete}
+              creatingBlankCollection={creatingBlankCollection}
+              onStartCreating={() => setCreatingBlankCollection(true)}
+              newBlankCollectionTitle={newBlankCollectionTitle}
+              onNewBlankCollectionTitleChange={setNewBlankCollectionTitle}
+              onCreateBlankCollection={handleCreateBlankCollection}
+              onCancelCreating={() => { setCreatingBlankCollection(false); setNewBlankCollectionTitle('') }}
+              savingBlankCollection={savingBlankCollection}
+            />
           )}
 
           {/* Tab Content - Friends */}
@@ -3082,18 +2902,43 @@ function MapComponent({ onMapClick }: MapProps) {
         onStyleSelect={handleMapStyleChange}
         showPOIs={showPOIs}
         onTogglePOIs={setShowPOIs}
-        poiCategories={poiCategories}
-        onCategoriesChange={setPoiCategories}
       />
+
+      {/* Discover collection detail (click a Discover marker or sidebar card) */}
+      {selectedDiscoverCollection && (
+        <DiscoverCollectionDetailModal
+          collection={{ ...selectedDiscoverCollection, pins: discoverDetailPins }}
+          loading={loadingDiscoverDetailPins}
+          onClose={() => setSelectedDiscoverCollection(null)}
+          onFork={(pinId, pinTitle) => {
+            setForkingPinId(pinId)
+            setForkingPinTitle(pinTitle)
+          }}
+        />
+      )}
+
+      {/* Fork pin modal */}
+      {forkingPinId && (
+        <ForkPinModal
+          pinTitle={forkingPinTitle}
+          sourcePinId={forkingPinId}
+          isOpen={!!forkingPinId}
+          onClose={() => setForkingPinId(null)}
+          onSuccess={() => {
+            setForkingPinId(null)
+            setSelectedDiscoverCollection(null)
+          }}
+        />
+      )}
     </div>
   )
 }
 
 // Main export with Wrapper
-export default function Map(props: MapProps) {
+export default function Map() {
   return (
     <Wrapper apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
-      <MapComponent {...props} />
+      <MapComponent />
     </Wrapper>
   )
 }

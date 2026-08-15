@@ -139,6 +139,53 @@ export default function CollectionPage({ params }: PageProps) {
           )
         }
 
+        // Attach fork attribution - "forked from {username}'s {collection}"
+        // for any pin that was copied in via the Discover fork flow
+        if (pinsWithImages.length > 0) {
+          const pinIds = pinsWithImages.map(p => p.id)
+          const { data: forks } = await supabase
+            .from('collection_forks')
+            .select('target_pin_id, source_collection_id')
+            .in('target_pin_id', pinIds)
+
+          if (forks && forks.length > 0) {
+            const sourceCollectionIds = [...new Set(forks.map(f => f.source_collection_id))]
+            const { data: sourceCollections } = await supabase
+              .from('collections')
+              .select('id, title, user_id')
+              .in('id', sourceCollectionIds)
+
+            const sourceUserIds = [...new Set((sourceCollections || []).map(c => c.user_id))]
+            const { data: sourceUsers } = await supabase
+              .from('users')
+              .select('id, username, full_name')
+              .in('id', sourceUserIds)
+
+            const collectionById = new Map((sourceCollections || []).map(c => [c.id, c]))
+            const userById = new Map((sourceUsers || []).map(u => [u.id, u]))
+            const forkByPinId = new Map(forks.map(f => [f.target_pin_id, f]))
+
+            pinsWithImages = pinsWithImages.map(pin => {
+              const fork = forkByPinId.get(pin.id)
+              if (!fork) return pin
+
+              const sourceCollection = collectionById.get(fork.source_collection_id)
+              const sourceUser = sourceCollection ? userById.get(sourceCollection.user_id) : null
+
+              if (!sourceCollection) return pin
+
+              return {
+                ...pin,
+                forked_from: {
+                  collectionId: sourceCollection.id,
+                  collectionTitle: sourceCollection.title,
+                  username: sourceUser?.full_name || sourceUser?.username || 'someone',
+                }
+              }
+            })
+          }
+        }
+
         setPins(pinsWithImages)
         setVoteCounts(voteCounts)
         setUserVote(userVote)

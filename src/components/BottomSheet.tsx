@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
+import { Z_INDEX } from '@/lib/mapUiConstants'
 
 interface BottomSheetProps {
   isOpen: boolean
@@ -126,7 +127,7 @@ export default function BottomSheet({
           right: 0,
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.4)',
-          zIndex: 998,
+          zIndex: Z_INDEX.bottomSheet,
           opacity: isOpen ? 1 : 0,
           transition: 'opacity 0.3s ease'
         }}
@@ -145,7 +146,7 @@ export default function BottomSheet({
           borderTopLeftRadius: 'var(--radius-lg)',
           borderTopRightRadius: 'var(--radius-lg)',
           boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.3)',
-          zIndex: 999,
+          zIndex: Z_INDEX.bottomSheetContent,
           transform: `translateY(${dragOffset}px)`,
           transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
           display: 'flex',

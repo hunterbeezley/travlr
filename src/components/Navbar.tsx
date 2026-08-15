@@ -44,24 +44,10 @@ export default function Navbar() {
           {/* Navigation Menu - Hidden on mobile */}
           <div className="navbar-nav navbar-nav-desktop">
           <button
-            onClick={() => router.push('/')}
-            className={`nav-link ${isActive('/') ? 'active' : ''}`}
-          >
-            FEED
-          </button>
-
-          <button
             onClick={() => router.push('/map')}
-            className={`nav-link ${isActive('/map') ? 'active' : ''}`}
+            className={`nav-link ${isActive('/map') || isActive('/') ? 'active' : ''}`}
           >
             MAP
-          </button>
-
-          <button
-            onClick={() => router.push('/search')}
-            className={`nav-link ${isActive('/search') ? 'active' : ''}`}
-          >
-            SEARCH
           </button>
 
           <button

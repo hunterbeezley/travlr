@@ -6,6 +6,7 @@ import { DatabaseService } from '@/lib/database'
 import { supabase } from '@/lib/supabase'
 import SingleImageUpload from './SingleImageUpload'
 import MultipleImageUpload from './MultipleImageUpload'
+import CollectionPicker from './CollectionPicker'
 
 
 interface PinCreationModalProps {
@@ -14,13 +15,6 @@ interface PinCreationModalProps {
   latitude: number
   longitude: number
   onPinCreated?: (pin: any) => void
-}
-
-interface Collection {
-  id: string
-  title: string
-  description: string | null
-  is_public: boolean
 }
 
 interface ImageItem {
@@ -54,8 +48,6 @@ export default function PinCreationModal({
 }: PinCreationModalProps) {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [collections, setCollections] = useState<Collection[]>([])
-  const [loadingCollections, setLoadingCollections] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [address, setAddress] = useState<string>('')
   const [loadingAddress, setLoadingAddress] = useState(false)
@@ -106,90 +98,8 @@ export default function PinCreationModal({
       setUseMultipleImages(false) // Reset to single image mode
       setError(null)
       fetchAddress()
-
-      // Only fetch collections if user is available
-      if (user) {
-        fetchCollections()
-      } else {
-        // Ensure specific loading state is false if no user
-        setLoadingCollections(false)
-      }
     }
-  }, [isOpen, user]) // Add 'user' as a dependency
-
-  const fetchCollections = async () => {
-    if (!user) {
-      logger.log('❌ fetchCollections: No user found')
-      setLoadingCollections(false)
-      return
-    }
-
-    logger.log('🔍 fetchCollections: Starting fetch for user:', user.id)
-
-    try {
-      setLoadingCollections(true)
-      const { data, error } = await supabase
-        .from('collections')
-        .select('id, title, description, is_public')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      logger.log('📥 fetchCollections result:', { data, error })
-
-      if (error) {
-        logger.error('❌ fetchCollections error:', error)
-        setError(`Failed to load collections: ${error.message}`)
-        return
-      }
-
-      logger.log(`✅ fetchCollections: Found ${data?.length || 0} collections:`, data)
-      setCollections(data || [])
-
-      // Auto-select first collection if available
-      if (data && data.length > 0 && !formData.collectionId) {
-        logger.log('🎯 Auto-selecting first collection:', data[0].id)
-        setFormData(prev => ({ ...prev, collectionId: data[0].id }))
-      } else {
-        logger.log('⚠️ No collections to auto-select or collection already selected')
-      }
-    } catch (error) {
-      logger.error('💥 fetchCollections exception:', error)
-      setError('Failed to load collections')
-    } finally {
-      setLoadingCollections(false)
-    }
-  }
-
-  // (Removed duplicate createNewCollection function to fix redeclaration error)
-
-  // Handler to create a new collection (simple prompt-based version)
-  const createNewCollection = async () => {
-    const title = window.prompt('Enter a name for your new collection:')
-    if (!title || !user) return
-
-    try {
-      setLoadingCollections(true)
-      const { data, error } = await supabase
-        .from('collections')
-        .insert([{ title, user_id: user.id, is_public: false }])
-        .select('id, title, description, is_public')
-        .single()
-
-      if (error) {
-        setError('Failed to create collection: ' + error.message)
-        return
-      }
-
-      if (data) {
-        setCollections(prev => [data, ...prev])
-        setFormData(prev => ({ ...prev, collectionId: data.id }))
-      }
-    } catch (err) {
-      setError('Failed to create collection')
-    } finally {
-      setLoadingCollections(false)
-    }
-  }
+  }, [isOpen, user])
 
   const fetchAddress = async () => {
     try {
@@ -522,46 +432,10 @@ export default function PinCreationModal({
             }}>
               Collection *
             </label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <select
-                value={formData.collectionId}
-                onChange={(e) => setFormData(prev => ({ ...prev, collectionId: e.target.value }))}
-                required
-                disabled={loadingCollections}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius)',
-                  fontSize: '1rem',
-                  backgroundColor: 'var(--card)',
-                  color: 'var(--foreground)'
-                }}
-              >
-                <option value="">Select a collection...</option>
-                {collections.map(collection => (
-                  <option key={collection.id} value={collection.id}>
-                    {collection.title} {collection.is_public ? '(Public)' : '(Private)'}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={createNewCollection}
-                style={{
-                  padding: '0.75rem',
-                  backgroundColor: 'var(--accent)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 'var(--radius)',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                + New
-              </button>
-            </div>
+            <CollectionPicker
+              value={formData.collectionId}
+              onChange={(id) => setFormData(prev => ({ ...prev, collectionId: id }))}
+            />
           </div>
 
           {/* Description */}

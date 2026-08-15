@@ -1,11 +1,13 @@
 'use client'
 import { logger } from '@/lib/logger'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 type AuthMode = 'signin' | 'signup' | 'reset'
 
 export default function Auth() {
+  const router = useRouter()
   const [mode, setMode] = useState<AuthMode>('signin')
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
@@ -37,7 +39,8 @@ export default function Auth() {
         }
       } else {
         logger.log('✅ Signed in successfully:', data.user?.email)
-        // Auth state change will redirect automatically via useAuth
+        // Server Component auth gate needs refresh to re-check session
+        router.refresh()
       }
     } catch (err: any) {
       logger.error('Sign in error:', err)

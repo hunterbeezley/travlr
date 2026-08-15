@@ -8,6 +8,7 @@ import ReportCommentModal from '@/components/ReportCommentModal'
 import Navbar from '@/components/Navbar'
 import CollectionActions from '@/components/Collection/CollectionActions'
 import TimelineView from '@/components/Collection/TimelineView'
+import ForkPinModal from '@/components/ForkPinModal'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Collection, Pin, Comment } from '@/lib/types/collection'
@@ -95,6 +96,10 @@ export default function CollectionPageClient({
 
   // Avatar state
   const [avatarLoadError, setAvatarLoadError] = useState(false)
+
+  // Fork modal state
+  const [forkingPinId, setForkingPinId] = useState<string | null>(null)
+  const [forkingPinTitle, setForkingPinTitle] = useState('')
 
   // Edit collection state
   const [isEditingCollection, setIsEditingCollection] = useState(false)
@@ -627,11 +632,11 @@ export default function CollectionPageClient({
                         </span>
                       </div>
                       <h1 className="collection-hero-title" style={{
-                        fontSize: '3rem',
+                        fontSize: '2.5rem',
                         fontWeight: '700',
-                        color: 'white',
+                        color: 'var(--accent)',
                         margin: 0,
-                        fontFamily: 'var(--font-display)',
+                        fontFamily: 'var(--font-mono)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
@@ -640,6 +645,27 @@ export default function CollectionPageClient({
                       </h1>
                     </div>
                   </div>
+                  {/* Corner brackets on hero image */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '30px',
+                    height: '30px',
+                    borderTop: '2px solid var(--color-red-muted)',
+                    borderLeft: '2px solid var(--color-red-muted)',
+                    zIndex: 10
+                  }} />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    width: '30px',
+                    height: '30px',
+                    borderBottom: '2px solid var(--color-red-muted)',
+                    borderRight: '2px solid var(--color-red-muted)',
+                    zIndex: 10
+                  }} />
                 </>
               )
             } else {
@@ -709,11 +735,11 @@ export default function CollectionPageClient({
                         </span>
                       </div>
                       <h1 className="collection-hero-title" style={{
-                        fontSize: '3rem',
+                        fontSize: '2.5rem',
                         fontWeight: '700',
-                        color: 'white',
+                        color: 'var(--accent)',
                         margin: 0,
-                        fontFamily: 'var(--font-display)',
+                        fontFamily: 'var(--font-mono)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)'
@@ -722,6 +748,27 @@ export default function CollectionPageClient({
                       </h1>
                     </div>
                   </div>
+                  {/* Corner brackets on hero map */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '30px',
+                    height: '30px',
+                    borderTop: '2px solid var(--color-red-muted)',
+                    borderLeft: '2px solid var(--color-red-muted)',
+                    zIndex: 10
+                  }} />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    width: '30px',
+                    height: '30px',
+                    borderBottom: '2px solid var(--color-red-muted)',
+                    borderRight: '2px solid var(--color-red-muted)',
+                    zIndex: 10
+                  }} />
                 </>
               )
             }
@@ -1091,15 +1138,26 @@ export default function CollectionPageClient({
                         border: '1px solid var(--border)',
                         overflow: 'hidden',
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        position: 'relative'
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-4px)'
                         e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.3)'
+                        // Show corner brackets
+                        const brackets = e.currentTarget.querySelectorAll('.pin-corner-bracket')
+                        brackets.forEach((b) => {
+                          (b as HTMLElement).style.opacity = '1'
+                        })
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)'
                         e.currentTarget.style.boxShadow = 'none'
+                        // Hide corner brackets
+                        const brackets = e.currentTarget.querySelectorAll('.pin-corner-bracket')
+                        brackets.forEach((b) => {
+                          (b as HTMLElement).style.opacity = '0'
+                        })
                       }}
                     >
                       {/* Pin Image */}
@@ -1177,12 +1235,97 @@ export default function CollectionPageClient({
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            marginBottom: '0.75rem'
                           }}>
                             {pin.description}
                           </p>
                         )}
+
+                        {/* Fork attribution - shown when this pin was copied in via Discover */}
+                        {pin.forked_from && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/collections/${pin.forked_from!.collectionId}`)
+                            }}
+                            style={{
+                              fontSize: '0.7rem',
+                              color: 'var(--muted-foreground)',
+                              marginBottom: '0.75rem',
+                              cursor: 'pointer',
+                              fontStyle: 'italic',
+                            }}
+                          >
+                            Forked from {pin.forked_from.username}&apos;s &ldquo;{pin.forked_from.collectionTitle}&rdquo;
+                          </div>
+                        )}
+
+                        {/* Fork button - only show if not owner and user is logged in */}
+                        {!isOwner && user && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setForkingPinId(pin.id)
+                              setForkingPinTitle(pin.title)
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '0.5rem 0.75rem',
+                              background: 'var(--accent)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 'var(--radius)',
+                              fontSize: '0.75rem',
+                              fontWeight: '700',
+                              fontFamily: 'var(--font-mono)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.opacity = '0.9'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.opacity = '1'
+                            }}
+                          >
+                            + Add to collection
+                          </button>
+                        )}
                       </div>
+                      {/* Corner brackets (shown on hover) */}
+                      <div
+                        className="pin-corner-bracket"
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '20px',
+                          height: '20px',
+                          borderTop: '2px solid var(--color-red-muted)',
+                          borderLeft: '2px solid var(--color-red-muted)',
+                          zIndex: 10,
+                          opacity: 0,
+                          transition: 'opacity 0.2s ease'
+                        }}
+                      />
+                      <div
+                        className="pin-corner-bracket"
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          width: '20px',
+                          height: '20px',
+                          borderBottom: '2px solid var(--color-red-muted)',
+                          borderRight: '2px solid var(--color-red-muted)',
+                          zIndex: 10,
+                          opacity: 0,
+                          transition: 'opacity 0.2s ease'
+                        }}
+                      />
                     </div>
                   )
                 })}
@@ -1883,6 +2026,20 @@ export default function CollectionPageClient({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Fork Pin Modal */}
+      {forkingPinId && (
+        <ForkPinModal
+          pinTitle={forkingPinTitle}
+          sourcePinId={forkingPinId}
+          isOpen={!!forkingPinId}
+          onClose={() => setForkingPinId(null)}
+          onSuccess={() => {
+            setShowShareToast(true)
+            setTimeout(() => setShowShareToast(false), 3000)
+          }}
+        />
       )}
     </div>
   )

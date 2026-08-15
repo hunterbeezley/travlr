@@ -43,6 +43,12 @@ export interface Pin {
   scheduled_time: string | null
   duration_minutes: number | null
   timeline_notes: string | null
+  // Set when this pin was copied in via the Discover fork flow
+  forked_from?: {
+    collectionId: string
+    collectionTitle: string
+    username: string
+  }
 }
 
 export interface Comment {
