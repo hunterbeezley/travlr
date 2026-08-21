@@ -2,6 +2,7 @@
 import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { X, Check, Twitter, Facebook, MessageCircle, Mail } from 'lucide-react'
 
 interface ShareCollectionModalProps {
   collectionId: string
@@ -110,9 +111,7 @@ export default function ShareCollectionModal({
               fontSize: '1.25rem',
               fontWeight: '700',
               margin: 0,
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-display)'
             }}>
               Share Collection
             </h2>
@@ -121,7 +120,7 @@ export default function ShareCollectionModal({
               style={{
                 background: 'transparent',
                 border: 'none',
-                fontSize: '1.5rem',
+                display: 'flex',
                 cursor: 'pointer',
                 color: 'var(--muted-foreground)',
                 padding: '0.25rem',
@@ -129,7 +128,7 @@ export default function ShareCollectionModal({
               }}
               aria-label="Close"
             >
-              ×
+              <X size={22} />
             </button>
           </div>
 
@@ -175,14 +174,21 @@ export default function ShareCollectionModal({
                     cursor: 'pointer',
                     fontSize: '0.875rem',
                     fontWeight: '600',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
+                    fontFamily: 'var(--font-body)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
                     whiteSpace: 'nowrap',
                     transition: 'var(--transition)'
                   }}
                 >
-                  {copied ? '✓ Copied' : 'Copy'}
+                  {copied ? (
+                    <>
+                      <Check size={16} /> Copied
+                    </>
+                  ) : (
+                    'Copy'
+                  )}
                 </button>
               </div>
             </div>
@@ -227,7 +233,7 @@ export default function ShareCollectionModal({
                     e.currentTarget.style.opacity = '1'
                   }}
                 >
-                  <span>🐦</span>
+                  <Twitter size={16} />
                   <span>Twitter</span>
                 </button>
 
@@ -255,7 +261,7 @@ export default function ShareCollectionModal({
                     e.currentTarget.style.opacity = '1'
                   }}
                 >
-                  <span>📘</span>
+                  <Facebook size={16} />
                   <span>Facebook</span>
                 </button>
 
@@ -283,7 +289,7 @@ export default function ShareCollectionModal({
                     e.currentTarget.style.opacity = '1'
                   }}
                 >
-                  <span>💬</span>
+                  <MessageCircle size={16} />
                   <span>WhatsApp</span>
                 </button>
 
@@ -311,7 +317,7 @@ export default function ShareCollectionModal({
                     e.currentTarget.style.borderColor = 'var(--border)'
                   }}
                 >
-                  <span>📧</span>
+                  <Mail size={16} />
                   <span>Email</span>
                 </button>
               </div>

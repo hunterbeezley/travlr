@@ -2,9 +2,11 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { Calendar } from 'lucide-react'
 import { Pin } from '@/lib/types/collection'
 import SchedulePinModal from './SchedulePinModal'
 import { supabase } from '@/lib/supabase'
+import { getCategoryIcon } from '@/lib/categoryIcons'
 
 interface TimelineViewProps {
   pins: Pin[]
@@ -13,19 +15,6 @@ interface TimelineViewProps {
   collectionColor: string
   isOwner?: boolean
   onOpenSettings?: () => void
-}
-
-const categoryEmojis: Record<string, string> = {
-  restaurant: '🍽️',
-  cafe: '☕',
-  bar: '🍺',
-  attraction: '🎯',
-  nature: '🌲',
-  shopping: '🛍️',
-  hotel: '🏨',
-  transport: '🚌',
-  activity: '🎪',
-  other: '📍'
 }
 
 // Generate array of dates between start and end
@@ -103,7 +92,9 @@ export default function TimelineView({
         borderRadius: 'var(--radius)',
         border: '1px solid var(--border)'
       }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📅</div>
+        <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+          <Calendar size={48} color="var(--muted-foreground)" />
+        </div>
         <h3 style={{
           fontSize: '1.25rem',
           fontWeight: '600',
@@ -133,9 +124,7 @@ export default function TimelineView({
               borderRadius: 'var(--radius)',
               color: 'white',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              fontFamily: 'var(--font-body)',
               fontSize: '0.875rem',
               cursor: 'pointer'
             }}
@@ -172,9 +161,7 @@ export default function TimelineView({
         fontWeight: '700',
         color: 'var(--foreground)',
         marginBottom: '1.5rem',
-        fontFamily: 'var(--font-display)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em'
+        fontFamily: 'var(--font-display)'
       }}>
         Itinerary Timeline
       </h2>
@@ -219,7 +206,7 @@ export default function TimelineView({
                   fontSize: '0.875rem',
                   fontWeight: '600',
                   color: 'var(--foreground)',
-                  fontFamily: 'var(--font-mono)'
+                  fontFamily: 'var(--font-body)'
                 }}>
                   Day {index + 1}
                 </div>
@@ -254,7 +241,7 @@ export default function TimelineView({
                     const firstImage = pin.pin_images.sort(
                       (a, b) => a.upload_order - b.upload_order
                     )[0]
-                    const emoji = categoryEmojis[pin.category || 'other'] || '📍'
+                    const CategoryIcon = getCategoryIcon(pin.category)
 
                     return (
                       <div
@@ -285,7 +272,7 @@ export default function TimelineView({
                             color: 'white',
                             fontSize: '0.75rem',
                             fontWeight: '600',
-                            fontFamily: 'var(--font-mono)',
+                            fontFamily: 'var(--font-body)',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center'
@@ -326,13 +313,13 @@ export default function TimelineView({
                             gap: '0.5rem',
                             marginBottom: '0.25rem'
                           }}>
-                            <span style={{ fontSize: '1rem' }}>{emoji}</span>
+                            <CategoryIcon size={16} color="var(--muted-foreground)" />
                             <h3 style={{
                               fontSize: '0.875rem',
                               fontWeight: '600',
                               color: 'var(--foreground)',
                               margin: 0,
-                              fontFamily: 'var(--font-mono)',
+                              fontFamily: 'var(--font-display)',
                               flex: 1
                             }}>
                               {pin.title}
@@ -351,9 +338,7 @@ export default function TimelineView({
                                   fontSize: '0.625rem',
                                   fontWeight: '600',
                                   cursor: 'pointer',
-                                  fontFamily: 'var(--font-mono)',
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em'
+                                  fontFamily: 'var(--font-body)'
                                 }}
                               >
                                 Edit
@@ -404,7 +389,7 @@ export default function TimelineView({
               const firstImage = pin.pin_images.sort(
                 (a, b) => a.upload_order - b.upload_order
               )[0]
-              const emoji = categoryEmojis[pin.category || 'other'] || '📍'
+              const CategoryIcon = getCategoryIcon(pin.category)
 
               return (
                 <div
@@ -452,13 +437,13 @@ export default function TimelineView({
                       gap: '0.5rem',
                       marginBottom: '0.5rem'
                     }}>
-                      <span style={{ fontSize: '1rem' }}>{emoji}</span>
+                      <CategoryIcon size={16} color="var(--muted-foreground)" />
                       <h3 style={{
                         fontSize: '0.875rem',
                         fontWeight: '600',
                         color: 'var(--foreground)',
                         margin: 0,
-                        fontFamily: 'var(--font-mono)',
+                        fontFamily: 'var(--font-display)',
                         flex: 1
                       }}>
                         {pin.title}
@@ -480,12 +465,15 @@ export default function TimelineView({
                           fontSize: '0.75rem',
                           fontWeight: '600',
                           cursor: 'pointer',
-                          fontFamily: 'var(--font-mono)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em'
+                          fontFamily: 'var(--font-body)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.375rem'
                         }}
                       >
-                        📅 Schedule
+                        <Calendar size={14} />
+                        Schedule
                       </button>
                     )}
                   </div>

@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import CollectionActions from '../Collection/CollectionActions'
-import { Heart, Bookmark, MessageCircle } from 'lucide-react'
+import { Heart, MapPin } from 'lucide-react'
 
 interface BentoFeedCardProps {
   activity: any
@@ -77,28 +77,40 @@ export default function BentoFeedCard({ activity, currentUserId }: BentoFeedCard
         }}
       >
         {firstImage ? (
-          <img
-            src={firstImage}
-            alt={collection.title}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover'
-            }}
-          />
+          <>
+            <img
+              src={firstImage}
+              alt={collection.title}
+              loading="lazy"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
+            />
+            {/* Bottom scrim for depth, matching the full-bleed hero
+                treatment on the collection detail page */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 45%)',
+                pointerEvents: 'none'
+              }}
+            />
+          </>
         ) : (
           <div
             style={{
               width: '100%',
               height: '100%',
-              background: 'linear-gradient(135deg, var(--muted) 0%, var(--accent) 100%)',
+              background: 'var(--color-terracotta-subtle)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '2rem'
+              justifyContent: 'center'
             }}
           >
-            📍
+            <MapPin size={32} color="var(--accent)" strokeWidth={1.5} />
           </div>
         )}
         {/* Corner brackets */}
@@ -109,8 +121,8 @@ export default function BentoFeedCard({ activity, currentUserId }: BentoFeedCard
             left: 0,
             width: '30px',
             height: '30px',
-            borderTop: '2px solid var(--color-red-muted)',
-            borderLeft: '2px solid var(--color-red-muted)',
+            borderTop: '2px solid var(--color-terracotta-muted)',
+            borderLeft: '2px solid var(--color-terracotta-muted)',
             zIndex: 10
           }}
         />
@@ -121,8 +133,8 @@ export default function BentoFeedCard({ activity, currentUserId }: BentoFeedCard
             right: 0,
             width: '30px',
             height: '30px',
-            borderBottom: '2px solid var(--color-red-muted)',
-            borderRight: '2px solid var(--color-red-muted)',
+            borderBottom: '2px solid var(--color-terracotta-muted)',
+            borderRight: '2px solid var(--color-terracotta-muted)',
             zIndex: 10
           }}
         />
@@ -184,24 +196,20 @@ export default function BentoFeedCard({ activity, currentUserId }: BentoFeedCard
             style={{
               fontSize: '0.75rem',
               color: 'var(--muted-foreground)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
               marginBottom: '4px',
-              fontFamily: 'var(--font-mono)'
+              fontFamily: 'var(--font-body)'
             }}
           >
             {activity.username || 'Anonymous'}
           </div>
           <h3
             style={{
-              fontSize: '0.75rem',
-              fontWeight: '700',
+              fontSize: '0.9375rem',
+              fontWeight: '600',
               color: 'var(--foreground)',
               margin: 0,
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              lineHeight: '1.2',
+              fontFamily: 'var(--font-display)',
+              lineHeight: '1.25',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               display: '-webkit-box',
@@ -216,20 +224,22 @@ export default function BentoFeedCard({ activity, currentUserId }: BentoFeedCard
           style={{
             display: 'flex',
             alignItems: 'center',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
+            fontFamily: 'var(--font-body)',
+            fontSize: '0.75rem',
             color: 'var(--muted-foreground)',
             fontVariantNumeric: 'tabular-nums',
-            gap: '8px'
+            gap: '10px'
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-            ♥ <strong style={{ color: 'var(--accent)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Heart size={12} color="var(--accent)" fill="var(--accent)" />
+            <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>
               {collection.stats?.likes_count || 0}
             </strong>
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-            ⌕ <strong style={{ color: 'var(--foreground)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <MapPin size={12} color="var(--foreground)" />
+            <strong style={{ color: 'var(--foreground)', fontWeight: 600 }}>
               {collection.pin_count}
             </strong>
           </span>

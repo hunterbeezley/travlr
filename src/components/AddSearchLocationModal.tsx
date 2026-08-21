@@ -1,6 +1,7 @@
 'use client'
 import { logger } from '@/lib/logger'
 import { useState } from 'react'
+import { Globe, Lock } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { extractPlaceData, mapGoogleTypeToCategory, buildPlacePhotoUrl } from '@/lib/placeHelpers'
 
@@ -261,11 +262,9 @@ export default function AddSearchLocationModal({
               fontWeight: '700',
               margin: 0,
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em'
+              fontFamily: 'var(--font-display)'
             }}>
-              ADD TO COLLECTION
+              Add to Collection
             </h2>
             <div style={{
               fontSize: '0.875rem',
@@ -306,12 +305,10 @@ export default function AddSearchLocationModal({
                 fontSize: '0.75rem',
                 fontWeight: '700',
                 marginBottom: '0.5rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                fontFamily: 'var(--font-body)',
                 color: 'var(--muted-foreground)'
               }}>
-                SELECT COLLECTION
+                Select Collection
               </label>
               <select
                 value={selectedCollectionId}
@@ -348,13 +345,11 @@ export default function AddSearchLocationModal({
                 cursor: 'pointer',
                 fontSize: '0.875rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                fontFamily: 'var(--font-body)',
                 marginBottom: '1.5rem'
               }}
             >
-              + CREATE NEW COLLECTION
+              + Create New Collection
             </button>
           </>
         ) : (
@@ -366,12 +361,10 @@ export default function AddSearchLocationModal({
                 fontSize: '0.75rem',
                 fontWeight: '700',
                 marginBottom: '0.5rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                fontFamily: 'var(--font-body)',
                 color: 'var(--muted-foreground)'
               }}>
-                COLLECTION TITLE
+                Collection Title
               </label>
               <input
                 type="text"
@@ -398,12 +391,10 @@ export default function AddSearchLocationModal({
                 fontSize: '0.75rem',
                 fontWeight: '700',
                 marginBottom: '0.5rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                fontFamily: 'var(--font-body)',
                 color: 'var(--muted-foreground)'
               }}>
-                DESCRIPTION (OPTIONAL)
+                Description (optional)
               </label>
               <textarea
                 value={newCollectionDescription}
@@ -438,22 +429,22 @@ export default function AddSearchLocationModal({
               }}>
                 <div>
                   <div style={{
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: 'var(--font-body)',
                     fontSize: '0.875rem',
                     fontWeight: '700',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
-                    color: 'var(--foreground)'
+                    color: 'var(--foreground)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem'
                   }}>
-                    {isPublic ? '🌍 PUBLIC COLLECTION' : '🔒 PRIVATE COLLECTION'}
+                    {isPublic ? <Globe size={16} /> : <Lock size={16} />}
+                    {isPublic ? 'Public Collection' : 'Private Collection'}
                   </div>
                   <div style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.65rem',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '0.75rem',
                     marginTop: '0.25rem',
-                    color: 'var(--muted-foreground)',
-                    textTransform: 'none',
-                    letterSpacing: '0.02em'
+                    color: 'var(--muted-foreground)'
                   }}>
                     {isPublic ? 'Visible to everyone' : 'Only visible to you'}
                   </div>
@@ -512,13 +503,11 @@ export default function AddSearchLocationModal({
                 cursor: 'pointer',
                 fontSize: '0.875rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                fontFamily: 'var(--font-body)',
                 marginBottom: '1.5rem'
               }}
             >
-              ← BACK TO EXISTING COLLECTIONS
+              ← Back to Existing Collections
             </button>
           </>
         )}
@@ -557,13 +546,11 @@ export default function AddSearchLocationModal({
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: '0.875rem',
               fontWeight: '700',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              fontFamily: 'var(--font-body)',
               opacity: loading ? 0.6 : 1
             }}
           >
-            CANCEL
+            Cancel
           </button>
           <button
             type="button"
@@ -578,13 +565,11 @@ export default function AddSearchLocationModal({
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: '0.875rem',
               fontWeight: '700',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              fontFamily: 'var(--font-body)',
               opacity: loading ? 0.6 : 1
             }}
           >
-            {loading ? 'SAVING...' : 'SAVE PIN'}
+            {loading ? 'Saving...' : 'Save Pin'}
           </button>
         </div>
       </div>

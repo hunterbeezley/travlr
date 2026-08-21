@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { DatabaseService } from '@/lib/database'
 import ImageSlideshow from './ImageSlideshow'
+import { X, AlertTriangle, Camera } from 'lucide-react'
 
 interface PinImageViewerModalProps {
   isOpen: boolean
@@ -92,8 +93,6 @@ export default function PinImageViewerModal({
           color: '#000',
           border: '2px solid rgba(0, 0, 0, 0.1)',
           cursor: 'pointer',
-          fontSize: '20px',
-          fontWeight: 'bold',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -113,7 +112,7 @@ export default function PinImageViewerModal({
         }}
         title="Close"
       >
-        ✕
+        <X size={20} />
       </button>
 
       <div style={{
@@ -138,11 +137,12 @@ export default function PinImageViewerModal({
             margin: 0,
             fontSize: '1.25rem',
             fontWeight: '600',
+            fontFamily: 'var(--font-display)',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
           }}>
-            🖼️ {pinTitle}
+            {pinTitle}
           </h2>
         </div>
 
@@ -184,7 +184,9 @@ export default function PinImageViewerModal({
               textAlign: 'center'
             }}>
               <div>
-                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚠️</div>
+                <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+                  <AlertTriangle size={32} color="var(--destructive)" />
+                </div>
                 <div>{error}</div>
                 <button
                   onClick={loadPinImages}
@@ -214,7 +216,9 @@ export default function PinImageViewerModal({
               textAlign: 'center'
             }}>
               <div>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📷</div>
+                <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+                  <Camera size={48} color="var(--muted-foreground)" />
+                </div>
                 <div>No images found for this pin</div>
                 <div style={{ fontSize: '0.875rem', marginTop: '0.5rem', opacity: 0.7 }}>
                   Add some images to see them here!

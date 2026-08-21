@@ -188,7 +188,7 @@ export default function FeedCard({ activity, currentUserId }: FeedCardProps) {
           <h3 style={{
             fontSize: '1.25rem',
             fontWeight: '700',
-            fontFamily: 'var(--font-mono)',
+            fontFamily: 'var(--font-display)',
             color: 'var(--accent)',
             transition: 'var(--transition)',
             cursor: 'pointer'

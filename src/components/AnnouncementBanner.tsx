@@ -32,8 +32,8 @@ export default function AnnouncementBanner({
 
   const variantStyles = {
     info: {
-      background: 'linear-gradient(135deg, rgba(230, 57, 70, 0.9) 0%, rgba(214, 40, 57, 0.9) 100%)',
-      borderColor: 'rgba(230, 57, 70, 0.5)'
+      background: 'linear-gradient(135deg, rgba(224, 92, 58, 0.9) 0%, rgba(201, 78, 48, 0.9) 100%)',
+      borderColor: 'rgba(224, 92, 58, 0.5)'
     },
     success: {
       background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.9) 0%, rgba(22, 163, 74, 0.9) 100%)',
@@ -64,7 +64,7 @@ export default function AnnouncementBanner({
         zIndex: 50,
         color: 'white',
         fontSize: '0.875rem',
-        fontFamily: 'var(--font-mono)',
+        fontFamily: 'var(--font-body)',
         fontWeight: '500',
         textAlign: 'center',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'

@@ -1,6 +1,7 @@
 'use client'
 import { logger } from '@/lib/logger'
 import { useState } from 'react'
+import { Heart, Bookmark, MessageCircle, Share2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import ShareCollectionModal from '../Share/ShareCollectionModal'
 
@@ -110,9 +111,7 @@ export default function CollectionActions({
           color: stats.user_liked ? 'white' : 'var(--foreground)',
           fontSize: '0.875rem',
           fontWeight: '600',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          fontFamily: 'var(--font-body)',
           transition: 'var(--transition)',
           opacity: loading ? 0.6 : 1
         }}
@@ -127,7 +126,7 @@ export default function CollectionActions({
           }
         }}
       >
-        <span>{stats.user_liked ? '❤️' : '🤍'}</span>
+        <Heart size={16} fill={stats.user_liked ? 'currentColor' : 'none'} />
         <span>{stats.likes_count}</span>
       </button>
 
@@ -148,9 +147,7 @@ export default function CollectionActions({
           color: stats.user_saved ? 'white' : 'var(--foreground)',
           fontSize: '0.875rem',
           fontWeight: '600',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          fontFamily: 'var(--font-body)',
           transition: 'var(--transition)',
           opacity: loading ? 0.6 : 1
         }}
@@ -165,7 +162,7 @@ export default function CollectionActions({
           }
         }}
       >
-        <span>{stats.user_saved ? '💾' : '🔖'}</span>
+        <Bookmark size={16} fill={stats.user_saved ? 'currentColor' : 'none'} />
         <span>{stats.saves_count}</span>
       </button>
 
@@ -178,11 +175,9 @@ export default function CollectionActions({
         color: 'var(--muted-foreground)',
         fontSize: '0.875rem',
         fontWeight: '600',
-        fontFamily: 'var(--font-mono)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em'
+        fontFamily: 'var(--font-body)'
       }}>
-        <span>💬</span>
+        <MessageCircle size={16} />
         <span>{stats.comments_count}</span>
       </div>
 
@@ -202,9 +197,7 @@ export default function CollectionActions({
             color: 'var(--foreground)',
             fontSize: '0.875rem',
             fontWeight: '600',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-body)',
             transition: 'var(--transition)'
           }}
           onMouseEnter={(e) => {
@@ -214,7 +207,7 @@ export default function CollectionActions({
             e.currentTarget.style.borderColor = 'var(--border)'
           }}
         >
-          <span>🔗</span>
+          <Share2 size={16} />
           {stats.shares_count !== undefined && stats.shares_count > 0 && (
             <span>{stats.shares_count}</span>
           )}

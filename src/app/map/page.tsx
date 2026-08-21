@@ -102,21 +102,19 @@ export default function HomePage() {
               <svg width="48" height="48" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
                 {/* Geometric logo */}
                 <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
-                <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
-                <circle cx="24" cy="24" r="8" fill="var(--color-red)"/>
-                <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-                <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-                <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-                <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
+                <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--accent)" strokeWidth="2"/>
+                <circle cx="24" cy="24" r="8" fill="var(--accent)"/>
+                <line x1="4" y1="4" x2="8" y2="8" stroke="var(--accent)" strokeWidth="2"/>
+                <line x1="44" y1="4" x2="40" y2="8" stroke="var(--accent)" strokeWidth="2"/>
+                <line x1="4" y1="44" x2="8" y2="40" stroke="var(--accent)" strokeWidth="2"/>
+                <line x1="44" y1="44" x2="40" y2="40" stroke="var(--accent)" strokeWidth="2"/>
               </svg>
               <h1 style={{
                 fontSize: '3rem',
                 fontWeight: '700',
                 color: 'var(--color-white)',
                 margin: 0,
-                fontFamily: 'var(--font-display)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em'
+                fontFamily: 'var(--font-display)'
               }}>
                 Travlr
               </h1>

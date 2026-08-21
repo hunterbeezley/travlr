@@ -1,6 +1,7 @@
 'use client'
 import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
+import { X, Smartphone } from 'lucide-react'
 
 export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
@@ -136,7 +137,7 @@ export default function PWAInstallPrompt() {
             e.currentTarget.style.color = 'var(--muted-foreground)'
           }}
         >
-          ✕
+          <X size={20} />
         </button>
 
         <div style={{
@@ -147,12 +148,12 @@ export default function PWAInstallPrompt() {
           {/* Icon */}
           <svg width="48" height="48" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
             <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
-            <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
-            <circle cx="24" cy="24" r="6" fill="var(--color-red)"/>
-            <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-            <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-            <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-            <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
+            <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--accent)" strokeWidth="2"/>
+            <circle cx="24" cy="24" r="6" fill="var(--accent)"/>
+            <line x1="4" y1="4" x2="8" y2="8" stroke="var(--accent)" strokeWidth="2"/>
+            <line x1="44" y1="4" x2="40" y2="8" stroke="var(--accent)" strokeWidth="2"/>
+            <line x1="4" y1="44" x2="8" y2="40" stroke="var(--accent)" strokeWidth="2"/>
+            <line x1="44" y1="44" x2="40" y2="40" stroke="var(--accent)" strokeWidth="2"/>
           </svg>
 
           {/* Content */}
@@ -161,11 +162,13 @@ export default function PWAInstallPrompt() {
               fontSize: '1.125rem',
               fontWeight: '700',
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              color: 'var(--foreground)'
+              fontFamily: 'var(--font-display)',
+              color: 'var(--foreground)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}>
-              📲 Install Travlr
+              <Smartphone size={20} /> Install Travlr
             </h3>
             <p style={{
               fontSize: '0.875rem',
@@ -192,9 +195,7 @@ export default function PWAInstallPrompt() {
                   cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '600',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   transition: 'var(--transition)'
                 }}
                 onMouseEnter={(e) => {
@@ -220,9 +221,7 @@ export default function PWAInstallPrompt() {
                   cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '600',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   transition: 'var(--transition)'
                 }}
                 onMouseEnter={(e) => {

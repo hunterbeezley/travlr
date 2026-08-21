@@ -204,10 +204,8 @@ export default function Auth() {
               background: mode === 'signin' ? 'var(--accent)' : 'transparent',
               color: mode === 'signin' ? 'white' : 'var(--foreground)',
               fontWeight: '700',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              fontSize: '0.75rem',
+              fontFamily: 'var(--font-body)',
+              fontSize: '0.875rem',
               cursor: 'pointer',
               transition: 'var(--transition)'
             }}
@@ -229,10 +227,8 @@ export default function Auth() {
               background: mode === 'signup' ? 'var(--accent)' : 'transparent',
               color: mode === 'signup' ? 'white' : 'var(--foreground)',
               fontWeight: '700',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              fontSize: '0.75rem',
+              fontFamily: 'var(--font-body)',
+              fontSize: '0.875rem',
               cursor: 'pointer',
               transition: 'var(--transition)'
             }}
@@ -278,11 +274,9 @@ export default function Auth() {
           <label style={{
             display: 'block',
             fontSize: '0.75rem',
-            fontWeight: '700',
+            fontWeight: '600',
             marginBottom: '0.5rem',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
+            fontFamily: 'var(--font-body)',
             color: 'var(--muted-foreground)'
           }}>
             Email Address
@@ -305,11 +299,9 @@ export default function Auth() {
             <label style={{
               display: 'block',
               fontSize: '0.75rem',
-              fontWeight: '700',
+              fontWeight: '600',
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              fontFamily: 'var(--font-body)',
               color: 'var(--muted-foreground)'
             }}>
               Password
@@ -334,11 +326,9 @@ export default function Auth() {
             <label style={{
               display: 'block',
               fontSize: '0.75rem',
-              fontWeight: '700',
+              fontWeight: '600',
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              fontFamily: 'var(--font-body)',
               color: 'var(--muted-foreground)'
             }}>
               Confirm Password
@@ -363,11 +353,9 @@ export default function Auth() {
             <label style={{
               display: 'block',
               fontSize: '0.75rem',
-              fontWeight: '700',
+              fontWeight: '600',
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              fontFamily: 'var(--font-body)',
               color: 'var(--muted-foreground)'
             }}>
               Date of Birth
@@ -395,7 +383,7 @@ export default function Auth() {
         <button
           type="submit"
           disabled={loading || !email || (mode !== 'reset' && !password)}
-          className={`btn ${mode === 'signup' ? 'btn-gradient' : 'btn-primary'} w-full`}
+          className="btn btn-primary w-full"
           style={{ marginTop: '0.5rem' }}
         >
           {loading ? (
@@ -407,9 +395,9 @@ export default function Auth() {
             </div>
           ) : (
             <>
-              {mode === 'signin' && '🚀 Sign In'}
-              {mode === 'signup' && '✨ Create Account'}
-              {mode === 'reset' && '📧 Send Reset Link'}
+              {mode === 'signin' && 'Sign In'}
+              {mode === 'signup' && 'Create Account'}
+              {mode === 'reset' && 'Send Reset Link'}
             </>
           )}
         </button>
@@ -432,7 +420,7 @@ export default function Auth() {
               fontSize: '0.875rem',
               cursor: 'pointer',
               textDecoration: 'underline',
-              fontFamily: 'var(--font-mono)'
+              fontFamily: 'var(--font-body)'
             }}
           >
             Forgot your password?
@@ -457,7 +445,7 @@ export default function Auth() {
               fontSize: '0.875rem',
               cursor: 'pointer',
               textDecoration: 'underline',
-              fontFamily: 'var(--font-mono)'
+              fontFamily: 'var(--font-body)'
             }}
           >
             ← Back to sign in

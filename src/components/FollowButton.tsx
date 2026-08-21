@@ -93,18 +93,16 @@ export default function FollowButton({
         border: `2px solid ${isFollowing ? 'var(--border)' : 'var(--accent)'}`,
         borderRadius: 'var(--radius)',
         cursor: loading || checking ? 'not-allowed' : 'pointer',
-        fontFamily: 'var(--font-mono)',
+        fontFamily: 'var(--font-body)',
         fontWeight: '700',
-        letterSpacing: '0.1em',
-        textTransform: 'uppercase',
         transition: 'var(--transition)',
         opacity: loading || checking ? 0.6 : 1
       }}
       onMouseEnter={(e) => {
         if (!loading && !checking) {
           if (isFollowing) {
-            e.currentTarget.style.borderColor = 'var(--color-red)'
-            e.currentTarget.style.color = 'var(--color-red)'
+            e.currentTarget.style.borderColor = 'var(--accent)'
+            e.currentTarget.style.color = 'var(--accent)'
           } else {
             e.currentTarget.style.transform = 'translateY(-2px)'
           }
@@ -121,7 +119,7 @@ export default function FollowButton({
         }
       }}
     >
-      {checking ? '...' : loading ? (isFollowing ? 'UNFOLLOWING...' : 'FOLLOWING...') : (isFollowing ? 'FOLLOWING' : 'FOLLOW')}
+      {checking ? '...' : loading ? (isFollowing ? 'Unfollowing...' : 'Following...') : (isFollowing ? 'Following' : 'Follow')}
     </button>
   )
 }

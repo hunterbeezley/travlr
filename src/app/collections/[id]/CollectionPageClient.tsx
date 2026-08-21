@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger'
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { MapPin, Heart, Bookmark, MessageCircle, Globe2, Lock, Share2, Pencil, List, Calendar, Trash2 } from 'lucide-react'
 import Toast from '@/components/Toast'
 import ReportCommentModal from '@/components/ReportCommentModal'
 import Navbar from '@/components/Navbar'
@@ -12,6 +13,7 @@ import ForkPinModal from '@/components/ForkPinModal'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Collection, Pin, Comment } from '@/lib/types/collection'
+import { getCategoryIcon } from '@/lib/categoryIcons'
 
 interface CollectionPageClientProps {
   collection: Collection
@@ -24,19 +26,6 @@ interface CollectionPageClientProps {
     net_score: number
   }
   initialUserVote: 'up' | 'down' | null
-}
-
-const categoryEmojis: Record<string, string> = {
-  restaurant: '🍽️',
-  cafe: '☕',
-  bar: '🍺',
-  attraction: '🎯',
-  nature: '🌲',
-  shopping: '🛍️',
-  hotel: '🏨',
-  transport: '🚌',
-  activity: '🎪',
-  other: '📍'
 }
 
 // Helper function to render comment text with styled @ mentions
@@ -820,9 +809,7 @@ export default function CollectionPageClient({
                     fontWeight: '700',
                     color: 'var(--foreground)',
                     marginBottom: '1rem',
-                    fontFamily: 'var(--font-display)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
+                    fontFamily: 'var(--font-display)'
                   }}>
                     {collection.title}
                   </h1>
@@ -908,16 +895,14 @@ export default function CollectionPageClient({
                   flexWrap: 'wrap',
                   alignItems: 'center',
                   fontSize: '0.875rem',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  fontFamily: 'var(--font-body)'
                 }}>
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem'
                   }}>
-                    <span style={{ fontSize: '1.25rem' }}>📍</span>
+                    <MapPin size={20} color="var(--muted-foreground)" />
                     <span style={{ color: 'var(--muted-foreground)' }}>
                       <strong style={{ color: 'var(--foreground)' }}>{pinCount}</strong> {pinCount === 1 ? 'pin' : 'pins'}
                     </span>
@@ -930,7 +915,7 @@ export default function CollectionPageClient({
                         alignItems: 'center',
                         gap: '0.5rem'
                       }}>
-                        <span style={{ fontSize: '1.25rem' }}>❤️</span>
+                        <Heart size={20} color="var(--muted-foreground)" />
                         <span style={{ color: 'var(--muted-foreground)' }}>
                           <strong style={{ color: 'var(--foreground)' }}>{collectionStats.likes_count || 0}</strong> {collectionStats.likes_count === 1 ? 'like' : 'likes'}
                         </span>
@@ -941,7 +926,7 @@ export default function CollectionPageClient({
                         alignItems: 'center',
                         gap: '0.5rem'
                       }}>
-                        <span style={{ fontSize: '1.25rem' }}>💾</span>
+                        <Bookmark size={20} color="var(--muted-foreground)" />
                         <span style={{ color: 'var(--muted-foreground)' }}>
                           <strong style={{ color: 'var(--foreground)' }}>{collectionStats.saves_count || 0}</strong> {collectionStats.saves_count === 1 ? 'save' : 'saves'}
                         </span>
@@ -954,7 +939,7 @@ export default function CollectionPageClient({
                     alignItems: 'center',
                     gap: '0.5rem'
                   }}>
-                    <span style={{ fontSize: '1.25rem' }}>💬</span>
+                    <MessageCircle size={20} color="var(--muted-foreground)" />
                     <span style={{ color: 'var(--muted-foreground)' }}>
                       <strong style={{ color: 'var(--foreground)' }}>{comments.length}</strong> {comments.length === 1 ? 'comment' : 'comments'}
                     </span>
@@ -965,7 +950,11 @@ export default function CollectionPageClient({
                     alignItems: 'center',
                     gap: '0.5rem'
                   }}>
-                    <span style={{ fontSize: '1.25rem' }}>{collection.is_public ? '🌍' : '🔒'}</span>
+                    {collection.is_public ? (
+                      <Globe2 size={20} color="var(--muted-foreground)" />
+                    ) : (
+                      <Lock size={20} color="var(--muted-foreground)" />
+                    )}
                     <span style={{ color: 'var(--muted-foreground)' }}>
                       {collection.is_public ? 'Public' : 'Private'}
                     </span>
@@ -1001,15 +990,20 @@ export default function CollectionPageClient({
                     gap: '0.5rem'
                   }}
                 >
-                  <span>🔗</span> SHARE
+                  <Share2 size={16} /> Share
                 </button>
 
                 {isOwner && (
                   <button
                     onClick={() => setIsEditingCollection(true)}
                     className="btn btn-secondary"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
                   >
-                    ✏️ EDIT COLLECTION
+                    <Pencil size={16} /> Edit Collection
                   </button>
                 )}
               </div>
@@ -1032,8 +1026,6 @@ export default function CollectionPageClient({
                 fontWeight: '700',
                 color: 'var(--foreground)',
                 fontFamily: 'var(--font-display)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
                 margin: 0
               }}>
                 {collection.view_mode === 'timeline' ? 'Itinerary Timeline' : 'Pins in this Collection'}
@@ -1060,6 +1052,9 @@ export default function CollectionPageClient({
                       })
                   }}
                   style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
                     padding: '0.5rem 1rem',
                     borderRadius: 'calc(var(--radius) - 2px)',
                     border: 'none',
@@ -1069,12 +1064,10 @@ export default function CollectionPageClient({
                     fontSize: '0.875rem',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
+                    fontFamily: 'var(--font-body)'
                   }}
                 >
-                  📋 List
+                  <List size={16} /> List
                 </button>
                 <button
                   onClick={() => {
@@ -1089,6 +1082,9 @@ export default function CollectionPageClient({
                       })
                   }}
                   style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
                     padding: '0.5rem 1rem',
                     borderRadius: 'calc(var(--radius) - 2px)',
                     border: 'none',
@@ -1098,12 +1094,10 @@ export default function CollectionPageClient({
                     fontSize: '0.875rem',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
+                    fontFamily: 'var(--font-body)'
                   }}
                 >
-                  📅 Timeline
+                  <Calendar size={16} /> Timeline
                 </button>
               </div>
             </div>
@@ -1126,7 +1120,7 @@ export default function CollectionPageClient({
               }}>
                 {pins.map((pin) => {
                   const firstImage = pin.pin_images.sort((a, b) => a.upload_order - b.upload_order)[0]
-                  const emoji = categoryEmojis[pin.category || 'other'] || '📍'
+                  const CategoryIcon = getCategoryIcon(pin.category)
 
                   return (
                     <div
@@ -1187,7 +1181,6 @@ export default function CollectionPageClient({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '4rem',
                           position: 'relative'
                         }}>
                           <div style={{
@@ -1196,7 +1189,7 @@ export default function CollectionPageClient({
                             left: '50%',
                             transform: 'translate(-50%, -50%)'
                           }}>
-                            {emoji}
+                            <CategoryIcon size={48} color="white" />
                           </div>
                         </div>
                       )}
@@ -1209,15 +1202,13 @@ export default function CollectionPageClient({
                           gap: '0.5rem',
                           marginBottom: '0.5rem'
                         }}>
-                          <span style={{ fontSize: '1.25rem' }}>{emoji}</span>
+                          <CategoryIcon size={18} color="var(--muted-foreground)" />
                           <h3 style={{
                             fontSize: '1rem',
                             fontWeight: '600',
                             color: 'var(--foreground)',
                             margin: 0,
-                            fontFamily: 'var(--font-mono)',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
+                            fontFamily: 'var(--font-display)',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
@@ -1278,9 +1269,7 @@ export default function CollectionPageClient({
                               borderRadius: 'var(--radius)',
                               fontSize: '0.75rem',
                               fontWeight: '700',
-                              fontFamily: 'var(--font-mono)',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.05em',
+                              fontFamily: 'var(--font-body)',
                               cursor: 'pointer',
                               transition: 'all 0.2s',
                             }}
@@ -1304,8 +1293,8 @@ export default function CollectionPageClient({
                           left: 0,
                           width: '20px',
                           height: '20px',
-                          borderTop: '2px solid var(--color-red-muted)',
-                          borderLeft: '2px solid var(--color-red-muted)',
+                          borderTop: '2px solid var(--color-terracotta-muted)',
+                          borderLeft: '2px solid var(--color-terracotta-muted)',
                           zIndex: 10,
                           opacity: 0,
                           transition: 'opacity 0.2s ease'
@@ -1319,8 +1308,8 @@ export default function CollectionPageClient({
                           right: 0,
                           width: '20px',
                           height: '20px',
-                          borderBottom: '2px solid var(--color-red-muted)',
-                          borderRight: '2px solid var(--color-red-muted)',
+                          borderBottom: '2px solid var(--color-terracotta-muted)',
+                          borderRight: '2px solid var(--color-terracotta-muted)',
                           zIndex: 10,
                           opacity: 0,
                           transition: 'opacity 0.2s ease'
@@ -1341,7 +1330,9 @@ export default function CollectionPageClient({
             padding: '4rem 2rem',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📍</div>
+            <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+              <MapPin size={48} color="var(--muted-foreground)" />
+            </div>
             <h3 style={{
               fontSize: '1.25rem',
               fontWeight: '600',
@@ -1363,7 +1354,7 @@ export default function CollectionPageClient({
                 onClick={() => router.push('/')}
                 className="btn btn-primary"
               >
-                GO TO MAP
+                Go to Map
               </button>
             )}
           </div>
@@ -1382,9 +1373,7 @@ export default function CollectionPageClient({
             fontWeight: '700',
             color: 'var(--foreground)',
             marginBottom: '1.5rem',
-            fontFamily: 'var(--font-display)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            fontFamily: 'var(--font-display)'
           }}>
             Comments ({comments.length})
           </h2>
@@ -1429,7 +1418,7 @@ export default function CollectionPageClient({
                     cursor: postingComment || !newComment.trim() ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {postingComment ? 'POSTING...' : 'POST COMMENT'}
+                  {postingComment ? 'Posting...' : 'Post Comment'}
                 </button>
               </div>
             </div>
@@ -1555,6 +1544,9 @@ export default function CollectionPageClient({
                               <button
                                 onClick={() => startEditComment(comment)}
                                 style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.375rem',
                                   padding: '0.25rem 0.75rem',
                                   background: 'var(--muted)',
                                   border: '1px solid var(--border)',
@@ -1564,13 +1556,16 @@ export default function CollectionPageClient({
                                   cursor: 'pointer'
                                 }}
                               >
-                                Edit
+                                <Pencil size={14} /> Edit
                               </button>
                               <button
                                 onClick={() => handleDeleteComment(comment.id)}
                                 style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.375rem',
                                   padding: '0.25rem 0.75rem',
-                                  background: '#ff6b6b',
+                                  background: 'var(--destructive)',
                                   border: 'none',
                                   borderRadius: 'var(--radius)',
                                   fontSize: '0.75rem',
@@ -1578,7 +1573,7 @@ export default function CollectionPageClient({
                                   cursor: 'pointer'
                                 }}
                               >
-                                Delete
+                                <Trash2 size={14} /> Delete
                               </button>
                             </>
                           ) : user && (
@@ -1594,8 +1589,8 @@ export default function CollectionPageClient({
                                 cursor: 'pointer'
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = '#ef4444'
-                                e.currentTarget.style.color = '#ef4444'
+                                e.currentTarget.style.borderColor = 'var(--destructive)'
+                                e.currentTarget.style.color = 'var(--destructive)'
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.borderColor = 'var(--border)'
@@ -1687,9 +1682,7 @@ export default function CollectionPageClient({
                       fontSize: '0.875rem',
                       fontWeight: '600',
                       cursor: loadingMoreComments ? 'not-allowed' : 'pointer',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
+                      fontFamily: 'var(--font-body)',
                       transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
@@ -1762,10 +1755,8 @@ export default function CollectionPageClient({
             <h2 style={{
               fontSize: '1.5rem',
               fontWeight: '700',
-              fontFamily: 'var(--font-mono)',
-              marginBottom: '1.5rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-display)',
+              marginBottom: '1.5rem'
             }}>
               Edit Collection
             </h2>
@@ -1925,7 +1916,7 @@ export default function CollectionPageClient({
                         borderRadius: 'var(--radius)',
                         fontSize: '0.875rem',
                         color: 'var(--foreground)',
-                        fontFamily: 'var(--font-mono)'
+                        fontFamily: 'var(--font-body)'
                       }}
                     />
                   </div>
@@ -1952,7 +1943,7 @@ export default function CollectionPageClient({
                         borderRadius: 'var(--radius)',
                         fontSize: '0.875rem',
                         color: 'var(--foreground)',
-                        fontFamily: 'var(--font-mono)'
+                        fontFamily: 'var(--font-body)'
                       }}
                     />
                   </div>
@@ -1992,9 +1983,7 @@ export default function CollectionPageClient({
                     borderRadius: 'var(--radius)',
                     cursor: savingCollection ? 'not-allowed' : 'pointer',
                     fontWeight: '600',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
+                    fontFamily: 'var(--font-body)',
                     fontSize: '0.75rem',
                     opacity: savingCollection ? 0.5 : 1
                   }}
@@ -2013,9 +2002,7 @@ export default function CollectionPageClient({
                     borderRadius: 'var(--radius)',
                     cursor: savingCollection || !editForm.title.trim() ? 'not-allowed' : 'pointer',
                     fontWeight: '600',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
+                    fontFamily: 'var(--font-body)',
                     fontSize: '0.75rem',
                     opacity: savingCollection || !editForm.title.trim() ? 0.5 : 1
                   }}

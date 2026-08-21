@@ -1,6 +1,7 @@
 'use client'
 import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
+import { Globe, Users, Building2, MapPin, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { DatabaseService, CityFeedCollection, CityWithCollections } from '@/lib/database'
 import CollectionDetailsModal from './CollectionDetailsModal'
 
@@ -92,7 +93,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
           animation: 'spin 1s linear infinite',
           margin: '0 auto 1rem'
         }} />
-        <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', fontFamily: 'var(--font-mono)' }}>
+        <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', fontFamily: 'var(--font-body)' }}>
           Loading cities...
         </p>
       </div>
@@ -107,14 +108,14 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
         padding: '4rem 2rem',
         textAlign: 'center'
       }}>
-        <div style={{ fontSize: '4rem', marginBottom: '2rem' }}>🌍</div>
+        <div style={{ marginBottom: '2rem', color: 'var(--muted-foreground)', display: 'flex', justifyContent: 'center' }}>
+          <Globe size={56} />
+        </div>
         <h1 style={{
           fontSize: '2rem',
           fontWeight: '700',
           marginBottom: '1rem',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em'
+          fontFamily: 'var(--font-display)'
         }}>
           No Cities Yet
         </h1>
@@ -147,21 +148,19 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
           fontSize: 'clamp(1.5rem, 5vw, 2.5rem)',
           fontWeight: '700',
           marginBottom: '0.5rem',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
+          fontFamily: 'var(--font-display)',
           display: 'flex',
           alignItems: 'center',
           gap: 'clamp(0.5rem, 2vw, 1rem)',
           flexWrap: 'wrap'
         }}>
-          <span>🌍</span>
+          <Globe size={32} />
           <span>Discover</span>
         </h1>
         <p style={{
           color: 'var(--muted-foreground)',
           fontSize: 'clamp(0.875rem, 2vw, 1rem)',
-          fontFamily: 'var(--font-mono)'
+          fontFamily: 'var(--font-body)'
         }}>
           Explore curated collections from cities around the world
         </p>
@@ -181,16 +180,17 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
         {/* City Selector */}
         <div>
           <label style={{
-            display: 'block',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem',
             fontSize: '0.75rem',
             fontWeight: '700',
             marginBottom: '0.75rem',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
+            fontFamily: 'var(--font-body)',
             color: 'var(--foreground)'
           }}>
-            📍 Select City
+            <MapPin size={14} />
+            Select City
           </label>
           <select
             value={selectedCity || ''}
@@ -203,7 +203,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
               background: 'var(--background)',
               color: 'var(--foreground)',
               fontSize: '1rem',
-              fontFamily: 'var(--font-mono)',
+              fontFamily: 'var(--font-body)',
               cursor: 'pointer',
               fontWeight: '600'
             }}
@@ -230,9 +230,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
               fontSize: '0.75rem',
               fontWeight: '700',
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              fontFamily: 'var(--font-body)',
               color: 'var(--foreground)'
             }}>
               Sort By
@@ -248,16 +246,14 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
                 background: 'var(--background)',
                 color: 'var(--foreground)',
                 fontSize: '0.875rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                fontFamily: 'var(--font-body)',
                 fontWeight: '700',
                 cursor: 'pointer'
               }}
             >
-              <option value="popular">📌 Most Pins</option>
-              <option value="recent">🕐 Most Recent</option>
-              <option value="top_rated">⭐ Top Rated</option>
+              <option value="popular">Most Pins</option>
+              <option value="recent">Most Recent</option>
+              <option value="top_rated">Top Rated</option>
             </select>
           </div>
 
@@ -273,9 +269,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
               background: friendsOnly ? 'rgba(99, 102, 241, 0.1)' : 'var(--background)',
               cursor: 'pointer',
               fontSize: '0.875rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              fontFamily: 'var(--font-body)',
               fontWeight: '700',
               transition: 'all 0.2s ease',
               userSelect: 'none'
@@ -290,7 +284,10 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
                   height: '18px'
                 }}
               />
-              <span>👥 Friends Only</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+                <Users size={16} />
+                Friends Only
+              </span>
             </label>
           </div>
         </div>
@@ -311,7 +308,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
             animation: 'spin 1s linear infinite',
             margin: '0 auto 1rem'
           }} />
-          <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', fontFamily: 'var(--font-mono)' }}>
+          <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', fontFamily: 'var(--font-body)' }}>
             Loading collections...
           </p>
         </div>
@@ -323,14 +320,14 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
           border: '2px solid var(--border)',
           borderRadius: 'var(--radius-lg)'
         }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏙️</div>
+          <div style={{ marginBottom: '1rem', color: 'var(--muted-foreground)', display: 'flex', justifyContent: 'center' }}>
+            <Building2 size={40} />
+          </div>
           <h3 style={{
             fontSize: '1.5rem',
             fontWeight: '700',
             marginBottom: '0.5rem',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em'
+            fontFamily: 'var(--font-body)'
           }}>
             No Collections Found
           </h3>
@@ -399,9 +396,9 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '4rem'
+                  color: 'white'
                 }}>
-                  📌
+                  <MapPin size={56} />
                 </div>
               )}
 
@@ -412,9 +409,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
                   fontSize: '1.25rem',
                   fontWeight: '700',
                   marginBottom: '1rem',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   lineHeight: '1.3'
                 }}>
                   {collection.title}
@@ -478,7 +473,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
                     <div style={{
                       fontSize: '0.875rem',
                       fontWeight: '700',
-                      fontFamily: 'var(--font-mono)',
+                      fontFamily: 'var(--font-body)',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
@@ -488,7 +483,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
                     <div style={{
                       fontSize: '0.75rem',
                       color: 'var(--muted-foreground)',
-                      fontFamily: 'var(--font-mono)'
+                      fontFamily: 'var(--font-body)'
                     }}>
                       {collection.city}{collection.state ? `, ${collection.state}` : ''}
                     </div>
@@ -501,7 +496,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
                   gap: '1rem',
                   flexWrap: 'wrap',
                   fontSize: '0.875rem',
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-body)',
                   fontWeight: '700'
                 }}>
                   <div style={{
@@ -510,7 +505,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
                     gap: '0.5rem',
                     color: 'var(--foreground)'
                   }}>
-                    <span>📌</span>
+                    <MapPin size={16} />
                     <span>{collection.pin_count} pin{collection.pin_count !== 1 ? 's' : ''}</span>
                   </div>
                   {collection.net_score !== 0 && (
@@ -520,7 +515,7 @@ export default function CityFeedTimeline({ userId }: CityFeedTimelineProps) {
                       gap: '0.5rem',
                       color: collection.net_score > 0 ? '#22c55e' : '#ef4444'
                     }}>
-                      <span>{collection.net_score > 0 ? '👍' : '👎'}</span>
+                      {collection.net_score > 0 ? <ThumbsUp size={16} /> : <ThumbsDown size={16} />}
                       <span>{collection.net_score > 0 ? '+' : ''}{collection.net_score}</span>
                     </div>
                   )}

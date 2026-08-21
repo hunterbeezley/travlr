@@ -39,9 +39,7 @@ export default function FeedFilters({
             cursor: 'pointer',
             fontSize: '0.75rem',
             fontWeight: '600',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-body)',
             transition: 'var(--transition)',
             whiteSpace: 'nowrap'
           }}

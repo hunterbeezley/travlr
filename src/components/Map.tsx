@@ -10,6 +10,7 @@ import { DatabaseService, FriendsCollection, DiscoverCollectionInBounds, Collect
 import { logger } from '@/lib/logger'
 import { getCachedPlaces, setCachedPlaces } from '@/lib/placesCache'
 import { Z_INDEX, FAB } from '@/lib/mapUiConstants'
+import { Search, Map as MapIcon, MapPin, Folder, X } from 'lucide-react'
 import PinCreationModal from './PinCreationModal'
 import PinEditModal from './PinEditModal'
 import PinImageViewerModal from './PinImageViewerModal'
@@ -379,7 +380,7 @@ function MapComponent() {
   }
 
   // Create custom marker icon SVG - Classic teardrop/map marker shape
-  const createMarkerIcon = (category: string | null, color: string = '#E63946') => {
+  const createMarkerIcon = (category: string | null, color: string = '#E05C3A') => {
     const icon = getCategoryIcon(category)
     // Use color as part of filter ID to ensure uniqueness
     const filterId = `shadow-${color.replace('#', '')}`
@@ -628,17 +629,16 @@ function MapComponent() {
       const infoWindowContent = document.createElement('div')
       infoWindowContent.style.padding = '12px'
       infoWindowContent.style.minWidth = '200px'
-      infoWindowContent.style.fontFamily = "'Share Tech Mono', monospace"
+      infoWindowContent.style.fontFamily = 'var(--font-body)'
       infoWindowContent.style.color = '#F4F4F5'
 
       const title = document.createElement('div')
       title.textContent = placeDetails.name || result.place_name.split(',')[0]
+      title.style.fontFamily = 'var(--font-display)'
       title.style.fontWeight = '700'
       title.style.marginBottom = '8px'
       title.style.fontSize = '14px'
       title.style.color = '#F4F4F5'
-      title.style.textTransform = 'uppercase'
-      title.style.letterSpacing = '0.05em'
       infoWindowContent.appendChild(title)
 
       if (placeDetails.rating) {
@@ -656,18 +656,16 @@ function MapComponent() {
         statusDiv.style.fontSize = '10px'
         statusDiv.style.marginBottom = '8px'
         statusDiv.style.fontWeight = '700'
-        statusDiv.style.textTransform = 'uppercase'
-        statusDiv.style.letterSpacing = '0.1em'
 
         if (placeDetails.business_status === 'OPERATIONAL') {
           statusDiv.style.color = '#22c55e'
-          statusDiv.textContent = '● OPEN'
+          statusDiv.textContent = '● Open'
         } else if (placeDetails.business_status === 'CLOSED_TEMPORARILY') {
           statusDiv.style.color = '#f59e0b'
-          statusDiv.textContent = '● TEMPORARILY CLOSED'
+          statusDiv.textContent = '● Temporarily closed'
         } else if (placeDetails.business_status === 'CLOSED_PERMANENTLY') {
-          statusDiv.style.color = '#E63946'
-          statusDiv.textContent = '● PERMANENTLY CLOSED'
+          statusDiv.style.color = 'var(--destructive)'
+          statusDiv.textContent = '● Permanently closed'
         }
         infoWindowContent.appendChild(statusDiv)
       }
@@ -683,27 +681,26 @@ function MapComponent() {
       infoWindowContent.appendChild(address)
 
       const button = document.createElement('button')
-      button.textContent = 'ADD TO COLLECTION'
+      button.textContent = 'Add to Collection'
       button.style.width = '100%'
       // Mobile-optimized touch targets
       const isMobile = window.innerWidth < 768
       button.style.padding = isMobile ? '14px' : '10px'
       button.style.minHeight = isMobile ? '44px' : 'auto'
-      button.style.background = '#E63946'
+      button.style.background = 'var(--accent)'
       button.style.color = 'white'
-      button.style.border = '1px solid #E63946'
+      button.style.border = '1px solid var(--accent)'
       button.style.borderRadius = '4px'
       button.style.cursor = 'pointer'
-      button.style.fontFamily = "'Share Tech Mono', monospace"
+      button.style.fontFamily = 'var(--font-body)'
       button.style.fontWeight = '700'
       button.style.fontSize = isMobile ? '13px' : '11px'
-      button.style.letterSpacing = '0.1em'
       button.style.transition = 'all 0.15s ease'
       button.onmouseenter = () => {
-        button.style.background = '#D62839'
+        button.style.background = 'var(--accent-hover)'
       }
       button.onmouseleave = () => {
-        button.style.background = '#E63946'
+        button.style.background = 'var(--accent)'
       }
       button.onclick = () => {
         setShowAddLocationModal(true)
@@ -721,7 +718,7 @@ function MapComponent() {
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 10,
-          fillColor: '#E63946',
+          fillColor: '#E05C3A',
           fillOpacity: 1,
           strokeColor: '#ffffff',
           strokeWeight: 2
@@ -1098,13 +1095,13 @@ function MapComponent() {
     // Create a map of collection ID to color for quick lookup
     const collectionColorMap: Record<string, string> = {}
     collections.forEach(collection => {
-      collectionColorMap[collection.id] = collection.color || '#E63946'
+      collectionColorMap[collection.id] = collection.color || '#E05C3A'
     })
 
     // Create markers for each pin
     pinsToRender.forEach(pin => {
-      // Get the collection color for this pin, default to red if not found
-      const pinColor = collectionColorMap[pin.collection_id] || '#E63946'
+      // Get the collection color for this pin, default to terracotta if not found
+      const pinColor = collectionColorMap[pin.collection_id] || '#E05C3A'
 
       const marker = new google.maps.Marker({
         position: { lat: pin.latitude, lng: pin.longitude },
@@ -1131,7 +1128,7 @@ function MapComponent() {
         const infoWindowContent = document.createElement('div')
         infoWindowContent.style.minWidth = '200px'
         infoWindowContent.style.maxWidth = '280px'
-        infoWindowContent.style.fontFamily = "'Share Tech Mono', monospace"
+        infoWindowContent.style.fontFamily = 'var(--font-body)'
         infoWindowContent.style.padding = '12px'
         infoWindowContent.style.color = '#F4F4F5'
 
@@ -1140,8 +1137,7 @@ function MapComponent() {
         title.style.margin = '0 0 8px 0'
         title.style.fontSize = '14px'
         title.style.fontWeight = '700'
-        title.style.textTransform = 'uppercase'
-        title.style.letterSpacing = '0.1em'
+        title.style.fontFamily = 'var(--font-display)'
         title.style.color = '#F4F4F5'
         infoWindowContent.appendChild(title)
 
@@ -1158,10 +1154,8 @@ function MapComponent() {
         const category = document.createElement('div')
         category.textContent = `[${pin.category || 'other'}]`
         category.style.fontSize = '10px'
-        category.style.color = '#E63946'
+        category.style.color = 'var(--accent)'
         category.style.fontWeight = '700'
-        category.style.letterSpacing = '0.1em'
-        category.style.textTransform = 'uppercase'
         infoWindowContent.appendChild(category)
 
         if (pin.image_url) {
@@ -1194,7 +1188,7 @@ function MapComponent() {
         buttonContainer.style.gap = '8px'
 
         const viewButton = document.createElement('button')
-        viewButton.textContent = 'VIEW'
+        viewButton.textContent = 'View'
         // Mobile-optimized touch targets
         const isMobile = window.innerWidth < 768
         viewButton.style.background = 'transparent'
@@ -1204,9 +1198,8 @@ function MapComponent() {
         viewButton.style.minHeight = isMobile ? '44px' : 'auto'
         viewButton.style.cursor = 'pointer'
         viewButton.style.fontSize = isMobile ? '12px' : '10px'
-        viewButton.style.fontFamily = "'Share Tech Mono', monospace"
+        viewButton.style.fontFamily = 'var(--font-body)'
         viewButton.style.fontWeight = '700'
-        viewButton.style.letterSpacing = '0.1em'
         viewButton.style.flex = '1'
         viewButton.style.borderRadius = '4px'
         viewButton.style.transition = 'all 0.15s ease'
@@ -1230,7 +1223,7 @@ function MapComponent() {
         // Add "View Collection" button if pin belongs to a collection
         if (pin.collection_id) {
           const collectionButton = document.createElement('button')
-          collectionButton.textContent = 'COLLECTION'
+          collectionButton.textContent = 'Collection'
           collectionButton.style.background = 'transparent'
           collectionButton.style.color = '#F4F4F5'
           collectionButton.style.border = '1px solid rgba(255, 255, 255, 0.3)'
@@ -1238,16 +1231,15 @@ function MapComponent() {
           collectionButton.style.minHeight = isMobile ? '44px' : 'auto'
           collectionButton.style.cursor = 'pointer'
           collectionButton.style.fontSize = isMobile ? '12px' : '10px'
-          collectionButton.style.fontFamily = "'Share Tech Mono', monospace"
+          collectionButton.style.fontFamily = 'var(--font-body)'
           collectionButton.style.fontWeight = '700'
-          collectionButton.style.letterSpacing = '0.1em'
           collectionButton.style.flex = '1'
           collectionButton.style.borderRadius = '4px'
           collectionButton.style.transition = 'all 0.15s ease'
           collectionButton.onmouseenter = () => {
-            collectionButton.style.background = 'rgba(230, 57, 70, 0.2)'
-            collectionButton.style.borderColor = '#E63946'
-            collectionButton.style.color = '#E63946'
+            collectionButton.style.background = 'var(--color-terracotta-subtle)'
+            collectionButton.style.borderColor = 'var(--accent)'
+            collectionButton.style.color = 'var(--accent)'
           }
           collectionButton.onmouseleave = () => {
             collectionButton.style.background = 'transparent'
@@ -1265,25 +1257,24 @@ function MapComponent() {
 
         if (isOwnPin) {
           const editButton = document.createElement('button')
-          editButton.textContent = 'EDIT'
-          editButton.style.background = '#E63946'
+          editButton.textContent = 'Edit'
+          editButton.style.background = 'var(--accent)'
           editButton.style.color = 'white'
-          editButton.style.border = '1px solid #E63946'
+          editButton.style.border = '1px solid var(--accent)'
           editButton.style.padding = isMobile ? '12px 14px' : '8px 12px'
           editButton.style.minHeight = isMobile ? '44px' : 'auto'
           editButton.style.cursor = 'pointer'
           editButton.style.fontSize = isMobile ? '12px' : '10px'
-          editButton.style.fontFamily = "'Share Tech Mono', monospace"
+          editButton.style.fontFamily = 'var(--font-body)'
           editButton.style.fontWeight = '700'
-          editButton.style.letterSpacing = '0.1em'
           editButton.style.flex = '1'
           editButton.style.borderRadius = '4px'
           editButton.style.transition = 'all 0.15s ease'
           editButton.onmouseenter = () => {
-            editButton.style.background = '#D62839'
+            editButton.style.background = 'var(--accent-hover)'
           }
           editButton.onmouseleave = () => {
-            editButton.style.background = '#E63946'
+            editButton.style.background = 'var(--accent)'
           }
           editButton.onclick = () => {
             setSelectedPin(pin)
@@ -1395,7 +1386,7 @@ function MapComponent() {
         const infoWindowContent = document.createElement('div')
         infoWindowContent.style.minWidth = '200px'
         infoWindowContent.style.maxWidth = '280px'
-        infoWindowContent.style.fontFamily = "'Share Tech Mono', monospace"
+        infoWindowContent.style.fontFamily = 'var(--font-body)'
         infoWindowContent.style.padding = '12px'
         infoWindowContent.style.color = '#F4F4F5'
 
@@ -1404,8 +1395,7 @@ function MapComponent() {
         title.style.margin = '0 0 8px 0'
         title.style.fontSize = '14px'
         title.style.fontWeight = '700'
-        title.style.textTransform = 'uppercase'
-        title.style.letterSpacing = '0.1em'
+        title.style.fontFamily = 'var(--font-display)'
         title.style.color = '#F4F4F5'
         infoWindowContent.appendChild(title)
 
@@ -1414,14 +1404,12 @@ function MapComponent() {
         type.style.fontSize = '10px'
         type.style.color = '#78787E'
         type.style.fontWeight = '700'
-        type.style.letterSpacing = '0.1em'
-        type.style.textTransform = 'uppercase'
         type.style.marginBottom = '8px'
         infoWindowContent.appendChild(type)
 
         if (poi.rating) {
           const rating = document.createElement('div')
-          rating.textContent = `⭐ ${poi.rating} ${poi.user_ratings_total ? `(${poi.user_ratings_total})` : ''}`
+          rating.textContent = `★ ${poi.rating} ${poi.user_ratings_total ? `(${poi.user_ratings_total})` : ''}`
           rating.style.fontSize = '12px'
           rating.style.color = '#A1A1AA'
           rating.style.marginBottom = '8px'
@@ -1440,11 +1428,9 @@ function MapComponent() {
           addButton.style.border = '1px solid var(--border)'
           addButton.style.borderRadius = 'var(--radius)'
           addButton.style.cursor = 'pointer'
-          addButton.style.fontFamily = "'Share Tech Mono', monospace"
+          addButton.style.fontFamily = 'var(--font-body)'
           addButton.style.fontSize = '11px'
           addButton.style.fontWeight = '700'
-          addButton.style.letterSpacing = '0.05em'
-          addButton.style.textTransform = 'uppercase'
 
           addButton.addEventListener('click', async () => {
             // Fetch full Details for this POI (the nearby-search data backing
@@ -1971,7 +1957,7 @@ function MapComponent() {
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)' }}
             >
-              🗺️
+              <MapIcon size={20} />
             </button>
           </div>
 
@@ -2008,9 +1994,7 @@ function MapComponent() {
                 fontSize: '0.875rem',
                 fontWeight: '700',
                 marginBottom: '1rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em'
+                fontFamily: 'var(--font-display)'
               }}>
                 Friends Collections
               </div>
@@ -2078,9 +2062,9 @@ function MapComponent() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '1rem',
-                      fontFamily: 'var(--font-mono)',
+                      fontFamily: 'var(--font-body)',
                       fontWeight: '700',
-                      color: 'var(--color-red)',
+                      color: 'var(--accent)',
                       pointerEvents: 'none'
                     }}>
                       [ ]
@@ -2149,7 +2133,7 @@ function MapComponent() {
                     onMouseEnter={(e) => {
                       e.currentTarget.style.borderColor = 'var(--accent)'
                       e.currentTarget.style.color = 'var(--accent)'
-                      e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
+                      e.currentTarget.style.backgroundColor = 'var(--color-terracotta-subtle)'
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.borderColor = 'var(--border)'
@@ -2170,15 +2154,13 @@ function MapComponent() {
                   textAlign: 'center',
                   color: 'var(--muted-foreground)',
                   fontSize: '0.75rem',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  fontFamily: 'var(--font-body)'
                 }}>
                   <div style={{
                     marginBottom: '0.5rem',
                     fontSize: '1.5rem',
                     fontWeight: '700',
-                    color: 'var(--color-red)'
+                    color: 'var(--accent)'
                   }}>[ ]</div>
                   <div>No friends collections</div>
                   <div style={{ fontSize: '0.65rem', marginTop: '0.5rem', opacity: 0.7 }}>
@@ -2218,13 +2200,12 @@ function MapComponent() {
           }}>
             {/* Search Icon */}
             <div style={{
-              color: 'var(--color-red)',
-              fontSize: '1.25rem',
+              color: 'var(--accent)',
               display: 'flex',
               alignItems: 'center',
               flexShrink: 0
             }}>
-              🔍
+              <Search size={20} />
             </div>
 
             {/* Search Input */}
@@ -2245,8 +2226,7 @@ function MapComponent() {
                 fontSize: '0.875rem',
                 padding: '0.25rem',
                 color: 'var(--foreground)',
-                fontFamily: 'var(--font-mono)',
-                letterSpacing: '0.02em'
+                fontFamily: 'var(--font-body)'
               }}
             />
 
@@ -2255,7 +2235,7 @@ function MapComponent() {
               <div style={{
                 width: '16px',
                 height: '16px',
-                border: '2px solid var(--color-red)',
+                border: '2px solid var(--accent)',
                 borderTopColor: 'transparent',
                 borderRadius: '50%',
                 animation: 'spin 0.6s linear infinite',
@@ -2277,7 +2257,6 @@ function MapComponent() {
                   border: 'none',
                   color: 'var(--muted-foreground)',
                   cursor: 'pointer',
-                  fontSize: '1.25rem',
                   padding: 0,
                   lineHeight: 1,
                   display: 'flex',
@@ -2286,14 +2265,14 @@ function MapComponent() {
                   flexShrink: 0
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--color-red)'
+                  e.currentTarget.style.color = 'var(--accent)'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = 'var(--muted-foreground)'
                 }}
                 title="Clear search"
               >
-                ×
+                <X size={18} />
               </button>
             )}
           </div>
@@ -2322,9 +2301,7 @@ function MapComponent() {
                   <div style={{
                     padding: '0.75rem 1rem 0.25rem',
                     fontSize: '0.7rem',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
+                    fontFamily: 'var(--font-body)',
                     color: 'var(--muted-foreground)',
                     fontWeight: '700'
                   }}>
@@ -2355,15 +2332,14 @@ function MapComponent() {
                             borderRadius: 'var(--radius)',
                             fontSize: '0.65rem',
                             fontWeight: 700,
-                            fontFamily: 'var(--font-mono)',
-                            textTransform: 'uppercase',
+                            fontFamily: 'var(--font-body)',
                             cursor: 'pointer',
                           }}
                         >
                           Follow
                         </button>
                       ) : (
-                        <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--muted-foreground)', fontFamily: 'var(--font-body)' }}>
                           Following
                         </span>
                       )}
@@ -2378,9 +2354,7 @@ function MapComponent() {
                   <div style={{
                     padding: '0.75rem 1rem 0.25rem',
                     fontSize: '0.7rem',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
+                    fontFamily: 'var(--font-body)',
                     color: 'var(--muted-foreground)',
                     fontWeight: '700'
                   }}>
@@ -2414,9 +2388,7 @@ function MapComponent() {
                 <div style={{
                   padding: '0.75rem 1rem 0.25rem',
                   fontSize: '0.7rem',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
+                  fontFamily: 'var(--font-body)',
                   color: 'var(--muted-foreground)',
                   fontWeight: '700'
                 }}>
@@ -2431,17 +2403,17 @@ function MapComponent() {
                   textAlign: 'center'
                 }}>
                   <div style={{
-                    fontSize: '2rem',
-                    marginBottom: '0.75rem'
+                    marginBottom: '0.75rem',
+                    color: 'var(--muted-foreground)',
+                    display: 'flex',
+                    justifyContent: 'center'
                   }}>
-                    🔍
+                    <Search size={32} />
                   </div>
                   <div style={{
                     fontFamily: 'var(--font-display)',
                     fontSize: '0.875rem',
                     fontWeight: '700',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
                     marginBottom: '0.5rem',
                     color: 'var(--foreground)'
                   }}>
@@ -2476,7 +2448,7 @@ function MapComponent() {
                     gap: '0.75rem'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(230, 57, 70, 0.1)'
+                    e.currentTarget.style.background = 'var(--color-terracotta-subtle)'
                     e.currentTarget.style.paddingLeft = '1.25rem'
                   }}
                   onMouseLeave={(e) => {
@@ -2486,10 +2458,10 @@ function MapComponent() {
                 >
                   {/* Location Icon */}
                   <div style={{
-                    fontSize: '1.25rem',
+                    display: 'flex',
                     flexShrink: 0
                   }}>
-                    📍
+                    <MapPin size={20} />
                   </div>
 
                   {/* Place Info */}
@@ -2498,7 +2470,7 @@ function MapComponent() {
                       fontWeight: '600',
                       marginBottom: '0.25rem',
                       color: 'var(--foreground)',
-                      fontFamily: 'var(--font-mono)',
+                      fontFamily: 'var(--font-body)',
                       fontSize: '0.875rem',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -2519,7 +2491,7 @@ function MapComponent() {
 
                   {/* Arrow Icon */}
                   <div style={{
-                    color: 'var(--color-red)',
+                    color: 'var(--accent)',
                     fontSize: '0.875rem',
                     flexShrink: 0,
                     opacity: 0.5
@@ -2579,7 +2551,7 @@ function MapComponent() {
           }}
           aria-label="Map layers"
         >
-          🗺️
+          <MapIcon size={24} />
         </button>
       )}
 
@@ -2598,7 +2570,7 @@ function MapComponent() {
           transform: 'translateX(-50%)',
           zIndex: 10,
           background: 'rgba(39, 39, 42, 0.7)',
-          border: '2px solid var(--color-red)',
+          border: '2px solid var(--accent)',
           padding: '0.75rem 1.5rem',
           fontSize: '0.65rem',
           color: 'var(--foreground)',
@@ -2606,12 +2578,10 @@ function MapComponent() {
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           textAlign: 'center',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
+          fontFamily: 'var(--font-body)',
           fontWeight: '600'
         }}>
-          <span style={{ color: 'var(--color-red)' }}>[DBL-CLICK]</span> Create Pin <span style={{ color: 'var(--muted-foreground)' }}>•</span> <span style={{ color: 'var(--color-red)' }}>[CLICK]</span> View Pin
+          <span style={{ color: 'var(--accent)' }}>[Double-click]</span> Create Pin <span style={{ color: 'var(--muted-foreground)' }}>•</span> <span style={{ color: 'var(--accent)' }}>[Click]</span> View Pin
         </div>
       )}
 
@@ -2729,7 +2699,7 @@ function MapComponent() {
           }}
           aria-label="Open collections"
         >
-          📂
+          <Folder size={24} />
         </button>
       )}
 
@@ -2782,9 +2752,7 @@ function MapComponent() {
                 fontSize: '0.875rem',
                 fontWeight: '700',
                 marginBottom: '1rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em'
+                fontFamily: 'var(--font-display)'
               }}>
                 Friends Collections
               </div>
@@ -2833,10 +2801,9 @@ function MapComponent() {
 
                     <div style={{ flex: 1, pointerEvents: 'none' }}>
                       <div style={{
-                        fontFamily: 'var(--font-mono)',
+                        fontFamily: 'var(--font-body)',
                         fontSize: '0.75rem',
                         fontWeight: '700',
-                        textTransform: 'uppercase',
                         marginBottom: '0.25rem'
                       }}>
                         {collection.title}
@@ -2844,7 +2811,7 @@ function MapComponent() {
                       <div style={{
                         fontSize: '0.625rem',
                         color: selectedCollectionId === collection.id ? 'rgba(255,255,255,0.8)' : 'var(--muted-foreground)',
-                        fontFamily: 'var(--font-mono)'
+                        fontFamily: 'var(--font-body)'
                       }}>
                         by @{collection.username} • {collection.pin_count || 0} pins
                       </div>
@@ -2874,7 +2841,7 @@ function MapComponent() {
                         justifyContent: 'center',
                         transition: 'var(--transition)',
                         flexShrink: 0,
-                        fontFamily: 'var(--font-mono)',
+                        fontFamily: 'var(--font-body)',
                         fontWeight: '700'
                       }}
                       title={`View collection: ${collection.title}`}

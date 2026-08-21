@@ -1,6 +1,7 @@
 'use client'
 import { logger } from '@/lib/logger'
 import React, { useState, useEffect } from 'react'
+import { X, MapPin, ThumbsUp, ThumbsDown, MessageCircle, Calendar, Globe2, Lock, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import ReportCommentModal from './ReportCommentModal'
 import CollectionActions from './Collection/CollectionActions'
@@ -100,7 +101,7 @@ export default function CollectionDetailsModal({
     title: collection.title,
     description: collection.description || '',
     is_public: collection.is_public,
-    color: collection.color || '#E63946'
+    color: collection.color || '#E05C3A'
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -299,7 +300,7 @@ export default function CollectionDetailsModal({
       title: collection.title,
       description: collection.description || '',
       is_public: collection.is_public,
-      color: collection.color || '#E63946'
+      color: collection.color || '#E05C3A'
     })
     setError('')
     setIsEditing(false)
@@ -539,8 +540,7 @@ export default function CollectionDetailsModal({
                 borderRadius: 'var(--radius)',
                 background: 'var(--background)',
                 color: 'var(--foreground)',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase'
+                fontFamily: 'var(--font-body)'
               }}
               maxLength={100}
             />
@@ -549,9 +549,7 @@ export default function CollectionDetailsModal({
               fontSize: '1.5rem',
               fontWeight: '700',
               margin: 0,
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em'
+              fontFamily: 'var(--font-display)'
             }}>
               {collection.title}
             </h2>
@@ -559,13 +557,13 @@ export default function CollectionDetailsModal({
 
           <button
             onClick={onClose}
+            aria-label="Close"
             style={{
               padding: '0.5rem',
               background: 'transparent',
               border: '2px solid var(--border)',
               borderRadius: 'var(--radius)',
               cursor: 'pointer',
-              fontSize: '1.25rem',
               lineHeight: 1,
               width: '36px',
               height: '36px',
@@ -575,7 +573,7 @@ export default function CollectionDetailsModal({
               flexShrink: 0
             }}
           >
-            ×
+            <X size={18} />
           </button>
         </div>
 
@@ -594,22 +592,22 @@ export default function CollectionDetailsModal({
             }}>
               <div>
                 <div style={{
-                  fontFamily: 'var(--font-mono)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '0.875rem',
                   fontWeight: '700',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
                   color: 'var(--foreground)'
                 }}>
-                  {editForm.is_public ? '🌍 PUBLIC COLLECTION' : '🔒 PRIVATE COLLECTION'}
+                  {editForm.is_public ? <Globe2 size={16} /> : <Lock size={16} />}
+                  {editForm.is_public ? 'Public Collection' : 'Private Collection'}
                 </div>
                 <div style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.65rem',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '0.75rem',
                   marginTop: '0.25rem',
-                  color: 'var(--muted-foreground)',
-                  textTransform: 'none',
-                  letterSpacing: '0.02em'
+                  color: 'var(--muted-foreground)'
                 }}>
                   {editForm.is_public ? 'Visible to everyone' : 'Only visible to you'}
                 </div>
@@ -665,11 +663,10 @@ export default function CollectionDetailsModal({
               borderRadius: 'var(--radius)',
               fontSize: '0.75rem',
               fontWeight: '700',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em'
+              fontFamily: 'var(--font-body)'
             }}>
-              {collection.is_public ? '🌍 PUBLIC' : '🔒 PRIVATE'}
+              {collection.is_public ? <Globe2 size={14} /> : <Lock size={14} />}
+              {collection.is_public ? 'Public' : 'Private'}
             </div>
           )}
         </div>
@@ -703,14 +700,12 @@ export default function CollectionDetailsModal({
                   cursor: votingInProgress ? 'not-allowed' : 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '700',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   transition: 'all 0.2s ease',
                   opacity: votingInProgress ? 0.6 : 1
                 }}
               >
-                <span style={{ fontSize: '1.25rem' }}>▲</span>
+                <ThumbsUp size={16} fill={userVote === 'up' ? 'currentColor' : 'none'} />
                 <span>{voteCounts.upvotes}</span>
               </button>
 
@@ -720,8 +715,8 @@ export default function CollectionDetailsModal({
                 textAlign: 'center',
                 fontSize: '1.25rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
-                color: voteCounts.net_score > 0 ? '#22c55e' : voteCounts.net_score < 0 ? '#ef4444' : 'var(--muted-foreground)'
+                fontFamily: 'var(--font-body)',
+                color: voteCounts.net_score > 0 ? '#22c55e' : voteCounts.net_score < 0 ? 'var(--destructive)' : 'var(--muted-foreground)'
               }}>
                 {voteCounts.net_score > 0 ? '+' : ''}{voteCounts.net_score}
               </div>
@@ -735,22 +730,20 @@ export default function CollectionDetailsModal({
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.5rem 1rem',
-                  background: userVote === 'down' ? '#ef4444' : 'var(--background)',
+                  background: userVote === 'down' ? 'var(--destructive)' : 'var(--background)',
                   color: userVote === 'down' ? 'white' : 'var(--foreground)',
                   border: '2px solid',
-                  borderColor: userVote === 'down' ? '#ef4444' : 'var(--border)',
+                  borderColor: userVote === 'down' ? 'var(--destructive)' : 'var(--border)',
                   borderRadius: 'var(--radius)',
                   cursor: votingInProgress ? 'not-allowed' : 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '700',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   transition: 'all 0.2s ease',
                   opacity: votingInProgress ? 0.6 : 1
                 }}
               >
-                <span style={{ fontSize: '1.25rem' }}>▼</span>
+                <ThumbsDown size={16} fill={userVote === 'down' ? 'currentColor' : 'none'} />
                 <span>{voteCounts.downvotes}</span>
               </button>
             </div>
@@ -758,12 +751,10 @@ export default function CollectionDetailsModal({
             {/* Voting hint */}
             <div style={{
               marginTop: '0.5rem',
-              fontSize: '0.65rem',
+              fontSize: '0.75rem',
               color: 'var(--muted-foreground)',
-              fontFamily: 'var(--font-mono)',
-              textAlign: 'center',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-body)',
+              textAlign: 'center'
             }}>
               {userVote ? `You voted ${userVote === 'up' ? 'up' : 'down'} • Click again to remove` : 'Vote to rate this collection'}
             </div>
@@ -778,12 +769,12 @@ export default function CollectionDetailsModal({
               fontSize: '0.75rem',
               fontWeight: '700',
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)',
+              fontFamily: 'var(--font-body)',
               textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              letterSpacing: '0.05em',
               color: 'var(--muted-foreground)'
             }}>
-              PIN COLOR
+              Pin Color
             </label>
             <div style={{
               display: 'flex',
@@ -870,7 +861,7 @@ export default function CollectionDetailsModal({
                 background: 'var(--muted)',
                 borderRadius: 'var(--radius)',
                 fontSize: '0.75rem',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-body)',
                 color: 'var(--muted-foreground)'
               }}>
                 <div style={{
@@ -893,12 +884,12 @@ export default function CollectionDetailsModal({
             fontSize: '0.75rem',
             fontWeight: '700',
             marginBottom: '0.5rem',
-            fontFamily: 'var(--font-mono)',
+            fontFamily: 'var(--font-body)',
             textTransform: 'uppercase',
-            letterSpacing: '0.1em',
+            letterSpacing: '0.05em',
             color: 'var(--muted-foreground)'
           }}>
-            DESCRIPTION
+            Description
           </label>
           {isOwner && isEditing ? (
             <textarea
@@ -939,12 +930,12 @@ export default function CollectionDetailsModal({
               fontSize: '0.75rem',
               fontWeight: '700',
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)',
+              fontFamily: 'var(--font-body)',
               textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              letterSpacing: '0.05em',
               color: 'var(--muted-foreground)'
             }}>
-              IMAGES ({images.length})
+              Images ({images.length})
             </label>
             <div style={{
               display: 'grid',
@@ -985,32 +976,44 @@ export default function CollectionDetailsModal({
           color: 'var(--muted-foreground)',
           flexWrap: 'wrap'
         }}>
-          <div>📌 {collection.pin_count || 0} pins</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <MapPin size={14} /> {collection.pin_count || 0} pins
+          </div>
           {voteCounts.net_score !== 0 && (
             <div style={{
-              color: voteCounts.net_score > 0 ? '#22c55e' : '#ef4444',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.375rem',
+              color: voteCounts.net_score > 0 ? '#22c55e' : 'var(--destructive)',
               fontWeight: '700'
             }}>
-              {voteCounts.net_score > 0 ? '👍' : '👎'} {Math.abs(voteCounts.net_score)} {voteCounts.net_score > 0 ? 'upvotes' : 'downvotes'} net
+              {voteCounts.net_score > 0 ? <ThumbsUp size={14} /> : <ThumbsDown size={14} />}
+              {Math.abs(voteCounts.net_score)} {voteCounts.net_score > 0 ? 'upvotes' : 'downvotes'} net
             </div>
           )}
-          <div>💬 {comments.length} comments</div>
-          <div>📅 {new Date(collection.created_at).toLocaleDateString()}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <MessageCircle size={14} /> {comments.length} comments
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <Calendar size={14} /> {new Date(collection.created_at).toLocaleDateString()}
+          </div>
         </div>
 
         {/* Comments Section */}
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{
-            display: 'block',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem',
             fontSize: '0.75rem',
             fontWeight: '700',
             marginBottom: '1rem',
-            fontFamily: 'var(--font-mono)',
+            fontFamily: 'var(--font-body)',
             textTransform: 'uppercase',
-            letterSpacing: '0.1em',
+            letterSpacing: '0.05em',
             color: 'var(--muted-foreground)'
           }}>
-            💬 COMMENTS ({comments.length})
+            <MessageCircle size={14} /> Comments ({comments.length})
           </label>
 
           {/* Comments List */}
@@ -1028,7 +1031,7 @@ export default function CollectionDetailsModal({
                 textAlign: 'center',
                 color: 'var(--muted-foreground)',
                 fontSize: '0.875rem',
-                fontFamily: 'var(--font-mono)'
+                fontFamily: 'var(--font-body)'
               }}>
                 Loading comments...
               </div>
@@ -1038,7 +1041,7 @@ export default function CollectionDetailsModal({
                 textAlign: 'center',
                 color: 'var(--muted-foreground)',
                 fontSize: '0.875rem',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-body)',
                 fontStyle: 'italic'
               }}>
                 No comments yet. Be the first to comment!
@@ -1106,7 +1109,7 @@ export default function CollectionDetailsModal({
                         <span style={{
                           fontSize: '0.75rem',
                           fontWeight: '700',
-                          fontFamily: 'var(--font-mono)',
+                          fontFamily: 'var(--font-body)',
                           color: 'var(--foreground)',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -1120,7 +1123,7 @@ export default function CollectionDetailsModal({
                           <span style={{
                             fontSize: '0.625rem',
                             fontWeight: '700',
-                            fontFamily: 'var(--font-mono)',
+                            fontFamily: 'var(--font-body)',
                             textTransform: 'uppercase',
                             letterSpacing: '0.05em',
                             padding: '0.125rem 0.375rem',
@@ -1129,7 +1132,7 @@ export default function CollectionDetailsModal({
                             borderRadius: 'var(--radius)',
                             flexShrink: 0
                           }}>
-                            OWNER
+                            Owner
                           </span>
                         )}
                       </div>
@@ -1144,7 +1147,7 @@ export default function CollectionDetailsModal({
                         <span style={{
                           fontSize: '0.625rem',
                           color: 'var(--muted-foreground)',
-                          fontFamily: 'var(--font-mono)',
+                          fontFamily: 'var(--font-body)',
                           whiteSpace: 'nowrap'
                         }}>
                           {new Date(comment.created_at).toLocaleDateString()}
@@ -1157,6 +1160,9 @@ export default function CollectionDetailsModal({
                                 <button
                                   onClick={() => handleStartEditComment(comment)}
                                   style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
                                     padding: '0.25rem 0.5rem',
                                     background: 'transparent',
                                     border: '1px solid var(--border)',
@@ -1165,34 +1171,33 @@ export default function CollectionDetailsModal({
                                     cursor: 'pointer',
                                     fontSize: '0.625rem',
                                     fontWeight: '700',
-                                    fontFamily: 'var(--font-mono)',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
+                                    fontFamily: 'var(--font-body)',
                                     transition: 'all 0.2s ease'
                                   }}
                                   title="Edit comment"
                                 >
-                                  EDIT
+                                  <Pencil size={12} /> Edit
                                 </button>
                                 <button
                                   onClick={() => handleDeleteComment(comment.id)}
                                   style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
                                     padding: '0.25rem 0.5rem',
                                     background: 'transparent',
                                     border: '1px solid var(--border)',
                                     borderRadius: 'var(--radius)',
-                                    color: '#ef4444',
+                                    color: 'var(--destructive)',
                                     cursor: 'pointer',
                                     fontSize: '0.625rem',
                                     fontWeight: '700',
-                                    fontFamily: 'var(--font-mono)',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
+                                    fontFamily: 'var(--font-body)',
                                     transition: 'all 0.2s ease'
                                   }}
                                   title="Delete comment"
                                 >
-                                  DELETE
+                                  <Trash2 size={12} /> Delete
                                 </button>
                               </>
                             ) : (
@@ -1207,14 +1212,12 @@ export default function CollectionDetailsModal({
                                   cursor: 'pointer',
                                   fontSize: '0.625rem',
                                   fontWeight: '700',
-                                  fontFamily: 'var(--font-mono)',
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em',
+                                  fontFamily: 'var(--font-body)',
                                   transition: 'all 0.2s ease'
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.borderColor = '#ef4444'
-                                  e.currentTarget.style.color = '#ef4444'
+                                  e.currentTarget.style.borderColor = 'var(--destructive)'
+                                  e.currentTarget.style.color = 'var(--destructive)'
                                 }}
                                 onMouseLeave={(e) => {
                                   e.currentTarget.style.borderColor = 'var(--border)'
@@ -1222,7 +1225,7 @@ export default function CollectionDetailsModal({
                                 }}
                                 title="Report inappropriate comment"
                               >
-                                REPORT
+                                Report
                               </button>
                             )}
                           </>
@@ -1269,12 +1272,10 @@ export default function CollectionDetailsModal({
                               cursor: 'pointer',
                               fontSize: '0.625rem',
                               fontWeight: '700',
-                              fontFamily: 'var(--font-mono)',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.05em'
+                              fontFamily: 'var(--font-body)'
                             }}
                           >
-                            CANCEL
+                            Cancel
                           </button>
                           <button
                             onClick={() => handleUpdateComment(comment.id)}
@@ -1288,12 +1289,10 @@ export default function CollectionDetailsModal({
                               cursor: !editingCommentText.trim() ? 'not-allowed' : 'pointer',
                               fontSize: '0.625rem',
                               fontWeight: '700',
-                              fontFamily: 'var(--font-mono)',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.05em'
+                              fontFamily: 'var(--font-body)'
                             }}
                           >
-                            SAVE
+                            Save
                           </button>
                         </div>
                       </div>
@@ -1330,9 +1329,7 @@ export default function CollectionDetailsModal({
                         fontSize: '0.75rem',
                         fontWeight: '600',
                         cursor: loadingMoreComments ? 'not-allowed' : 'pointer',
-                        fontFamily: 'var(--font-mono)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
+                        fontFamily: 'var(--font-body)',
                         transition: 'all 0.2s ease'
                       }}
                       onMouseEnter={(e) => {
@@ -1400,9 +1397,7 @@ export default function CollectionDetailsModal({
                 cursor: !newComment.trim() || postingComment ? 'not-allowed' : 'pointer',
                 fontSize: '0.75rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                fontFamily: 'var(--font-body)',
                 whiteSpace: 'nowrap',
                 minHeight: '80px',
                 display: 'flex',
@@ -1412,7 +1407,7 @@ export default function CollectionDetailsModal({
               }}
               title="⌘/Ctrl + Enter to post"
             >
-              {postingComment ? 'POSTING...' : 'POST'}
+              {postingComment ? 'Posting...' : 'Post'}
             </button>
           </div>
 
@@ -1421,7 +1416,7 @@ export default function CollectionDetailsModal({
             marginTop: '0.5rem',
             fontSize: '0.625rem',
             color: 'var(--muted-foreground)',
-            fontFamily: 'var(--font-mono)',
+            fontFamily: 'var(--font-body)',
             textAlign: 'right'
           }}>
             ⌘/Ctrl + Enter to post
@@ -1432,10 +1427,10 @@ export default function CollectionDetailsModal({
         {error && (
           <div style={{
             padding: '0.75rem',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '2px solid #ef4444',
+            background: 'var(--color-red-subtle)',
+            border: '2px solid var(--destructive)',
             borderRadius: 'var(--radius)',
-            color: '#ef4444',
+            color: 'var(--destructive)',
             fontSize: '0.875rem',
             marginBottom: '1rem'
           }}>
@@ -1465,13 +1460,11 @@ export default function CollectionDetailsModal({
                     cursor: loading ? 'not-allowed' : 'pointer',
                     fontSize: '0.875rem',
                     fontWeight: '700',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
+                    fontFamily: 'var(--font-body)',
                     opacity: loading ? 0.6 : 1
                   }}
                 >
-                  CANCEL
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -1486,13 +1479,11 @@ export default function CollectionDetailsModal({
                     cursor: loading ? 'not-allowed' : 'pointer',
                     fontSize: '0.875rem',
                     fontWeight: '700',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
+                    fontFamily: 'var(--font-body)',
                     opacity: loading ? 0.6 : 1
                   }}
                 >
-                  {loading ? 'SAVING...' : 'SAVE'}
+                  {loading ? 'Saving...' : 'Save'}
                 </button>
               </>
             ) : (
@@ -1508,12 +1499,10 @@ export default function CollectionDetailsModal({
                   cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '700',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em'
+                  fontFamily: 'var(--font-body)'
                 }}
               >
-                EDIT COLLECTION
+                Edit Collection
               </button>
             )}
           </div>

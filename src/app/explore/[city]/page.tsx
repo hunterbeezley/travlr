@@ -8,6 +8,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import CollectionGrid from '@/components/Discover/CollectionGrid'
 import Auth from '@/components/Auth'
+import { Building2, Folder, MapPin, Star, Clock, Flame } from 'lucide-react'
 
 type SortOption = 'popular' | 'recent' | 'top_rated' | 'most_pins'
 
@@ -142,10 +143,8 @@ export default function CityDetailPage() {
         {/* Breadcrumb */}
         <div style={{
           marginBottom: '1rem',
-          fontSize: '0.75rem',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          fontSize: '0.8125rem',
+          fontFamily: 'var(--font-body)',
           color: 'var(--muted-foreground)'
         }}>
           <Link href="/explore" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
@@ -169,14 +168,12 @@ export default function CityDetailPage() {
             gap: '1rem',
             marginBottom: '1rem'
           }}>
-            <div style={{ fontSize: '3rem' }}>🌆</div>
+            <div style={{ color: 'var(--accent)' }}><Building2 size={48} strokeWidth={1.5} /></div>
             <div>
               <h1 style={{
                 fontSize: '2rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                fontFamily: 'var(--font-display)',
                 margin: 0,
                 marginBottom: '0.5rem'
               }}>
@@ -184,15 +181,19 @@ export default function CityDetailPage() {
               </h1>
               <div style={{
                 fontSize: '0.875rem',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-body)',
                 color: 'var(--muted-foreground)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '1rem'
               }}>
-                <span>📂 {totalCollections} {totalCollections === 1 ? 'collection' : 'collections'}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <Folder size={14} /> {totalCollections} {totalCollections === 1 ? 'collection' : 'collections'}
+                </span>
                 <span>•</span>
-                <span>📍 {totalPins} {totalPins === 1 ? 'pin' : 'pins'}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <MapPin size={14} /> {totalPins} {totalPins === 1 ? 'pin' : 'pins'}
+                </span>
               </div>
             </div>
           </div>
@@ -214,9 +215,7 @@ export default function CityDetailPage() {
           <div style={{
             fontSize: '0.875rem',
             fontWeight: '600',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-body)',
             color: 'var(--foreground)'
           }}>
             Sort by:
@@ -227,10 +226,10 @@ export default function CityDetailPage() {
             flexWrap: 'wrap'
           }}>
             {[
-              { value: 'popular', label: '⭐ Popular' },
-              { value: 'recent', label: '🕐 Recent' },
-              { value: 'top_rated', label: '🔥 Top Rated' },
-              { value: 'most_pins', label: '📍 Most Pins' }
+              { value: 'popular', label: 'Popular', icon: Star },
+              { value: 'recent', label: 'Recent', icon: Clock },
+              { value: 'top_rated', label: 'Top Rated', icon: Flame },
+              { value: 'most_pins', label: 'Most Pins', icon: MapPin }
             ].map((option) => (
               <button
                 key={option.value}
@@ -242,13 +241,14 @@ export default function CityDetailPage() {
                   border: '2px solid',
                   borderColor: sortBy === option.value ? 'var(--accent)' : 'var(--border)',
                   borderRadius: 'var(--radius)',
-                  fontSize: '0.75rem',
+                  fontSize: '0.8125rem',
                   fontWeight: '600',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   cursor: 'pointer',
-                  transition: 'var(--transition)'
+                  transition: 'var(--transition)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem'
                 }}
                 onMouseEnter={(e) => {
                   if (sortBy !== option.value) {
@@ -261,6 +261,7 @@ export default function CityDetailPage() {
                   }
                 }}
               >
+                <option.icon size={14} />
                 {option.label}
               </button>
             ))}
@@ -285,12 +286,14 @@ export default function CityDetailPage() {
             borderRadius: 'var(--radius-lg)',
             border: '2px solid var(--border)'
           }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏙️</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: 'var(--muted-foreground)' }}>
+              <Building2 size={48} strokeWidth={1.5} />
+            </div>
             <h3 style={{
               fontSize: '1.25rem',
               fontWeight: '700',
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)'
+              fontFamily: 'var(--font-display)'
             }}>
               No Collections in {cityName} Yet
             </h3>
@@ -312,9 +315,7 @@ export default function CityDetailPage() {
                 borderRadius: 'var(--radius)',
                 fontSize: '0.875rem',
                 fontWeight: '600',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                fontFamily: 'var(--font-body)',
                 textDecoration: 'none',
                 transition: 'var(--transition)'
               }}

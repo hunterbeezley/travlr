@@ -1,4 +1,5 @@
 'use client'
+import { X } from 'lucide-react'
 import CollectionList from './CollectionList'
 import { CollectionCardData } from './CollectionCard'
 
@@ -47,19 +48,17 @@ export default function MineTab<T extends CollectionCardData>({
         display: 'flex',
         alignItems: 'center',
         gap: '0.5rem',
-        fontFamily: 'var(--font-mono)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.1em'
+        fontFamily: 'var(--font-display)'
       }}>
         Collections
         <span style={{
           fontSize: '0.75rem',
           fontWeight: '600',
-          color: 'var(--color-red)',
+          color: 'var(--accent)',
           backgroundColor: 'var(--muted)',
           padding: '0.125rem 0.5rem',
           marginLeft: 'auto',
-          fontFamily: 'var(--font-mono)'
+          fontFamily: 'var(--font-body)'
         }}>
           {allPinsCount}
         </span>
@@ -80,9 +79,7 @@ export default function MineTab<T extends CollectionCardData>({
             cursor: 'pointer',
             fontSize: '0.75rem',
             fontWeight: 700,
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-body)',
             color: 'var(--foreground)',
           }}
         >
@@ -111,8 +108,7 @@ export default function MineTab<T extends CollectionCardData>({
               borderRadius: 'var(--radius)',
               fontSize: '0.7rem',
               fontWeight: 700,
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
+              fontFamily: 'var(--font-body)',
               cursor: savingBlankCollection || !newBlankCollectionTitle.trim() ? 'not-allowed' : 'pointer',
               opacity: savingBlankCollection || !newBlankCollectionTitle.trim() ? 0.6 : 1,
             }}
@@ -127,10 +123,13 @@ export default function MineTab<T extends CollectionCardData>({
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius)',
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               fontSize: '0.7rem',
             }}
           >
-            ✕
+            <X size={14} />
           </button>
         </div>
       )}
@@ -164,10 +163,8 @@ export default function MineTab<T extends CollectionCardData>({
             alignItems: 'center',
             gap: '0.5rem',
             fontWeight: '600',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            fontSize: '0.75rem',
-            letterSpacing: '0.05em'
+            fontFamily: 'var(--font-body)',
+            fontSize: '0.75rem'
           }}
         >
           All Pins
@@ -176,7 +173,7 @@ export default function MineTab<T extends CollectionCardData>({
             marginLeft: 'auto',
             backgroundColor: selectedCollectionId === null ? 'rgba(255,255,255,0.2)' : 'var(--muted)',
             padding: '0.125rem 0.5rem',
-            fontFamily: 'var(--font-mono)'
+            fontFamily: 'var(--font-body)'
           }}>
             {allPinsCount}
           </span>
@@ -197,15 +194,13 @@ export default function MineTab<T extends CollectionCardData>({
               textAlign: 'center',
               color: 'var(--muted-foreground)',
               fontSize: '0.75rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-body)'
             }}>
               <div style={{
                 marginBottom: '0.5rem',
                 fontSize: '1.5rem',
                 fontWeight: '700',
-                color: 'var(--color-red)'
+                color: 'var(--accent)'
               }}>[ ]</div>
               <div>No collections yet</div>
               <div style={{ fontSize: '0.65rem', marginTop: '0.5rem', opacity: 0.7 }}>

@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { Search } from 'lucide-react'
 
 interface SearchBarProps {
   onSearch: (query: string) => void
@@ -59,12 +60,13 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
             cursor: 'pointer',
             fontSize: '0.875rem',
             fontWeight: '600',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-body)',
             transition: 'var(--transition)',
             whiteSpace: 'nowrap',
-            flexShrink: 0
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.375rem'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.opacity = '0.9'
@@ -73,7 +75,8 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
             e.currentTarget.style.opacity = '1'
           }}
         >
-          🔍 Search
+          <Search size={16} />
+          Search
         </button>
       </div>
     </form>

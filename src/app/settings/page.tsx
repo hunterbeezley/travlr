@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DatabaseService } from '@/lib/database'
+import { Download, Trash2, AlertTriangle } from 'lucide-react'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -68,35 +69,45 @@ export default function SettingsPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'var(--background)',
       padding: '40px 20px'
     }}>
       <div style={{
         maxWidth: '800px',
         margin: '0 auto',
-        background: 'white',
-        borderRadius: '20px',
+        background: 'var(--card-elevated)',
+        color: 'var(--foreground)',
+        borderRadius: 'var(--radius-xl)',
         padding: '40px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+        boxShadow: 'var(--shadow-xl)'
       }}>
-        <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '10px' }}>
+        <h1 style={{ fontSize: '32px', fontWeight: 'bold', fontFamily: 'var(--font-display)', marginBottom: '10px' }}>
           Settings & Privacy
         </h1>
-        <p style={{ color: '#666', marginBottom: '40px' }}>
+        <p style={{ color: 'var(--muted-foreground)', marginBottom: '40px' }}>
           Manage your data and privacy settings
         </p>
 
         {/* Data Export Section */}
         <div style={{
           padding: '30px',
-          background: '#f8f9fa',
-          borderRadius: '12px',
+          background: 'var(--card)',
+          borderRadius: 'var(--radius-lg)',
           marginBottom: '30px'
         }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '10px' }}>
-            📥 Download Your Data
+          <h2 style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
+            fontFamily: 'var(--font-display)',
+            marginBottom: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <Download size={20} color="var(--accent)" />
+            Download Your Data
           </h2>
-          <p style={{ color: '#666', marginBottom: '20px', lineHeight: '1.6' }}>
+          <p style={{ color: 'var(--muted-foreground)', marginBottom: '20px', lineHeight: '1.6' }}>
             Export all your data including profile information, pins, collections, and followers.
             This will download a JSON file with all your information.
           </p>
@@ -104,13 +115,14 @@ export default function SettingsPage() {
             onClick={handleExportData}
             disabled={loading}
             style={{
-              background: '#3b82f6',
+              background: 'var(--accent)',
               color: 'white',
               padding: '12px 24px',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius)',
               border: 'none',
               fontSize: '16px',
               fontWeight: '600',
+              fontFamily: 'var(--font-body)',
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.6 : 1,
               transition: 'all 0.2s'
@@ -118,7 +130,7 @@ export default function SettingsPage() {
           >
             {loading ? 'Exporting...' : 'Download My Data'}
           </button>
-          <p style={{ fontSize: '12px', color: '#999', marginTop: '10px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--muted-foreground)', marginTop: '10px' }}>
             GDPR Right to Data Portability
           </p>
         </div>
@@ -126,14 +138,24 @@ export default function SettingsPage() {
         {/* Account Deletion Section */}
         <div style={{
           padding: '30px',
-          background: '#fff5f5',
-          border: '2px solid #fecaca',
-          borderRadius: '12px'
+          background: 'var(--color-red-subtle)',
+          border: '2px solid var(--color-red-muted)',
+          borderRadius: 'var(--radius-lg)'
         }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '10px', color: '#dc2626' }}>
-            🗑️ Delete Account
+          <h2 style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
+            fontFamily: 'var(--font-display)',
+            marginBottom: '10px',
+            color: 'var(--destructive)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <Trash2 size={20} color="var(--destructive)" />
+            Delete Account
           </h2>
-          <p style={{ color: '#666', marginBottom: '20px', lineHeight: '1.6' }}>
+          <p style={{ color: 'var(--muted-foreground)', marginBottom: '20px', lineHeight: '1.6' }}>
             Permanently delete your account and all associated data. This action cannot be undone.
             All your pins, collections, and profile information will be removed.
           </p>
@@ -141,13 +163,14 @@ export default function SettingsPage() {
             onClick={() => setShowDeleteModal(true)}
             disabled={loading}
             style={{
-              background: '#dc2626',
+              background: 'var(--destructive)',
               color: 'white',
               padding: '12px 24px',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius)',
               border: 'none',
               fontSize: '16px',
               fontWeight: '600',
+              fontFamily: 'var(--font-body)',
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.6 : 1,
               transition: 'all 0.2s'
@@ -155,7 +178,7 @@ export default function SettingsPage() {
           >
             Delete My Account
           </button>
-          <p style={{ fontSize: '12px', color: '#999', marginTop: '10px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--muted-foreground)', marginTop: '10px' }}>
             GDPR Right to Erasure
           </p>
         </div>
@@ -164,10 +187,10 @@ export default function SettingsPage() {
           <div style={{
             marginTop: '20px',
             padding: '15px',
-            background: '#fee',
-            border: '1px solid #fcc',
-            borderRadius: '8px',
-            color: '#c00'
+            background: 'var(--color-red-subtle)',
+            border: '1px solid var(--color-red-muted)',
+            borderRadius: 'var(--radius)',
+            color: 'var(--destructive)'
           }}>
             {error}
           </div>
@@ -178,10 +201,11 @@ export default function SettingsPage() {
           onClick={() => router.back()}
           style={{
             marginTop: '30px',
-            color: '#666',
+            color: 'var(--muted-foreground)',
             background: 'none',
             border: 'none',
             fontSize: '16px',
+            fontFamily: 'var(--font-body)',
             cursor: 'pointer',
             textDecoration: 'underline'
           }}
@@ -205,26 +229,37 @@ export default function SettingsPage() {
           zIndex: 1000
         }}>
           <div style={{
-            background: 'white',
-            borderRadius: '16px',
+            background: 'var(--card-elevated)',
+            color: 'var(--foreground)',
+            borderRadius: 'var(--radius-xl)',
             padding: '40px',
             maxWidth: '500px',
             width: '90%'
           }}>
-            <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#dc2626' }}>
-              ⚠️ Confirm Account Deletion
+            <h3 style={{
+              fontSize: '24px',
+              fontWeight: 'bold',
+              fontFamily: 'var(--font-display)',
+              marginBottom: '20px',
+              color: 'var(--destructive)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <AlertTriangle size={22} color="var(--destructive)" />
+              Confirm Account Deletion
             </h3>
-            <p style={{ marginBottom: '20px', lineHeight: '1.6', color: '#666' }}>
+            <p style={{ marginBottom: '20px', lineHeight: '1.6', color: 'var(--muted-foreground)' }}>
               This will permanently delete:
             </p>
-            <ul style={{ marginBottom: '20px', paddingLeft: '20px', color: '#666' }}>
+            <ul style={{ marginBottom: '20px', paddingLeft: '20px', color: 'var(--muted-foreground)' }}>
               <li>Your profile and account information</li>
               <li>All your pins and images</li>
               <li>All your collections</li>
               <li>All your follows and followers</li>
               <li>All your notifications</li>
             </ul>
-            <p style={{ marginBottom: '20px', fontWeight: 'bold', color: '#dc2626' }}>
+            <p style={{ marginBottom: '20px', fontWeight: 'bold', color: 'var(--destructive)' }}>
               This action cannot be undone!
             </p>
             <p style={{ marginBottom: '10px', fontWeight: '600' }}>
@@ -238,8 +273,10 @@ export default function SettingsPage() {
               style={{
                 width: '100%',
                 padding: '12px',
-                border: '2px solid #ddd',
-                borderRadius: '8px',
+                background: 'var(--background)',
+                color: 'var(--foreground)',
+                border: '2px solid var(--border)',
+                borderRadius: 'var(--radius)',
                 fontSize: '16px',
                 marginBottom: '20px'
               }}
@@ -254,11 +291,13 @@ export default function SettingsPage() {
                 style={{
                   flex: 1,
                   padding: '12px',
-                  background: '#e5e7eb',
+                  background: 'var(--muted)',
+                  color: 'var(--foreground)',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: 'var(--radius)',
                   fontSize: '16px',
                   fontWeight: '600',
+                  fontFamily: 'var(--font-body)',
                   cursor: 'pointer'
                 }}
               >
@@ -270,12 +309,13 @@ export default function SettingsPage() {
                 style={{
                   flex: 1,
                   padding: '12px',
-                  background: '#dc2626',
+                  background: 'var(--destructive)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: 'var(--radius)',
                   fontSize: '16px',
                   fontWeight: '600',
+                  fontFamily: 'var(--font-body)',
                   cursor: (loading || deleteConfirmation !== 'DELETE') ? 'not-allowed' : 'pointer',
                   opacity: (loading || deleteConfirmation !== 'DELETE') ? 0.5 : 1
                 }}

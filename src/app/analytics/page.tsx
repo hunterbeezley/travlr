@@ -6,6 +6,18 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Auth from '@/components/Auth'
+import {
+  Library,
+  MapPin,
+  Eye,
+  Heart,
+  Bookmark,
+  Share2,
+  MessageCircle,
+  TrendingUp,
+  BarChart3,
+  Trophy,
+} from 'lucide-react'
 
 export default function AnalyticsPage() {
   const { user, loading: authLoading } = useAuth()
@@ -74,11 +86,9 @@ export default function AnalyticsPage() {
         borderBottom: '2px solid var(--border)'
       }}>
         <h1 style={{
-          fontSize: '1.5rem',
+          fontSize: '1.75rem',
           fontWeight: '700',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          fontFamily: 'var(--font-display)',
           marginBottom: '0.5rem'
         }}>
           Creator Analytics
@@ -108,11 +118,9 @@ export default function AnalyticsPage() {
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius)',
               cursor: 'pointer',
-              fontSize: '0.75rem',
+              fontSize: '0.8125rem',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-body)'
             }}
           >
             {days} Days
@@ -128,14 +136,14 @@ export default function AnalyticsPage() {
         marginBottom: '2rem'
       }}>
         {[
-          { label: 'Collections', value: summary.total_collections || 0, icon: '📚' },
-          { label: 'Total Pins', value: summary.total_pins || 0, icon: '📍' },
-          { label: 'Views', value: summary.total_views || 0, icon: '👁️' },
-          { label: 'Likes', value: summary.total_likes || 0, icon: '❤️' },
-          { label: 'Saves', value: summary.total_saves || 0, icon: '💾' },
-          { label: 'Shares', value: summary.total_shares || 0, icon: '🔗' },
-          { label: 'Comments', value: summary.total_comments || 0, icon: '💬' },
-          { label: 'Engagement', value: `${summary.avg_engagement_rate || 0}%`, icon: '📈' }
+          { label: 'Collections', value: summary.total_collections || 0, icon: Library },
+          { label: 'Total Pins', value: summary.total_pins || 0, icon: MapPin },
+          { label: 'Views', value: summary.total_views || 0, icon: Eye },
+          { label: 'Likes', value: summary.total_likes || 0, icon: Heart },
+          { label: 'Saves', value: summary.total_saves || 0, icon: Bookmark },
+          { label: 'Shares', value: summary.total_shares || 0, icon: Share2 },
+          { label: 'Comments', value: summary.total_comments || 0, icon: MessageCircle },
+          { label: 'Engagement', value: `${summary.avg_engagement_rate || 0}%`, icon: TrendingUp }
         ].map((stat) => (
           <div
             key={stat.label}
@@ -147,11 +155,11 @@ export default function AnalyticsPage() {
               textAlign: 'center'
             }}
           >
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{stat.icon}</div>
+            <stat.icon size={28} color="var(--accent)" style={{ marginBottom: '0.5rem' }} />
             <div style={{
               fontSize: '1.5rem',
               fontWeight: '700',
-              fontFamily: 'var(--font-mono)',
+              fontFamily: 'var(--font-body)',
               marginBottom: '0.25rem'
             }}>
               {stat.value}
@@ -178,14 +186,16 @@ export default function AnalyticsPage() {
           marginBottom: '1.5rem'
         }}>
           <h2 style={{
-            fontSize: '1rem',
+            fontSize: '1.125rem',
             fontWeight: '700',
-            fontFamily: 'var(--font-mono)',
+            fontFamily: 'var(--font-display)',
             marginBottom: '1rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
-            📊 Engagement Trend
+            <BarChart3 size={20} color="var(--accent)" />
+            Engagement Trend
           </h2>
           <div style={{
             display: 'flex',
@@ -204,20 +214,26 @@ export default function AnalyticsPage() {
                   padding: '0.75rem',
                   background: 'var(--muted)',
                   borderRadius: 'var(--radius)',
-                  fontSize: '0.75rem'
+                  fontSize: '0.8125rem'
                 }}
               >
                 <div style={{
                   minWidth: '80px',
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-body)',
                   color: 'var(--muted-foreground)'
                 }}>
                   {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </div>
                 <div style={{ flex: 1, display: 'flex', gap: '1rem' }}>
-                  <span>👁️ {day.views}</span>
-                  <span>❤️ {day.likes}</span>
-                  <span>💾 {day.saves}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Eye size={14} color="var(--muted-foreground)" /> {day.views}
+                  </span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Heart size={14} color="var(--muted-foreground)" /> {day.likes}
+                  </span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Bookmark size={14} color="var(--muted-foreground)" /> {day.saves}
+                  </span>
                 </div>
               </div>
             ))}
@@ -234,14 +250,16 @@ export default function AnalyticsPage() {
           padding: '1.5rem'
         }}>
           <h2 style={{
-            fontSize: '1rem',
+            fontSize: '1.125rem',
             fontWeight: '700',
-            fontFamily: 'var(--font-mono)',
+            fontFamily: 'var(--font-display)',
             marginBottom: '1rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
-            🏆 Top Performing Collections
+            <Trophy size={20} color="var(--accent)" />
+            Top Performing Collections
           </h2>
           <div style={{
             display: 'flex',
@@ -279,16 +297,24 @@ export default function AnalyticsPage() {
                     {collection.collection_name}
                   </div>
                   <div style={{
-                    fontSize: '0.7rem',
+                    fontSize: '0.75rem',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: 'var(--font-body)',
                     display: 'flex',
                     gap: '1rem'
                   }}>
-                    <span>👁️ {collection.views}</span>
-                    <span>❤️ {collection.likes}</span>
-                    <span>💾 {collection.saves}</span>
-                    <span>📈 {collection.engagement_rate}%</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Eye size={13} /> {collection.views}
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Heart size={13} /> {collection.likes}
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Bookmark size={13} /> {collection.saves}
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <TrendingUp size={13} /> {collection.engagement_rate}%
+                    </span>
                   </div>
                 </div>
               </Link>
@@ -306,12 +332,12 @@ export default function AnalyticsPage() {
           borderRadius: 'var(--radius-lg)',
           border: '2px solid var(--border)'
         }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
+          <BarChart3 size={48} color="var(--muted-foreground)" style={{ marginBottom: '1rem' }} />
           <h3 style={{
-            fontSize: '1.25rem',
+            fontSize: '1.375rem',
             fontWeight: '700',
             marginBottom: '0.5rem',
-            fontFamily: 'var(--font-mono)'
+            fontFamily: 'var(--font-display)'
           }}>
             No Analytics Yet
           </h3>
@@ -332,9 +358,7 @@ export default function AnalyticsPage() {
               borderRadius: 'var(--radius)',
               textDecoration: 'none',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              fontFamily: 'var(--font-body)',
               fontSize: '0.875rem'
             }}
           >

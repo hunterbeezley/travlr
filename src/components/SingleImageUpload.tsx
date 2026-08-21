@@ -2,6 +2,7 @@
 import { logger } from '@/lib/logger'
 import { useState, useRef } from 'react'
 import { ImageUploadService } from '@/lib/imageUpload'
+import { Camera, Trash2, Loader2 } from 'lucide-react'
 
 interface SingleImageUploadProps {
   currentImageUrl?: string
@@ -125,14 +126,14 @@ export default function SingleImageUpload({
         >
           {uploading ? (
             <>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏳</div>
+              <Loader2 size={32} style={{ marginBottom: '0.5rem', animation: 'spin 1s linear infinite', color: 'var(--muted-foreground)' }} />
               <div style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
                 Uploading image...
               </div>
             </>
           ) : (
             <>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📷</div>
+              <Camera size={32} style={{ marginBottom: '0.5rem', color: 'var(--muted-foreground)' }} />
               <div style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)', textAlign: 'center' }}>
                 Click to upload an image
                 <br />
@@ -177,9 +178,10 @@ export default function SingleImageUpload({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: '0.5rem',
               color: 'white'
             }}>
-              ⏳ Uploading...
+              <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Uploading...
             </div>
           )}
 
@@ -204,6 +206,9 @@ export default function SingleImageUpload({
                   padding: '0.5rem',
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
                   transition: 'var(--transition)'
                 }}
                 onMouseEnter={(e) => {
@@ -215,7 +220,7 @@ export default function SingleImageUpload({
                   e.currentTarget.style.backgroundColor = 'var(--accent)'
                 }}
               >
-                📷 Replace
+                <Camera size={14} /> Replace
               </button>
 
               {/* Remove button */}
@@ -230,6 +235,9 @@ export default function SingleImageUpload({
                   padding: '0.5rem',
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
                   transition: 'var(--transition)'
                 }}
                 onMouseEnter={(e) => {
@@ -241,7 +249,7 @@ export default function SingleImageUpload({
                   e.currentTarget.style.backgroundColor = 'var(--destructive)'
                 }}
               >
-                🗑️ Remove
+                <Trash2 size={14} /> Remove
               </button>
             </div>
           )}

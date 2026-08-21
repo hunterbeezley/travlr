@@ -2,6 +2,7 @@
 import { logger } from '@/lib/logger'
 import { useState, useRef } from 'react'
 import { ImageUploadService } from '@/lib/imageUpload'
+import { Camera, X, Loader2 } from 'lucide-react'
 
 interface ImageItem {
   id: string // temporary ID for tracking
@@ -213,7 +214,7 @@ export default function MultipleImageUpload({
             e.currentTarget.style.backgroundColor = 'var(--muted)'
           }}
         >
-          <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📷</div>
+          <Camera size={24} style={{ marginBottom: '0.5rem', color: 'var(--muted-foreground)' }} />
           <div style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)', textAlign: 'center' }}>
             {images.length >= maxImages 
               ? `Maximum ${maxImages} images reached`
@@ -279,9 +280,10 @@ export default function MultipleImageUpload({
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: 'white',
-                  fontSize: '0.75rem'
+                  fontSize: '0.75rem',
+                  gap: '0.375rem'
                 }}>
-                  ⏳ Uploading...
+                  <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Uploading...
                 </div>
               )}
 
@@ -332,7 +334,7 @@ export default function MultipleImageUpload({
                     e.currentTarget.style.backgroundColor = 'var(--destructive)'
                   }}
                 >
-                  ✕
+                  <X size={12} />
                 </button>
               )}
             </div>

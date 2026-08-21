@@ -32,12 +32,12 @@ export default function Navbar() {
           >
             <svg width="32" height="32" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
               <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
-              <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
-              <circle cx="24" cy="24" r="6" fill="var(--color-red)"/>
-              <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-              <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
+              <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--accent)" strokeWidth="2"/>
+              <circle cx="24" cy="24" r="6" fill="var(--accent)"/>
+              <line x1="4" y1="4" x2="8" y2="8" stroke="var(--accent)" strokeWidth="2"/>
+              <line x1="44" y1="4" x2="40" y2="8" stroke="var(--accent)" strokeWidth="2"/>
+              <line x1="4" y1="44" x2="8" y2="40" stroke="var(--accent)" strokeWidth="2"/>
+              <line x1="44" y1="44" x2="40" y2="40" stroke="var(--accent)" strokeWidth="2"/>
             </svg>
             Travlr
           </div>
@@ -48,14 +48,14 @@ export default function Navbar() {
             onClick={() => router.push('/map')}
             className={`nav-link ${isActive('/map') || isActive('/') ? 'active' : ''}`}
           >
-            MAP
+            Map
           </button>
 
           <button
             onClick={() => router.push('/friends')}
             className={`nav-link ${isActive('/friends') ? 'active' : ''}`}
           >
-            FRIENDS
+            Friends
           </button>
         </div>
 
@@ -81,7 +81,7 @@ export default function Navbar() {
                 className="btn btn-destructive btn-small navbar-logout-desktop"
                 title="Sign out"
               >
-                LOGOUT
+                Sign out
               </button>
             </div>
           )}

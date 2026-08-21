@@ -9,6 +9,7 @@ import DayView from '@/components/Planner/DayView'
 import POISearch from '@/components/Planner/POISearch'
 import ManualAddItemModal from '@/components/Planner/ManualAddItemModal'
 import { Itinerary, ItineraryItem, GooglePlaceResult } from '@/lib/types/itinerary'
+import { Calendar } from 'lucide-react'
 
 export default function PlannerPage() {
   const router = useRouter()
@@ -223,9 +224,7 @@ export default function PlannerPage() {
             <h1 style={{
               fontSize: '2rem',
               fontWeight: '700',
-              fontFamily: 'var(--font-display)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-display)'
             }}>
               Trip Planner
             </h1>
@@ -235,9 +234,7 @@ export default function PlannerPage() {
               className="btn btn-primary"
               style={{
                 padding: '0.75rem 1.5rem',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                fontFamily: 'var(--font-body)',
                 fontSize: '0.875rem'
               }}
             >
@@ -279,7 +276,7 @@ export default function PlannerPage() {
                   borderRadius: 'var(--radius)',
                   fontSize: '0.875rem',
                   color: 'var(--foreground)',
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-body)',
                   cursor: 'pointer'
                 }}
               >
@@ -384,7 +381,7 @@ export default function PlannerPage() {
                   style={{
                     fontSize: '0.875rem',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)'
+                    fontFamily: 'var(--font-body)'
                   }}
                 >
                   Day{' '}
@@ -464,10 +461,11 @@ export default function PlannerPage() {
               padding: '4rem',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗓️</div>
+              <Calendar size={48} color="var(--muted-foreground)" style={{ marginBottom: '1rem' }} />
               <h3 style={{
-                fontSize: '1.25rem',
+                fontSize: '1.375rem',
                 fontWeight: '600',
+                fontFamily: 'var(--font-display)',
                 marginBottom: '0.5rem'
               }}>
                 No trips yet
@@ -612,9 +610,7 @@ function CreateItineraryModal({
             fontSize: '1.5rem',
             fontWeight: '700',
             marginBottom: '1.5rem',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            fontFamily: 'var(--font-display)'
           }}
         >
           Create New Trip
@@ -675,7 +671,7 @@ function CreateItineraryModal({
                   borderRadius: 'var(--radius)',
                   fontSize: '0.875rem',
                   color: 'var(--foreground)',
-                  fontFamily: 'var(--font-mono)'
+                  fontFamily: 'var(--font-body)'
                 }}
               />
             </div>
@@ -703,7 +699,7 @@ function CreateItineraryModal({
                   borderRadius: 'var(--radius)',
                   fontSize: '0.875rem',
                   color: 'var(--foreground)',
-                  fontFamily: 'var(--font-mono)'
+                  fontFamily: 'var(--font-body)'
                 }}
               />
             </div>
@@ -769,10 +765,8 @@ function CreateItineraryModal({
                 borderRadius: 'var(--radius)',
                 cursor: saving ? 'not-allowed' : 'pointer',
                 fontWeight: '600',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                fontSize: '0.75rem',
+                fontFamily: 'var(--font-body)',
+                fontSize: '0.8125rem',
                 opacity: saving ? 0.5 : 1
               }}
             >
@@ -799,10 +793,8 @@ function CreateItineraryModal({
                     ? 'not-allowed'
                     : 'pointer',
                 fontWeight: '600',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                fontSize: '0.75rem'
+                fontFamily: 'var(--font-body)',
+                fontSize: '0.8125rem'
               }}
             >
               {saving ? 'Creating...' : 'Create Trip'}

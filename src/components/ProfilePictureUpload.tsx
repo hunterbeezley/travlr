@@ -5,6 +5,7 @@
 import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/lib/logger'
+import { Camera, X, Loader2 } from 'lucide-react'
 
 interface ProfilePictureUploadProps {
   currentImageUrl?: string | null
@@ -298,10 +299,10 @@ export default function ProfilePictureUpload({
             e.currentTarget.style.opacity = '0'
           }}
           >
-            📷
+            <Camera size={20} />
           </div>
         )}
-        
+
         {/* Loading overlay */}
         {uploading && (
           <div style={{
@@ -318,7 +319,7 @@ export default function ProfilePictureUpload({
             color: 'white',
             fontSize: '0.75rem'
           }}>
-            ⏳
+            <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
           </div>
         )}
       </div>
@@ -357,7 +358,7 @@ export default function ProfilePictureUpload({
           }}
           title="Delete profile picture"
         >
-          ✕
+          <X size={12} />
         </button>
       )}
 

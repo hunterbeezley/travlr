@@ -128,10 +128,8 @@ export default function SchedulePinModal({
           style={{
             fontSize: '1.5rem',
             fontWeight: '700',
-            fontFamily: 'var(--font-mono)',
-            marginBottom: '0.5rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
+            fontFamily: 'var(--font-display)',
+            marginBottom: '0.5rem'
           }}
         >
           Schedule Pin
@@ -175,7 +173,7 @@ export default function SchedulePinModal({
                 borderRadius: 'var(--radius)',
                 fontSize: '0.875rem',
                 color: 'var(--foreground)',
-                fontFamily: 'var(--font-mono)'
+                fontFamily: 'var(--font-body)'
               }}
             />
             <p
@@ -212,7 +210,7 @@ export default function SchedulePinModal({
                 borderRadius: 'var(--radius)',
                 fontSize: '0.875rem',
                 color: 'var(--foreground)',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-body)',
                 cursor: 'pointer'
               }}
             >
@@ -256,7 +254,7 @@ export default function SchedulePinModal({
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    fontFamily: 'var(--font-mono)'
+                    fontFamily: 'var(--font-body)'
                   }}
                 >
                   {mins < 60 ? `${mins}m` : `${mins / 60}h`}
@@ -277,7 +275,7 @@ export default function SchedulePinModal({
                 borderRadius: 'var(--radius)',
                 fontSize: '0.875rem',
                 color: 'var(--foreground)',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-body)',
                 marginTop: '0.5rem'
               }}
             />
@@ -337,9 +335,7 @@ export default function SchedulePinModal({
                   borderRadius: 'var(--radius)',
                   cursor: saving ? 'not-allowed' : 'pointer',
                   fontWeight: '600',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '0.75rem',
                   opacity: saving ? 0.5 : 1
                 }}
@@ -358,9 +354,7 @@ export default function SchedulePinModal({
                   borderRadius: 'var(--radius)',
                   cursor: saving || !scheduledDate ? 'not-allowed' : 'pointer',
                   fontWeight: '600',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '0.75rem',
                   opacity: saving || !scheduledDate ? 0.5 : 1
                 }}
@@ -383,9 +377,7 @@ export default function SchedulePinModal({
                   borderRadius: 'var(--radius)',
                   cursor: saving ? 'not-allowed' : 'pointer',
                   fontWeight: '600',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '0.75rem',
                   opacity: saving ? 0.5 : 1
                 }}

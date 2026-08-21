@@ -1,5 +1,6 @@
 'use client'
 import React, { useState } from 'react'
+import { MapPin } from 'lucide-react'
 import { ItineraryItem } from '@/lib/types/itinerary'
 
 interface DayViewProps {
@@ -110,7 +111,7 @@ export default function DayView({
           style={{
             fontSize: '0.875rem',
             color: 'var(--muted-foreground)',
-            fontFamily: 'var(--font-mono)'
+            fontFamily: 'var(--font-body)'
           }}
         >
           {dayItems.length} {dayItems.length === 1 ? 'item' : 'items'}
@@ -253,7 +254,7 @@ export default function DayView({
             pointerEvents: 'none'
           }}
         >
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📍</div>
+          <MapPin size={32} color="var(--muted-foreground)" style={{ marginBottom: '0.5rem' }} />
           <p
             style={{
               fontSize: '0.875rem',

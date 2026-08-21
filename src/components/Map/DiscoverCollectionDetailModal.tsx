@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Z_INDEX } from '@/lib/mapUiConstants'
+import { X } from 'lucide-react'
 
 export interface DiscoverCollectionDetailPin {
   id: string
@@ -61,12 +62,12 @@ export default function DiscoverCollectionDetailModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700 }}>{collection.title}</h2>
+          <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, fontFamily: 'var(--font-display)' }}>{collection.title}</h2>
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: 'var(--muted-foreground)' }}
+            style={{ background: 'none', border: 'none', display: 'flex', cursor: 'pointer', color: 'var(--muted-foreground)' }}
           >
-            ✕
+            <X size={20} />
           </button>
         </div>
         {collection.description && (
@@ -125,8 +126,7 @@ export default function DiscoverCollectionDetailModal({
                     borderRadius: 'var(--radius)',
                     fontSize: '0.7rem',
                     fontWeight: 700,
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
+                    fontFamily: 'var(--font-body)',
                     cursor: 'pointer',
                     flexShrink: 0,
                     marginLeft: '0.75rem',

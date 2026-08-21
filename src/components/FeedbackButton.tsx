@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { usePathname } from 'next/navigation'
+import { MessageCircle, X } from 'lucide-react'
 import { Z_INDEX } from '@/lib/mapUiConstants'
 
 export default function FeedbackButton() {
@@ -74,7 +75,7 @@ export default function FeedbackButton() {
         title="Send Feedback"
         aria-label="Send Feedback"
       >
-        💬
+        <MessageCircle size={17} strokeWidth={2} />
       </button>
     )
   }
@@ -132,28 +133,28 @@ export default function FeedbackButton() {
           marginBottom: '1.5rem'
         }}>
           <h2 style={{
-            fontSize: '1.25rem',
+            fontSize: '1.375rem',
             fontWeight: '700',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-display)',
             margin: 0
           }}>
-            📣 Send Feedback
+            Send Feedback
           </h2>
           <button
             onClick={() => setIsOpen(false)}
+            aria-label="Close"
             style={{
               background: 'none',
               border: 'none',
-              color: 'var(--foreground)',
+              color: 'var(--muted-foreground)',
               cursor: 'pointer',
-              fontSize: '1.5rem',
               padding: '0.25rem',
-              lineHeight: 1
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
-            ×
+            <X size={20} />
           </button>
         </div>
 
@@ -162,20 +163,19 @@ export default function FeedbackButton() {
           <div style={{ marginBottom: '1rem' }}>
             <label style={{
               display: 'block',
-              fontSize: '0.875rem',
+              fontSize: '0.8125rem',
               fontWeight: '600',
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-body)',
+              color: 'var(--muted-foreground)'
             }}>
               Type
             </label>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               {[
-                { value: 'bug', label: '🐛 Bug', emoji: '🐛' },
-                { value: 'feature', label: '✨ Feature', emoji: '✨' },
-                { value: 'other', label: '💭 Other', emoji: '💭' }
+                { value: 'bug', label: '🐛 Bug' },
+                { value: 'feature', label: '✨ Feature' },
+                { value: 'other', label: '💭 Other' }
               ].map((type) => (
                 <button
                   key={type.value}
@@ -190,11 +190,9 @@ export default function FeedbackButton() {
                     borderColor: feedbackType === type.value ? 'var(--accent)' : 'var(--border)',
                     borderRadius: 'var(--radius)',
                     cursor: 'pointer',
-                    fontSize: '0.75rem',
+                    fontSize: '0.8125rem',
                     fontWeight: '600',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
+                    fontFamily: 'var(--font-body)',
                     transition: 'var(--transition)'
                   }}
                 >
@@ -208,12 +206,11 @@ export default function FeedbackButton() {
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{
               display: 'block',
-              fontSize: '0.875rem',
+              fontSize: '0.8125rem',
               fontWeight: '600',
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-body)',
+              color: 'var(--muted-foreground)'
             }}>
               Your Feedback
             </label>
@@ -236,7 +233,7 @@ export default function FeedbackButton() {
                 border: '2px solid var(--border)',
                 borderRadius: 'var(--radius)',
                 color: 'var(--foreground)',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-body)',
                 fontSize: '0.875rem',
                 resize: 'vertical'
               }}
@@ -245,16 +242,16 @@ export default function FeedbackButton() {
 
           {/* User Info */}
           <div style={{
-            fontSize: '0.75rem',
+            fontSize: '0.8125rem',
             color: 'var(--muted-foreground)',
             marginBottom: '1rem',
             padding: '0.75rem',
             background: 'var(--muted)',
             borderRadius: 'var(--radius)',
-            fontFamily: 'var(--font-mono)'
+            fontFamily: 'var(--font-body)'
           }}>
-            <div>👤 {profile?.username || user?.email || 'Anonymous'}</div>
-            <div>📍 Page: {pathname}</div>
+            <div>{profile?.username || user?.email || 'Anonymous'}</div>
+            <div>Page: {pathname}</div>
           </div>
 
           {/* Submit Button */}
@@ -270,14 +267,12 @@ export default function FeedbackButton() {
               borderRadius: 'var(--radius)',
               cursor: isSubmitting || !feedback.trim() ? 'not-allowed' : 'pointer',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              fontSize: '0.875rem',
+              fontFamily: 'var(--font-body)',
+              fontSize: '0.9375rem',
               transition: 'var(--transition)'
             }}
           >
-            {isSubmitting ? '⏳ Sending...' : submitStatus === 'success' ? '✅ Sent!' : '📤 Send Feedback'}
+            {isSubmitting ? 'Sending...' : submitStatus === 'success' ? 'Sent!' : 'Send Feedback'}
           </button>
 
           {submitStatus === 'error' && (
