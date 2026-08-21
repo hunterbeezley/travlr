@@ -2,6 +2,7 @@
 import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Building2 } from 'lucide-react'
 
 interface CityBrowserProps {
   onSelect: (city: string) => void
@@ -64,11 +65,9 @@ export default function CityBrowser({ onSelect, selected }: CityBrowserProps) {
   return (
     <div style={{ marginBottom: '2rem' }}>
       <h3 style={{
-        fontSize: '0.875rem',
+        fontSize: '1.125rem',
         fontWeight: '700',
-        fontFamily: 'var(--font-mono)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.1em',
+        fontFamily: 'var(--font-display)',
         marginBottom: '1rem',
         color: 'var(--foreground)'
       }}>
@@ -92,11 +91,9 @@ export default function CityBrowser({ onSelect, selected }: CityBrowserProps) {
               borderColor: selected === city.city ? 'var(--accent)' : 'var(--border)',
               borderRadius: 'var(--radius)',
               cursor: 'pointer',
-              fontSize: '0.75rem',
+              fontSize: '0.875rem',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              fontFamily: 'var(--font-body)',
               transition: 'var(--transition)',
               display: 'flex',
               alignItems: 'center',
@@ -113,7 +110,7 @@ export default function CityBrowser({ onSelect, selected }: CityBrowserProps) {
               }
             }}
           >
-            <span>🌆</span>
+            <Building2 size={16} />
             <span>{city.city}</span>
             <span style={{
               fontSize: '0.7rem',
@@ -134,11 +131,9 @@ export default function CityBrowser({ onSelect, selected }: CityBrowserProps) {
               border: '2px solid var(--border)',
               borderRadius: 'var(--radius)',
               cursor: 'pointer',
-              fontSize: '0.75rem',
+              fontSize: '0.875rem',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              fontFamily: 'var(--font-body)',
               transition: 'var(--transition)'
             }}
             onMouseEnter={(e) => {

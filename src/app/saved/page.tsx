@@ -8,7 +8,7 @@ import Navbar from '@/components/Navbar'
 import Auth from '@/components/Auth'
 import OrganizeFolderModal from '@/components/Saved/OrganizeFolderModal'
 import EmptyState from '@/components/EmptyState'
-import { Bookmark, Calendar } from 'lucide-react'
+import { Bookmark, Calendar, Library, Folder, MapPin, Heart, MessageCircle, Eye, Link2, Trash2 } from 'lucide-react'
 
 export default function SavedCollectionsPage() {
   const { user, loading: authLoading } = useAuth()
@@ -227,9 +227,7 @@ export default function SavedCollectionsPage() {
         <h1 style={{
           fontSize: '1.5rem',
           fontWeight: '700',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          fontFamily: 'var(--font-display)',
           marginBottom: '1rem'
         }}>
           Saved Collections
@@ -250,7 +248,7 @@ export default function SavedCollectionsPage() {
               <div style={{
                 fontSize: '0.7rem',
                 color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-body)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 marginBottom: '0.25rem'
@@ -260,7 +258,7 @@ export default function SavedCollectionsPage() {
               <div style={{
                 fontSize: '1.5rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-display)',
                 color: 'var(--foreground)'
               }}>
                 {insights.totalCollections}
@@ -271,7 +269,7 @@ export default function SavedCollectionsPage() {
               <div style={{
                 fontSize: '0.7rem',
                 color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-body)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 marginBottom: '0.25rem'
@@ -281,7 +279,7 @@ export default function SavedCollectionsPage() {
               <div style={{
                 fontSize: '1.5rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-display)',
                 color: 'var(--foreground)'
               }}>
                 {insights.totalPins}
@@ -292,7 +290,7 @@ export default function SavedCollectionsPage() {
               <div style={{
                 fontSize: '0.7rem',
                 color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-body)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 marginBottom: '0.25rem'
@@ -302,7 +300,7 @@ export default function SavedCollectionsPage() {
               <div style={{
                 fontSize: '1.5rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-display)',
                 color: 'var(--foreground)'
               }}>
                 {insights.totalCities}
@@ -313,7 +311,7 @@ export default function SavedCollectionsPage() {
               <div style={{
                 fontSize: '0.7rem',
                 color: 'var(--muted-foreground)',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-body)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 marginBottom: '0.25rem'
@@ -323,7 +321,7 @@ export default function SavedCollectionsPage() {
               <div style={{
                 fontSize: '1.5rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-display)',
                 color: 'var(--foreground)'
               }}>
                 {insights.totalCreators}
@@ -355,9 +353,7 @@ export default function SavedCollectionsPage() {
               cursor: 'pointer',
               fontSize: '0.875rem',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              fontFamily: 'var(--font-body)',
               transition: 'var(--transition)',
               whiteSpace: 'nowrap',
               display: 'flex',
@@ -365,7 +361,7 @@ export default function SavedCollectionsPage() {
               gap: '0.5rem'
             }}
           >
-            <span>{folder.folder === 'All' ? '📚' : '📁'}</span>
+            {folder.folder === 'All' ? <Library size={16} strokeWidth={2} /> : <Folder size={16} strokeWidth={2} />}
             <span>{folder.folder}</span>
             <span style={{
               fontSize: '0.7rem',
@@ -472,7 +468,7 @@ export default function SavedCollectionsPage() {
                     fontSize: '1rem',
                     fontWeight: '700',
                     marginBottom: '0.25rem',
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: 'var(--font-display)',
                     color: 'var(--foreground)'
                   }}>
                     {collection.collection_name}
@@ -488,21 +484,22 @@ export default function SavedCollectionsPage() {
 
                 {/* Folder Badge */}
                 <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
                   fontSize: '0.7rem',
                   color: 'var(--muted-foreground)',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
+                  fontFamily: 'var(--font-body)',
                   marginBottom: '0.75rem'
                 }}>
-                  📁 {collection.folder}
+                  <Folder size={12} strokeWidth={2} /> {collection.folder}
                 </div>
 
                 {/* Stats */}
                 <div style={{
                   fontSize: '0.7rem',
                   color: 'var(--muted-foreground)',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
+                  fontFamily: 'var(--font-body)',
                   display: 'flex',
                   gap: '0.75rem',
                   marginBottom: '1rem',
@@ -510,11 +507,17 @@ export default function SavedCollectionsPage() {
                   background: 'var(--muted)',
                   borderRadius: 'var(--radius)'
                 }}>
-                  <span>📍 {collection.pin_count}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <MapPin size={12} strokeWidth={2} /> {collection.pin_count}
+                  </span>
                   {collection.stats && (
                     <>
-                      <span>❤️ {collection.stats.likes_count || 0}</span>
-                      <span>💬 {collection.stats.comments_count || 0}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Heart size={12} strokeWidth={2} /> {collection.stats.likes_count || 0}
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <MessageCircle size={12} strokeWidth={2} /> {collection.stats.comments_count || 0}
+                      </span>
                     </>
                   )}
                 </div>
@@ -536,9 +539,7 @@ export default function SavedCollectionsPage() {
                       cursor: 'pointer',
                       fontSize: '0.7rem',
                       fontWeight: '600',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
+                      fontFamily: 'var(--font-body)',
                       textAlign: 'center',
                       textDecoration: 'none',
                       display: 'flex',
@@ -554,7 +555,7 @@ export default function SavedCollectionsPage() {
                       e.currentTarget.style.opacity = '1'
                     }}
                   >
-                    <span>👁️</span> View
+                    <Eye size={14} strokeWidth={2} /> View
                   </Link>
 
                   <button
@@ -567,9 +568,7 @@ export default function SavedCollectionsPage() {
                       cursor: 'pointer',
                       fontSize: '0.7rem',
                       fontWeight: '600',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
+                      fontFamily: 'var(--font-body)',
                       color: 'var(--foreground)',
                       display: 'flex',
                       alignItems: 'center',
@@ -584,7 +583,7 @@ export default function SavedCollectionsPage() {
                       e.currentTarget.style.borderColor = 'var(--border)'
                     }}
                   >
-                    <span>🔗</span> Share
+                    <Link2 size={14} strokeWidth={2} /> Share
                   </button>
 
                   <button
@@ -597,9 +596,7 @@ export default function SavedCollectionsPage() {
                       cursor: 'pointer',
                       fontSize: '0.7rem',
                       fontWeight: '600',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
+                      fontFamily: 'var(--font-body)',
                       color: 'var(--foreground)',
                       display: 'flex',
                       alignItems: 'center',
@@ -614,7 +611,7 @@ export default function SavedCollectionsPage() {
                       e.currentTarget.style.borderColor = 'var(--border)'
                     }}
                   >
-                    <span>📁</span> Move
+                    <Folder size={14} strokeWidth={2} /> Move
                   </button>
 
                   <button
@@ -627,10 +624,8 @@ export default function SavedCollectionsPage() {
                       cursor: 'pointer',
                       fontSize: '0.7rem',
                       fontWeight: '600',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#ef4444',
+                      fontFamily: 'var(--font-body)',
+                      color: 'var(--destructive)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -638,15 +633,15 @@ export default function SavedCollectionsPage() {
                       transition: 'var(--transition)'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#ef4444'
-                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
+                      e.currentTarget.style.borderColor = 'var(--destructive)'
+                      e.currentTarget.style.background = 'var(--color-red-subtle)'
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.borderColor = 'var(--border)'
                       e.currentTarget.style.background = 'var(--muted)'
                     }}
                   >
-                    <span>🗑️</span> Unsave
+                    <Trash2 size={14} strokeWidth={2} /> Unsave
                   </button>
                 </div>
               </div>

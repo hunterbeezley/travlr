@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { Search } from 'lucide-react'
 
 interface AdvancedFiltersProps {
   onApplyFilters: (filters: FilterState) => void
@@ -85,15 +86,14 @@ export default function AdvancedFilters({ onApplyFilters, onClearFilters }: Adva
           cursor: 'pointer',
           fontSize: '0.875rem',
           fontWeight: '600',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          fontFamily: 'var(--font-body)',
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem'
         }}
       >
-        <span>🔍 Filters</span>
+        <Search size={16} />
+        <span>Filters</span>
         {activeFilterCount > 0 && (
           <span style={{
             background: 'white',
@@ -140,10 +140,8 @@ export default function AdvancedFilters({ onApplyFilters, onClearFilters }: Adva
             <h2 style={{
               fontSize: '1.25rem',
               fontWeight: '700',
-              fontFamily: 'var(--font-mono)',
-              marginBottom: '1.5rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-display)',
+              marginBottom: '1.5rem'
             }}>
               Advanced Filters
             </h2>
@@ -368,9 +366,7 @@ export default function AdvancedFilters({ onApplyFilters, onClearFilters }: Adva
                   borderRadius: 'var(--radius)',
                   cursor: 'pointer',
                   fontWeight: '600',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '0.75rem'
                 }}
               >
@@ -386,9 +382,7 @@ export default function AdvancedFilters({ onApplyFilters, onClearFilters }: Adva
                   borderRadius: 'var(--radius)',
                   cursor: 'pointer',
                   fontWeight: '600',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '0.75rem'
                 }}
               >
@@ -405,9 +399,7 @@ export default function AdvancedFilters({ onApplyFilters, onClearFilters }: Adva
                   borderRadius: 'var(--radius)',
                   cursor: 'pointer',
                   fontWeight: '600',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '0.75rem'
                 }}
               >

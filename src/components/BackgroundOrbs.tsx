@@ -21,7 +21,7 @@ export default function BackgroundOrbs() {
           left: '5rem',
           width: '18rem',
           height: '18rem',
-          background: 'radial-gradient(circle, rgba(230, 57, 70, 0.2) 0%, rgba(230, 57, 70, 0.05) 50%, transparent 100%)',
+          background: 'radial-gradient(circle, rgba(224, 92, 58, 0.2) 0%, rgba(224, 92, 58, 0.05) 50%, transparent 100%)',
           borderRadius: '50%',
           filter: 'blur(60px)',
           transform: 'translate(-50%, -50%)'
@@ -37,7 +37,7 @@ export default function BackgroundOrbs() {
           right: '5rem',
           width: '24rem',
           height: '24rem',
-          background: 'radial-gradient(circle, rgba(230, 57, 70, 0.15) 0%, rgba(230, 57, 70, 0.03) 50%, transparent 100%)',
+          background: 'radial-gradient(circle, rgba(224, 92, 58, 0.15) 0%, rgba(224, 92, 58, 0.03) 50%, transparent 100%)',
           borderRadius: '50%',
           filter: 'blur(70px)',
           animationDelay: '2s'
@@ -53,7 +53,7 @@ export default function BackgroundOrbs() {
           left: '50%',
           width: '16rem',
           height: '16rem',
-          background: 'radial-gradient(circle, rgba(230, 57, 70, 0.18) 0%, rgba(230, 57, 70, 0.04) 50%, transparent 100%)',
+          background: 'radial-gradient(circle, rgba(224, 92, 58, 0.18) 0%, rgba(224, 92, 58, 0.04) 50%, transparent 100%)',
           borderRadius: '50%',
           filter: 'blur(65px)',
           transform: 'translate(-50%, -50%)',
@@ -70,7 +70,7 @@ export default function BackgroundOrbs() {
           right: '20%',
           width: '12rem',
           height: '12rem',
-          background: 'radial-gradient(circle, rgba(230, 57, 70, 0.12) 0%, rgba(230, 57, 70, 0.02) 50%, transparent 100%)',
+          background: 'radial-gradient(circle, rgba(224, 92, 58, 0.12) 0%, rgba(224, 92, 58, 0.02) 50%, transparent 100%)',
           borderRadius: '50%',
           filter: 'blur(50px)',
           animationDelay: '6s'
@@ -86,7 +86,7 @@ export default function BackgroundOrbs() {
           left: '15%',
           width: '14rem',
           height: '14rem',
-          background: 'radial-gradient(circle, rgba(230, 57, 70, 0.16) 0%, rgba(230, 57, 70, 0.03) 50%, transparent 100%)',
+          background: 'radial-gradient(circle, rgba(224, 92, 58, 0.16) 0%, rgba(224, 92, 58, 0.03) 50%, transparent 100%)',
           borderRadius: '50%',
           filter: 'blur(55px)',
           animationDelay: '8s'

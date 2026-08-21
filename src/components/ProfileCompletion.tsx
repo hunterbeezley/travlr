@@ -179,7 +179,6 @@ const ProfileCompletion: React.FC<ProfileCompletionProps> = ({ onComplete }) => 
   return (
     <div className="form-container slide-up">
       <div className="text-center" style={{ marginBottom: '2rem' }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👋</div>
         <h2 className="form-title">Welcome to Travlr!</h2>
         <p className="form-subtitle">
           Let's set up your profile to get started

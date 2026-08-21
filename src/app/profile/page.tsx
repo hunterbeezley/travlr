@@ -11,7 +11,8 @@ import EmptyState from '@/components/EmptyState'
 import { supabase } from '@/lib/supabase'
 import { DatabaseService } from '@/lib/database'
 import { logger } from '@/lib/logger'
-import { FolderOpen } from 'lucide-react'
+import { FolderOpen, Folder, MapPin, Link2, Mail, Calendar, Bookmark, ChartBar, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { getCategoryIcon } from '@/lib/categoryIcons'
 
 interface UserProfile {
   id: string
@@ -624,13 +625,13 @@ export default function ProfilePage() {
                       color: 'var(--muted-foreground)'
                     }}>
                       {profile?.location && (
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                          📍 {profile.location}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontFamily: 'var(--font-body)', fontSize: '0.75rem' }}>
+                          <MapPin size={14} strokeWidth={2} /> {profile.location}
                         </div>
                       )}
                       {profile?.website && (
-                        <div>
-                          🔗 <a
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                          <Link2 size={14} strokeWidth={2} /> <a
                             href={profile.website}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -643,11 +644,11 @@ export default function ProfilePage() {
                           </a>
                         </div>
                       )}
-                      <div>
-                        ✉️ {user.email}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        <Mail size={14} strokeWidth={2} /> {user.email}
                       </div>
-                      <div>
-                        📅 Joined {new Date(profile?.created_at || '').toLocaleDateString()}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        <Calendar size={14} strokeWidth={2} /> Joined {new Date(profile?.created_at || '').toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -927,7 +928,7 @@ export default function ProfilePage() {
                 e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
               }}
             >
-              <span style={{ fontSize: '1.5rem' }}>💾</span>
+              <Bookmark size={24} strokeWidth={2} color="var(--accent)" />
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '1rem', fontWeight: '600' }}>Saved</div>
                 <div style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
@@ -961,7 +962,7 @@ export default function ProfilePage() {
                 e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
               }}
             >
-              <span style={{ fontSize: '1.5rem' }}>📊</span>
+              <ChartBar size={24} strokeWidth={2} color="var(--accent)" />
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '1rem', fontWeight: '600' }}>Analytics</div>
                 <div style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
@@ -996,7 +997,7 @@ export default function ProfilePage() {
                 marginBottom: '1.5rem'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '1.5rem' }}>📂</span>
+                  <Folder size={22} strokeWidth={2} color="var(--accent)" />
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
                     My Collections
                   </h3>
@@ -1115,10 +1116,9 @@ export default function ProfilePage() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '1.5rem',
                             flexShrink: 0
                           }}>
-                            📂
+                            <Folder size={22} strokeWidth={2} color="var(--muted-foreground)" />
                           </div>
                         )}
                         
@@ -1173,16 +1173,23 @@ export default function ProfilePage() {
                             fontSize: '0.75rem',
                             color: 'var(--muted-foreground)'
                           }}>
-                            <span>📌 {collection.pin_count || 0} pins</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <MapPin size={12} strokeWidth={2} /> {collection.pin_count || 0} pins
+                            </span>
                             {collection.net_score !== undefined && collection.net_score !== 0 && (
                               <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
                                 color: collection.net_score > 0 ? '#22c55e' : '#ef4444',
                                 fontWeight: '600'
                               }}>
-                                {collection.net_score > 0 ? '👍' : '👎'} {collection.net_score > 0 ? '+' : ''}{collection.net_score}
+                                {collection.net_score > 0 ? <ThumbsUp size={12} strokeWidth={2} /> : <ThumbsDown size={12} strokeWidth={2} />} {collection.net_score > 0 ? '+' : ''}{collection.net_score}
                               </span>
                             )}
-                            <span>📅 {new Date(collection.created_at).toLocaleDateString()}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <Calendar size={12} strokeWidth={2} /> {new Date(collection.created_at).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1207,7 +1214,7 @@ export default function ProfilePage() {
                 gap: '0.5rem',
                 marginBottom: '1.5rem'
               }}>
-                <span style={{ fontSize: '1.5rem' }}>📌</span>
+                <MapPin size={22} strokeWidth={2} color="var(--accent)" />
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: 0 }}>
                   My Pins
                 </h3>
@@ -1241,7 +1248,9 @@ export default function ProfilePage() {
                   padding: '3rem 1rem',
                   color: 'var(--muted-foreground)'
                 }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📌</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                    <MapPin size={48} strokeWidth={1.5} />
+                  </div>
                   <h4 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
                     No Pins Yet
                   </h4>
@@ -1261,7 +1270,7 @@ export default function ProfilePage() {
                       fontWeight: '500'
                     }}
                   >
-                    GO TO MAP
+                    Go to Map
                   </button>
                 </div>
               ) : (
@@ -1318,10 +1327,12 @@ export default function ProfilePage() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '1.5rem',
                             flexShrink: 0
                           }}>
-                            📌
+                            {(() => {
+                              const CategoryIcon = getCategoryIcon(pin.category)
+                              return <CategoryIcon size={22} strokeWidth={2} color="var(--muted-foreground)" />
+                            })()}
                           </div>
                         )}
                         
@@ -1357,10 +1368,17 @@ export default function ProfilePage() {
                             fontSize: '0.75rem',
                             color: 'var(--muted-foreground)'
                           }}>
-                            {pin.category && (
-                              <span>🏷️ {pin.category}</span>
-                            )}
-                            <span>📅 {new Date(pin.created_at).toLocaleDateString()}</span>
+                            {pin.category && (() => {
+                              const CategoryIcon = getCategoryIcon(pin.category)
+                              return (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <CategoryIcon size={12} strokeWidth={2} /> {pin.category}
+                                </span>
+                              )
+                            })()}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <Calendar size={12} strokeWidth={2} /> {new Date(pin.created_at).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1538,7 +1556,7 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={createCollectionLoading || !newCollectionForm.title.trim()}
-                  className="btn-gradient"
+                  className="btn btn-primary"
                   style={{
                     width: '100%'
                   }}

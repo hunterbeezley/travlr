@@ -52,9 +52,7 @@ export default function SuccessAnimation({
           style={{
             fontSize: size === 'large' ? '1.125rem' : '1rem',
             fontWeight: '600',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-body)',
             marginBottom: description ? '0.5rem' : '0',
             color: 'var(--foreground)'
           }}

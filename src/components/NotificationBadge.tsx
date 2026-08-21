@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { DatabaseService, Notification } from '@/lib/database'
+import { Bell, User, MessageCircle, MapPin } from 'lucide-react'
 
 interface NotificationBadgeProps {
   userId: string
@@ -224,15 +225,13 @@ export default function NotificationBadge({ userId }: NotificationBadgeProps) {
               borderBottom: '1px solid var(--border)'
             }}>
               <h2 style={{
-                fontSize: '0.875rem',
+                fontSize: '0.9375rem',
                 fontWeight: '700',
                 margin: 0,
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                fontFamily: 'var(--font-body)',
                 color: 'var(--foreground)'
               }}>
-                NOTIFICATIONS
+                Notifications
               </h2>
 
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -245,11 +244,10 @@ export default function NotificationBadge({ userId }: NotificationBadgeProps) {
                       border: '1px solid var(--border)',
                       borderRadius: 'var(--radius)',
                       cursor: 'pointer',
-                      fontSize: '0.65rem',
+                      fontSize: '0.75rem',
                       color: 'var(--muted-foreground)',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
+                      fontFamily: 'var(--font-body)',
+                      fontWeight: 600
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.borderColor = 'var(--accent)'
@@ -277,7 +275,7 @@ export default function NotificationBadge({ userId }: NotificationBadgeProps) {
                   textAlign: 'center',
                   color: 'var(--muted-foreground)',
                   fontSize: '0.875rem',
-                  fontFamily: 'var(--font-mono)'
+                  fontFamily: 'var(--font-body)'
                 }}>
                   Loading notifications...
                 </div>
@@ -287,12 +285,9 @@ export default function NotificationBadge({ userId }: NotificationBadgeProps) {
                   textAlign: 'center',
                   color: 'var(--muted-foreground)',
                   fontSize: '0.875rem',
-                  fontFamily: 'var(--font-mono)'
+                  fontFamily: 'var(--font-body)'
                 }}>
-                  <div style={{
-                    fontSize: '2rem',
-                    marginBottom: '0.5rem'
-                  }}>🔔</div>
+                  <Bell size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
                   <div>No notifications yet</div>
                   <div style={{
                     fontSize: '0.75rem',
@@ -310,7 +305,7 @@ export default function NotificationBadge({ userId }: NotificationBadgeProps) {
                     style={{
                       padding: '1rem 1.5rem',
                       borderBottom: '1px solid var(--border)',
-                      background: notification.is_read ? 'transparent' : 'rgba(230, 57, 70, 0.05)',
+                      background: notification.is_read ? 'transparent' : 'var(--color-terracotta-subtle)',
                       cursor: 'pointer',
                       transition: 'var(--transition)',
                       display: 'flex',
@@ -319,12 +314,12 @@ export default function NotificationBadge({ userId }: NotificationBadgeProps) {
                     }}
                     onMouseEnter={(e) => {
                       if (!notification.is_read) {
-                        e.currentTarget.style.background = 'rgba(230, 57, 70, 0.1)'
+                        e.currentTarget.style.background = 'var(--color-terracotta-muted)'
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!notification.is_read) {
-                        e.currentTarget.style.background = 'rgba(230, 57, 70, 0.05)'
+                        e.currentTarget.style.background = 'var(--color-terracotta-subtle)'
                       }
                     }}
                   >
@@ -351,9 +346,9 @@ export default function NotificationBadge({ userId }: NotificationBadgeProps) {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '1.25rem'
+                        color: 'var(--muted-foreground)'
                       }}>
-                        {notification.type === 'new_follower' ? '👤' : notification.type === 'collection_comment' ? '💬' : notification.type === 'mention' ? '@' : '📌'}
+                        {notification.type === 'new_follower' ? <User size={20} /> : notification.type === 'collection_comment' ? <MessageCircle size={20} /> : notification.type === 'mention' ? '@' : <MapPin size={20} />}
                       </div>
                     )}
 

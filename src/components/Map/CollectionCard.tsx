@@ -1,4 +1,5 @@
 'use client'
+import { Folder, Info, X } from 'lucide-react'
 
 export type CollectionCardVariant = 'mine' | 'discover' | 'friends'
 
@@ -93,10 +94,10 @@ export default function CollectionCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '1.25rem',
+          color: 'var(--muted-foreground)',
           pointerEvents: 'none'
         }}>
-          📂
+          <Folder size={20} />
         </div>
       )}
 
@@ -172,7 +173,7 @@ export default function CollectionCard({
         onMouseEnter={(e) => {
           e.currentTarget.style.borderColor = 'var(--accent)'
           e.currentTarget.style.color = 'var(--accent)'
-          e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
+          e.currentTarget.style.backgroundColor = 'var(--color-terracotta-subtle)'
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.borderColor = 'var(--border)'
@@ -181,7 +182,7 @@ export default function CollectionCard({
         }}
         title={`View details for ${collection.title}`}
       >
-        ⓘ
+        <Info size={14} />
       </button>
       )}
 
@@ -211,9 +212,9 @@ export default function CollectionCard({
           flexShrink: 0
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = 'var(--color-red)'
-          e.currentTarget.style.color = 'var(--color-red)'
-          e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.1)'
+          e.currentTarget.style.borderColor = 'var(--destructive)'
+          e.currentTarget.style.color = 'var(--destructive)'
+          e.currentTarget.style.backgroundColor = 'var(--color-red-subtle)'
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.borderColor = 'var(--border)'
@@ -222,7 +223,7 @@ export default function CollectionCard({
         }}
         title={`Delete ${collection.title}`}
       >
-        ×
+        <X size={16} />
       </button>
       )}
     </div>

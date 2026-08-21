@@ -97,9 +97,7 @@ export default function ReportCommentModal({
               fontSize: '1.25rem',
               fontWeight: '700',
               margin: 0,
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-display)'
             }}>
               Report Comment
             </h2>
@@ -238,9 +236,7 @@ export default function ReportCommentModal({
                   fontWeight: '600',
                   cursor: submitting ? 'not-allowed' : 'pointer',
                   opacity: submitting ? 0.5 : 1,
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  fontFamily: 'var(--font-body)'
                 }}
               >
                 Cancel
@@ -250,16 +246,14 @@ export default function ReportCommentModal({
                 disabled={submitting}
                 style={{
                   padding: '0.75rem 1.5rem',
-                  background: submitting ? 'var(--muted)' : '#ef4444',
+                  background: submitting ? 'var(--muted)' : 'var(--destructive)',
                   border: 'none',
                   borderRadius: 'var(--radius)',
                   color: 'white',
                   fontSize: '0.875rem',
                   fontWeight: '600',
                   cursor: submitting ? 'not-allowed' : 'pointer',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  fontFamily: 'var(--font-body)'
                 }}
               >
                 {submitting ? 'Submitting...' : 'Submit Report'}

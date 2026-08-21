@@ -131,15 +131,15 @@ export default function CommentReactions({
               padding: '0.25rem 0.5rem',
               borderRadius: 'var(--radius-lg)',
               border: hasUserReacted(emoji)
-                ? '1px solid var(--color-red-muted)'
+                ? '1px solid var(--color-terracotta-muted)'
                 : '1px solid rgba(255, 255, 255, 0.1)',
               background: hasUserReacted(emoji)
-                ? 'rgba(230, 57, 70, 0.2)'
+                ? 'var(--color-terracotta-subtle)'
                 : 'rgba(255, 255, 255, 0.05)',
               cursor: currentUserId ? 'pointer' : 'not-allowed',
               transition: 'all 0.2s ease',
               fontSize: '0.875rem',
-              fontFamily: 'var(--font-mono)',
+              fontFamily: 'var(--font-body)',
               display: 'flex',
               alignItems: 'center',
               gap: '0.25rem',
@@ -221,10 +221,10 @@ export default function CommentReactions({
                       height: 40,
                       borderRadius: '50%',
                       border: hasUserReacted(emoji)
-                        ? '2px solid var(--color-red-muted)'
+                        ? '2px solid var(--color-terracotta-muted)'
                         : '1px solid transparent',
                       background: hasUserReacted(emoji)
-                        ? 'rgba(230, 57, 70, 0.2)'
+                        ? 'var(--color-terracotta-subtle)'
                         : 'transparent',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
@@ -240,7 +240,7 @@ export default function CommentReactions({
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'scale(1)'
                       e.currentTarget.style.background = hasUserReacted(emoji)
-                        ? 'rgba(230, 57, 70, 0.2)'
+                        ? 'var(--color-terracotta-subtle)'
                         : 'transparent'
                     }}
                     aria-label={`React with ${emoji}`}

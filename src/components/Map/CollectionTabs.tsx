@@ -44,11 +44,9 @@ export default function CollectionTabs({
             border: 'none',
             borderRadius: 'var(--radius)',
             cursor: 'pointer',
-            fontFamily: 'var(--font-mono)',
+            fontFamily: 'var(--font-body)',
             fontSize: '0.625rem',
             fontWeight: '700',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
             transition: 'var(--transition)'
           }}
         >

@@ -8,7 +8,7 @@ import Navbar from '@/components/Navbar'
 import UserAvatar from '@/components/UserAvatar'
 import Auth from '@/components/Auth'
 import EmptyState from '@/components/EmptyState'
-import { SearchX, UserPlus, Search } from 'lucide-react'
+import { SearchX, UserPlus, Search, MapPin, Users, Folder } from 'lucide-react'
 
 interface UserSearchResult {
   id: string
@@ -232,8 +232,7 @@ export default function FriendsPage() {
               fontSize: '1rem',
               fontWeight: '700',
               marginBottom: '0.25rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase'
+              fontFamily: 'var(--font-display)'
             }}>
               {user.full_name || user.username || user.email}
             </h3>
@@ -259,11 +258,14 @@ export default function FriendsPage() {
 
           {user.location && (
             <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
               fontSize: '0.75rem',
               color: 'var(--muted-foreground)',
               marginBottom: '0.75rem'
             }}>
-              📍 {user.location}
+              <MapPin size={12} strokeWidth={2} /> {user.location}
             </div>
           )}
 
@@ -276,10 +278,14 @@ export default function FriendsPage() {
             marginBottom: '0.75rem'
           }}>
             {user.follower_count !== undefined && (
-              <span>👥 {user.follower_count} followers</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Users size={12} strokeWidth={2} /> {user.follower_count} followers
+              </span>
             )}
             {user.collection_count !== undefined && (
-              <span>📂 {user.collection_count} collections</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Folder size={12} strokeWidth={2} /> {user.collection_count} collections
+              </span>
             )}
           </div>
         </div>
@@ -296,9 +302,7 @@ export default function FriendsPage() {
             cursor: 'pointer',
             fontSize: '0.75rem',
             fontWeight: '600',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-body)',
             whiteSpace: 'nowrap',
             flexShrink: 0,
             transition: 'var(--transition)'
@@ -354,12 +358,10 @@ export default function FriendsPage() {
           <h1 style={{
             fontSize: '2rem',
             fontWeight: '700',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-display)',
             marginBottom: '0.5rem'
           }}>
-            👥 Find Friends
+            Find Friends
           </h1>
           <p style={{
             fontSize: '0.875rem',
@@ -448,13 +450,11 @@ export default function FriendsPage() {
               cursor: 'pointer',
               fontSize: '0.875rem',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              fontFamily: 'var(--font-body)',
               transition: 'var(--transition)'
             }}
           >
-            ✨ Suggested
+            Suggested
           </button>
           <button
             onClick={() => setActiveTab('search')}
@@ -468,13 +468,11 @@ export default function FriendsPage() {
               cursor: 'pointer',
               fontSize: '0.875rem',
               fontWeight: '600',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              fontFamily: 'var(--font-body)',
               transition: 'var(--transition)'
             }}
           >
-            🔍 Search Results
+            Search Results
           </button>
         </div>
 
@@ -502,12 +500,14 @@ export default function FriendsPage() {
                 borderRadius: 'var(--radius-lg)',
                 border: '2px solid var(--border)'
               }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: 'var(--muted-foreground)' }}>
+                  <Search size={48} strokeWidth={1.5} />
+                </div>
                 <h3 style={{
                   fontSize: '1.25rem',
                   fontWeight: '700',
                   marginBottom: '0.5rem',
-                  fontFamily: 'var(--font-mono)'
+                  fontFamily: 'var(--font-display)'
                 }}>
                   Search for Friends
                 </h3>

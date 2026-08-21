@@ -1,6 +1,8 @@
 'use client'
 import React, { useState, useEffect, useRef } from 'react'
+import { Search, Loader2, Star } from 'lucide-react'
 import { GooglePlaceResult } from '@/lib/types/itinerary'
+import { getCategoryIconForGoogleTypes } from '@/lib/categoryIcons'
 
 interface POISearchProps {
   onPlaceSelect: (place: GooglePlaceResult) => void
@@ -136,20 +138,6 @@ export default function POISearch({ onPlaceSelect }: POISearchProps) {
     setShowResults(false)
   }
 
-  // Determine emoji based on place types
-  const getPlaceEmoji = (types: string[]) => {
-    if (types.includes('restaurant')) return '🍽️'
-    if (types.includes('cafe')) return '☕'
-    if (types.includes('bar')) return '🍺'
-    if (types.includes('lodging')) return '🏨'
-    if (types.includes('tourist_attraction')) return '🎯'
-    if (types.includes('park')) return '🌲'
-    if (types.includes('shopping_mall') || types.includes('store')) return '🛍️'
-    if (types.includes('museum')) return '🎨'
-    if (types.includes('spa')) return '💆'
-    return '📍'
-  }
-
   return (
     <div ref={searchRef} style={{ position: 'relative', width: '100%' }}>
       {/* Search Input */}
@@ -179,11 +167,17 @@ export default function POISearch({ onPlaceSelect }: POISearchProps) {
             right: '1rem',
             top: '50%',
             transform: 'translateY(-50%)',
-            fontSize: '1.25rem',
-            pointerEvents: 'none'
+            display: 'flex',
+            alignItems: 'center',
+            pointerEvents: 'none',
+            color: 'var(--muted-foreground)'
           }}
         >
-          {loading ? '⏳' : '🔍'}
+          {loading ? (
+            <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+          ) : (
+            <Search size={18} />
+          )}
         </div>
       </div>
 
@@ -204,7 +198,9 @@ export default function POISearch({ onPlaceSelect }: POISearchProps) {
             zIndex: 100
           }}
         >
-          {results.map((place) => (
+          {results.map((place) => {
+            const PlaceIcon = getCategoryIconForGoogleTypes(place.types)
+            return (
             <div
               key={place.place_id}
               onClick={() => handleSelectPlace(place)}
@@ -228,9 +224,9 @@ export default function POISearch({ onPlaceSelect }: POISearchProps) {
                   alignItems: 'flex-start'
                 }}
               >
-                {/* Emoji/Icon */}
-                <div style={{ fontSize: '1.5rem', flexShrink: 0 }}>
-                  {getPlaceEmoji(place.types)}
+                {/* Category Icon */}
+                <div style={{ flexShrink: 0, paddingTop: '0.125rem' }}>
+                  <PlaceIcon size={22} color="var(--accent)" />
                 </div>
 
                 {/* Place Details */}
@@ -262,18 +258,23 @@ export default function POISearch({ onPlaceSelect }: POISearchProps) {
                   {place.rating && (
                     <div
                       style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
                         fontSize: '0.75rem',
                         color: 'var(--accent)',
                         marginTop: '0.25rem'
                       }}
                     >
-                      ⭐ {place.rating} ({place.user_ratings_total} reviews)
+                      <Star size={12} fill="var(--accent)" color="var(--accent)" />
+                      {place.rating} ({place.user_ratings_total} reviews)
                     </div>
                   )}
                 </div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

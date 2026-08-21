@@ -1,6 +1,7 @@
 'use client'
 import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
+import { Globe, Users, Building2, MapPin } from 'lucide-react'
 import { DatabaseService, CityFeedCollection, CityWithCollections } from '@/lib/database'
 import CollectionDetailsModal from './CollectionDetailsModal'
 
@@ -85,7 +86,7 @@ export default function CityFeed({ userId }: CityFeedProps) {
         padding: '2rem',
         color: 'var(--muted-foreground)',
         fontSize: '0.875rem',
-        fontFamily: 'var(--font-mono)'
+        fontFamily: 'var(--font-body)'
       }}>
         Loading cities...
       </div>
@@ -104,18 +105,16 @@ export default function CityFeed({ userId }: CityFeedProps) {
         textAlign: 'center'
       }}>
         <div style={{
-          fontSize: '3rem',
-          marginBottom: '1rem'
+          marginBottom: '1rem',
+          color: 'var(--muted-foreground)'
         }}>
-          🌍
+          <Globe size={48} />
         </div>
         <h3 style={{
           fontSize: '1.25rem',
           fontWeight: '700',
           marginBottom: '0.5rem',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em'
+          fontFamily: 'var(--font-body)'
         }}>
           No Cities Yet
         </h3>
@@ -149,11 +148,13 @@ export default function CityFeed({ userId }: CityFeedProps) {
           fontSize: '1.25rem',
           fontWeight: '700',
           marginBottom: '1rem',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em'
+          fontFamily: 'var(--font-body)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
         }}>
-          🌍 City Feed
+          <Globe size={20} />
+          City Feed
         </h2>
 
         {/* City Selector */}
@@ -163,9 +164,7 @@ export default function CityFeed({ userId }: CityFeedProps) {
             fontSize: '0.75rem',
             fontWeight: '700',
             marginBottom: '0.5rem',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
+            fontFamily: 'var(--font-body)',
             color: 'var(--muted-foreground)'
           }}>
             Select City
@@ -181,7 +180,7 @@ export default function CityFeed({ userId }: CityFeedProps) {
               background: 'var(--background)',
               color: 'var(--foreground)',
               fontSize: '0.875rem',
-              fontFamily: 'var(--font-mono)',
+              fontFamily: 'var(--font-body)',
               cursor: 'pointer'
             }}
           >
@@ -212,16 +211,14 @@ export default function CityFeed({ userId }: CityFeedProps) {
               background: 'var(--background)',
               color: 'var(--foreground)',
               fontSize: '0.75rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
+              fontFamily: 'var(--font-body)',
               fontWeight: '700',
               cursor: 'pointer'
             }}
           >
-            <option value="popular">📌 Popular</option>
-            <option value="recent">🕐 Recent</option>
-            <option value="top_rated">⭐ Top Rated</option>
+            <option value="popular">Popular</option>
+            <option value="recent">Recent</option>
+            <option value="top_rated">Top Rated</option>
           </select>
 
           {/* Friends Only Toggle */}
@@ -235,9 +232,7 @@ export default function CityFeed({ userId }: CityFeedProps) {
             background: friendsOnly ? 'rgba(99, 102, 241, 0.1)' : 'var(--background)',
             cursor: 'pointer',
             fontSize: '0.75rem',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            fontFamily: 'var(--font-body)',
             fontWeight: '700',
             transition: 'all 0.2s ease'
           }}>
@@ -249,7 +244,10 @@ export default function CityFeed({ userId }: CityFeedProps) {
                 cursor: 'pointer'
               }}
             />
-            <span>👥 Friends Only</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+              <Users size={14} />
+              Friends Only
+            </span>
           </label>
         </div>
       </div>
@@ -266,7 +264,7 @@ export default function CityFeed({ userId }: CityFeedProps) {
             textAlign: 'center',
             color: 'var(--muted-foreground)',
             fontSize: '0.875rem',
-            fontFamily: 'var(--font-mono)'
+            fontFamily: 'var(--font-body)'
           }}>
             Loading collections...
           </div>
@@ -276,18 +274,18 @@ export default function CityFeed({ userId }: CityFeedProps) {
             textAlign: 'center'
           }}>
             <div style={{
-              fontSize: '2rem',
-              marginBottom: '1rem'
+              marginBottom: '1rem',
+              color: 'var(--muted-foreground)',
+              display: 'flex',
+              justifyContent: 'center'
             }}>
-              🏙️
+              <Building2 size={32} />
             </div>
             <h3 style={{
               fontSize: '1rem',
               fontWeight: '700',
               marginBottom: '0.5rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em'
+              fontFamily: 'var(--font-body)'
             }}>
               No Collections Found
             </h3>
@@ -353,9 +351,9 @@ export default function CityFeed({ userId }: CityFeedProps) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '3rem'
+                    color: 'white'
                   }}>
-                    📌
+                    <MapPin size={40} />
                   </div>
                 )}
 
@@ -366,9 +364,7 @@ export default function CityFeed({ userId }: CityFeedProps) {
                     fontSize: '0.875rem',
                     fontWeight: '700',
                     marginBottom: '0.5rem',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
+                    fontFamily: 'var(--font-body)',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap'
@@ -415,7 +411,7 @@ export default function CityFeed({ userId }: CityFeedProps) {
                     <span style={{
                       fontSize: '0.75rem',
                       color: 'var(--muted-foreground)',
-                      fontFamily: 'var(--font-mono)',
+                      fontFamily: 'var(--font-body)',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
@@ -431,9 +427,12 @@ export default function CityFeed({ userId }: CityFeedProps) {
                     flexWrap: 'wrap',
                     fontSize: '0.75rem',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)'
+                    fontFamily: 'var(--font-body)'
                   }}>
-                    <div>📌 {collection.pin_count}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <MapPin size={12} />
+                      {collection.pin_count}
+                    </div>
                     {collection.net_score !== 0 && (
                       <div style={{
                         color: collection.net_score > 0 ? '#22c55e' : '#ef4444',

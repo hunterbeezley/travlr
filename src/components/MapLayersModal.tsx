@@ -1,12 +1,13 @@
 'use client'
 import { useEffect } from 'react'
+import { Map as MapIcon, Satellite, Mountain, Moon, MapPin, Check, Lightbulb, type LucideIcon } from 'lucide-react'
 import { Z_INDEX } from '@/lib/mapUiConstants'
 
 interface MapLayer {
   name: string
   value: string
   description: string
-  icon: string
+  icon: LucideIcon
 }
 
 interface MapLayersModalProps {
@@ -47,25 +48,25 @@ export default function MapLayersModal({
       name: 'Default',
       value: 'roadmap',
       description: 'Standard street map with labels',
-      icon: '🗺️'
+      icon: MapIcon
     },
     {
       name: 'Satellite',
       value: 'satellite',
       description: 'Aerial imagery without labels',
-      icon: '🛰️'
+      icon: Satellite
     },
     {
       name: 'Terrain',
       value: 'terrain',
       description: 'Topographic map with elevation',
-      icon: '⛰️'
+      icon: Mountain
     },
     {
       name: 'Dark Mode',
       value: 'dark',
       description: 'Dark theme for night viewing',
-      icon: '🌙'
+      icon: Moon
     }
   ]
 
@@ -122,9 +123,7 @@ export default function MapLayersModal({
           <h3 style={{
             fontSize: '1rem',
             fontWeight: '700',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
+            fontFamily: 'var(--font-display)',
             margin: 0
           }}>
             Map Layers
@@ -197,7 +196,6 @@ export default function MapLayersModal({
             >
               {/* Icon */}
               <div style={{
-                fontSize: '2rem',
                 flexShrink: 0,
                 width: '48px',
                 height: '48px',
@@ -208,23 +206,24 @@ export default function MapLayersModal({
                 borderRadius: 'var(--radius)',
                 border: '2px solid var(--border)'
               }}>
-                {layer.icon}
+                <layer.icon size={24} color={currentStyle === layer.value ? 'white' : 'var(--foreground)'} />
               </div>
 
               {/* Text */}
               <div style={{ flex: 1 }}>
                 <div style={{
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '0.875rem',
                   fontWeight: '700',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
                   marginBottom: '0.25rem',
-                  color: currentStyle === layer.value ? 'white' : 'var(--foreground)'
+                  color: currentStyle === layer.value ? 'white' : 'var(--foreground)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem'
                 }}>
                   {layer.name}
                   {currentStyle === layer.value && (
-                    <span style={{ marginLeft: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>✓</span>
+                    <Check size={14} strokeWidth={3} style={{ color: 'rgba(255,255,255,0.8)' }} />
                   )}
                 </div>
                 <div style={{
@@ -247,9 +246,7 @@ export default function MapLayersModal({
             <h4 style={{
               fontSize: '0.875rem',
               fontWeight: '700',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              fontFamily: 'var(--font-body)',
               margin: '0 0 1rem 0',
               color: 'var(--foreground)'
             }}>
@@ -287,7 +284,6 @@ export default function MapLayersModal({
             >
               {/* Icon */}
               <div style={{
-                fontSize: '2rem',
                 flexShrink: 0,
                 width: '48px',
                 height: '48px',
@@ -298,23 +294,24 @@ export default function MapLayersModal({
                 borderRadius: 'var(--radius)',
                 border: '2px solid var(--border)'
               }}>
-                📍
+                <MapPin size={24} color={showPOIs ? 'white' : 'var(--foreground)'} />
               </div>
 
               {/* Text */}
               <div style={{ flex: 1 }}>
                 <div style={{
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '0.875rem',
                   fontWeight: '700',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
                   marginBottom: '0.25rem',
-                  color: showPOIs ? 'white' : 'var(--foreground)'
+                  color: showPOIs ? 'white' : 'var(--foreground)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem'
                 }}>
                   Show POIs
                   {showPOIs && (
-                    <span style={{ marginLeft: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>✓</span>
+                    <Check size={14} strokeWidth={3} style={{ color: 'rgba(255,255,255,0.8)' }} />
                   )}
                 </div>
                 <div style={{
@@ -335,9 +332,13 @@ export default function MapLayersModal({
                 borderRadius: 'var(--radius)',
                 fontSize: '0.75rem',
                 color: 'var(--muted-foreground)',
-                lineHeight: '1.5'
+                lineHeight: '1.5',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.5rem'
               }}>
-                <strong>💡 Tip:</strong> Nearby places appear when zoomed in. Search for something specific using the search bar instead of browsing categories here.
+                <Lightbulb size={14} style={{ flexShrink: 0, marginTop: '0.15rem' }} />
+                <span><strong>Tip:</strong> Nearby places appear when zoomed in. Search for something specific using the search bar instead of browsing categories here.</span>
               </div>
             )}
           </div>

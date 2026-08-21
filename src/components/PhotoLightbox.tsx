@@ -172,9 +172,7 @@ export default function PhotoLightbox({
           color: 'white',
           fontSize: '0.875rem',
           fontWeight: '600',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          fontFamily: 'var(--font-body)',
           zIndex: 10
         }}
       >
@@ -331,9 +329,7 @@ export default function PhotoLightbox({
           borderRadius: 'var(--radius)',
           color: 'rgba(255, 255, 255, 0.8)',
           fontSize: '0.75rem',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          fontFamily: 'var(--font-body)',
           zIndex: 10
         }}
       >

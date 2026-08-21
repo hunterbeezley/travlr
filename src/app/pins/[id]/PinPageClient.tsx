@@ -3,9 +3,11 @@ import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { ChevronLeft, ChevronRight, Star, DollarSign, CheckCircle, AlertTriangle, Globe, Phone, Copy, Share2, Pencil } from 'lucide-react'
 import Toast from '@/components/Toast'
 import Navbar from '@/components/Navbar'
 import PinEditModal from '@/components/PinEditModal'
+import { getCategoryIcon } from '@/lib/categoryIcons'
 
 interface Profile {
   username: string | null
@@ -62,19 +64,6 @@ interface PinPageClientProps {
   isOwner: boolean
 }
 
-const categoryEmojis: Record<string, string> = {
-  restaurant: '🍽️',
-  cafe: '☕',
-  bar: '🍺',
-  attraction: '🎯',
-  nature: '🌲',
-  shopping: '🛍️',
-  hotel: '🏨',
-  transport: '🚌',
-  activity: '🎪',
-  other: '📍'
-}
-
 export default function PinPageClient({
   pin,
   relatedPins,
@@ -87,7 +76,7 @@ export default function PinPageClient({
   const [currentPin, setCurrentPin] = useState<Pin>(pin)
 
   const sortedImages = [...currentPin.pin_images].sort((a, b) => a.upload_order - b.upload_order)
-  const emoji = categoryEmojis[currentPin.category || 'other'] || '📍'
+  const CategoryIcon = getCategoryIcon(currentPin.category)
   const displayName = currentPin.profiles.full_name || currentPin.profiles.username || 'Anonymous'
 
   const handleCopyCoordinates = async () => {
@@ -155,7 +144,7 @@ export default function PinPageClient({
           className="btn btn-secondary btn-small"
           style={{ marginBottom: '1rem' }}
         >
-          ← BACK
+          ← Back
         </button>
 
         <div style={{
@@ -172,7 +161,7 @@ export default function PinPageClient({
                 width: '100%',
                 paddingTop: '66.67%',
                 background: 'var(--muted)',
-                borderRadius: 'var(--radius)',
+                borderRadius: 'var(--radius-sm)',
                 overflow: 'hidden',
                 marginBottom: '2rem'
               }}>
@@ -203,7 +192,6 @@ export default function PinPageClient({
                         width: '48px',
                         height: '48px',
                         cursor: 'pointer',
-                        fontSize: '1.5rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -217,7 +205,7 @@ export default function PinPageClient({
                         e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)'
                       }}
                     >
-                      ‹
+                      <ChevronLeft size={24} />
                     </button>
                     <button
                       onClick={() => setCurrentImageIndex((prev) => (prev + 1) % sortedImages.length)}
@@ -234,7 +222,6 @@ export default function PinPageClient({
                         width: '48px',
                         height: '48px',
                         cursor: 'pointer',
-                        fontSize: '1.5rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -248,7 +235,7 @@ export default function PinPageClient({
                         e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)'
                       }}
                     >
-                      ›
+                      <ChevronRight size={24} />
                     </button>
 
                     {/* Image Indicators */}
@@ -307,7 +294,6 @@ export default function PinPageClient({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '6rem',
                 marginBottom: '2rem',
                 position: 'relative'
               }}>
@@ -317,7 +303,7 @@ export default function PinPageClient({
                   left: '50%',
                   transform: 'translate(-50%, -50%)'
                 }}>
-                  {emoji}
+                  <CategoryIcon size={96} color="white" strokeWidth={1.5} />
                 </div>
               </div>
             )}
@@ -363,8 +349,7 @@ export default function PinPageClient({
                     fontSize: '0.875rem',
                     fontWeight: '600',
                     color: 'var(--foreground)',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase'
+                    fontFamily: 'var(--font-body)'
                   }}>
                     {currentPin.collections!.title}
                   </span>
@@ -378,15 +363,13 @@ export default function PinPageClient({
                 gap: '0.75rem',
                 marginBottom: '1rem'
               }}>
-                <span style={{ fontSize: '2rem' }}>{emoji}</span>
+                <CategoryIcon size={32} color="var(--accent)" />
                 <h1 style={{
                   fontSize: '2rem',
                   fontWeight: '700',
                   color: 'var(--foreground)',
                   margin: 0,
-                  fontFamily: 'var(--font-display)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  fontFamily: 'var(--font-display)'
                 }}>
                   {currentPin.title}
                 </h1>
@@ -400,7 +383,7 @@ export default function PinPageClient({
                     fontSize: '0.75rem',
                     fontWeight: '700',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: 'var(--font-body)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     marginBottom: '0.5rem'
@@ -428,7 +411,7 @@ export default function PinPageClient({
                     fontSize: '0.75rem',
                     fontWeight: '700',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: 'var(--font-body)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     marginBottom: '0.5rem'
@@ -512,9 +495,7 @@ export default function PinPageClient({
                   fontWeight: '700',
                   color: 'var(--foreground)',
                   marginBottom: '1rem',
-                  fontFamily: 'var(--font-display)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  fontFamily: 'var(--font-display)'
                 }}>
                   Place Details
                 </h2>
@@ -525,7 +506,7 @@ export default function PinPageClient({
                 }}>
                   {currentPin.rating && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '1.25rem' }}>⭐</span>
+                      <Star size={20} color="var(--accent)" fill="var(--accent)" />
                       <span style={{ color: 'var(--foreground)', fontWeight: '600' }}>
                         {currentPin.rating.toFixed(1)}
                       </span>
@@ -539,7 +520,7 @@ export default function PinPageClient({
 
                   {currentPin.price_level && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '1.25rem' }}>💰</span>
+                      <DollarSign size={20} color="var(--muted-foreground)" />
                       <span style={{ color: 'var(--foreground)' }}>
                         {'$'.repeat(currentPin.price_level)}
                       </span>
@@ -548,9 +529,11 @@ export default function PinPageClient({
 
                   {currentPin.business_status && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '1.25rem' }}>
-                        {currentPin.business_status === 'OPERATIONAL' ? '✅' : '⚠️'}
-                      </span>
+                      {currentPin.business_status === 'OPERATIONAL' ? (
+                        <CheckCircle size={20} color="var(--accent)" />
+                      ) : (
+                        <AlertTriangle size={20} color="var(--destructive)" />
+                      )}
                       <span style={{ color: 'var(--foreground)' }}>
                         {currentPin.business_status === 'OPERATIONAL' ? 'Open' : 'Closed'}
                       </span>
@@ -559,7 +542,7 @@ export default function PinPageClient({
 
                   {currentPin.website && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '1.25rem' }}>🌐</span>
+                      <Globe size={20} color="var(--muted-foreground)" />
                       <a
                         href={currentPin.website}
                         target="_blank"
@@ -577,7 +560,7 @@ export default function PinPageClient({
 
                   {currentPin.phone_number && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '1.25rem' }}>📞</span>
+                      <Phone size={20} color="var(--muted-foreground)" />
                       <a
                         href={`tel:${currentPin.phone_number.replace(/[^0-9+]/g, '')}`}
                         style={{
@@ -607,9 +590,7 @@ export default function PinPageClient({
                 fontWeight: '700',
                 color: 'var(--foreground)',
                 marginBottom: '1rem',
-                fontFamily: 'var(--font-display)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
+                fontFamily: 'var(--font-display)'
               }}>
                 Location
               </h2>
@@ -661,7 +642,7 @@ export default function PinPageClient({
                   className="btn btn-secondary btn-small"
                   aria-label="Copy coordinates to clipboard"
                 >
-                  📋 COPY
+                  <Copy size={16} /> Copy
                 </button>
               </div>
             </div>
@@ -681,7 +662,7 @@ export default function PinPageClient({
                   minWidth: '120px' // Reduced for mobile
                 }}
               >
-                🔗 SHARE
+                <Share2 size={16} /> Share
               </button>
 
               {isOwner && (
@@ -693,7 +674,7 @@ export default function PinPageClient({
                     minWidth: '120px' // Reduced for mobile
                   }}
                 >
-                  ✏️ EDIT
+                  <Pencil size={16} /> Edit
                 </button>
               )}
             </div>
@@ -708,9 +689,7 @@ export default function PinPageClient({
               fontWeight: '700',
               color: 'var(--foreground)',
               marginBottom: '1.5rem',
-              fontFamily: 'var(--font-display)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-display)'
             }}>
               More from {currentPin.collections?.title}
             </h2>
@@ -722,7 +701,7 @@ export default function PinPageClient({
             }}>
               {relatedPins.map((relatedPin) => {
                 const firstImage = relatedPin.pin_images.sort((a, b) => a.upload_order - b.upload_order)[0]
-                const relatedEmoji = categoryEmojis[relatedPin.category || 'other'] || '📍'
+                const RelatedIcon = getCategoryIcon(relatedPin.category)
 
                 return (
                   <div
@@ -768,7 +747,6 @@ export default function PinPageClient({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '3rem',
                         position: 'relative'
                       }}>
                         <div style={{
@@ -777,7 +755,7 @@ export default function PinPageClient({
                           left: '50%',
                           transform: 'translate(-50%, -50%)'
                         }}>
-                          {relatedEmoji}
+                          <RelatedIcon size={48} color="white" strokeWidth={1.5} />
                         </div>
                       </div>
                     )}
@@ -788,7 +766,7 @@ export default function PinPageClient({
                         alignItems: 'center',
                         gap: '0.5rem'
                       }}>
-                        <span style={{ fontSize: '1rem' }}>{relatedEmoji}</span>
+                        <RelatedIcon size={16} color="var(--muted-foreground)" />
                         <h3 style={{
                           fontSize: '0.875rem',
                           fontWeight: '600',

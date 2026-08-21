@@ -101,8 +101,7 @@ export default function CollectionPicker({ value, onChange }: CollectionPickerPr
             borderRadius: 'var(--radius)',
             fontSize: '0.75rem',
             fontWeight: 700,
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
+            fontFamily: 'var(--font-body)',
             cursor: 'pointer',
           }}
         >
@@ -119,8 +118,7 @@ export default function CollectionPicker({ value, onChange }: CollectionPickerPr
             borderRadius: 'var(--radius)',
             fontSize: '0.75rem',
             fontWeight: 700,
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
+            fontFamily: 'var(--font-body)',
             cursor: 'pointer',
           }}
         >
@@ -186,8 +184,7 @@ export default function CollectionPicker({ value, onChange }: CollectionPickerPr
               borderRadius: 'var(--radius)',
               fontSize: '0.75rem',
               fontWeight: 700,
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
+              fontFamily: 'var(--font-body)',
               cursor: creating || !newTitle.trim() ? 'not-allowed' : 'pointer',
               opacity: creating || !newTitle.trim() ? 0.6 : 1,
               whiteSpace: 'nowrap',

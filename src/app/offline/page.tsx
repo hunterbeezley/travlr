@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { CheckCircle, WifiOff, RefreshCw } from 'lucide-react'
 
 export default function OfflinePage() {
   const router = useRouter()
@@ -52,23 +53,22 @@ export default function OfflinePage() {
           opacity: 0.5
         }}>
           <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--color-white)" strokeWidth="2"/>
-          <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--color-red)" strokeWidth="2"/>
-          <circle cx="24" cy="24" r="6" fill="var(--color-red)"/>
-          <line x1="4" y1="4" x2="8" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-          <line x1="44" y1="4" x2="40" y2="8" stroke="var(--color-red)" strokeWidth="2"/>
-          <line x1="4" y1="44" x2="8" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
-          <line x1="44" y1="44" x2="40" y2="40" stroke="var(--color-red)" strokeWidth="2"/>
+          <rect x="8" y="8" width="32" height="32" fill="none" stroke="var(--accent)" strokeWidth="2"/>
+          <circle cx="24" cy="24" r="6" fill="var(--accent)"/>
+          <line x1="4" y1="4" x2="8" y2="8" stroke="var(--accent)" strokeWidth="2"/>
+          <line x1="44" y1="4" x2="40" y2="8" stroke="var(--accent)" strokeWidth="2"/>
+          <line x1="4" y1="44" x2="8" y2="40" stroke="var(--accent)" strokeWidth="2"/>
+          <line x1="44" y1="44" x2="40" y2="40" stroke="var(--accent)" strokeWidth="2"/>
         </svg>
 
         {isOnline ? (
           <>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
+            <CheckCircle size={48} style={{ marginBottom: '1rem', color: '#22c55e' }} />
             <h1 style={{
               fontSize: '2rem',
               fontWeight: '700',
               marginBottom: '1rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
+              fontFamily: 'var(--font-display)',
               color: '#22c55e'
             }}>
               Back Online!
@@ -83,13 +83,12 @@ export default function OfflinePage() {
           </>
         ) : (
           <>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📡</div>
+            <WifiOff size={48} style={{ marginBottom: '1rem', color: 'var(--muted-foreground)' }} />
             <h1 style={{
               fontSize: '2rem',
               fontWeight: '700',
               marginBottom: '1rem',
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase'
+              fontFamily: 'var(--font-display)'
             }}>
               You're Offline
             </h1>
@@ -113,9 +112,10 @@ export default function OfflinePage() {
                 cursor: 'pointer',
                 fontSize: '1rem',
                 fontWeight: '600',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                fontFamily: 'var(--font-body)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
                 transition: 'var(--transition)'
               }}
               onMouseEnter={(e) => {
@@ -127,7 +127,7 @@ export default function OfflinePage() {
                 e.currentTarget.style.transform = 'translateY(0)'
               }}
             >
-              🔄 Try Again
+              <RefreshCw size={18} /> Try Again
             </button>
 
             <p style={{

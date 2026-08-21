@@ -1,8 +1,9 @@
-/* Modern Theme for Travlr */
-/* Tidal-Inspired Design - Soft, Approachable, Modern */
-
-/* Import Inter for a clean, modern look */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Travlr Theme - Editorial Direction */
+/* Dark magazine aesthetic: near-black canvas, terracotta accent, Playfair
+   Display headlines over Inter body/UI text. Fonts are loaded via
+   next/font/google in layout.tsx (not an @import here) - see
+   --font-display/--font-body below, which reference the CSS variables
+   next/font generates. */
 
 /* Modern CSS Reset */
 *,
@@ -91,9 +92,14 @@ select {
 
 /* CSS Custom Properties */
 :root {
-  /* Colors - Softened Monochrome + Red */
-  --color-black: #0F0F0F;
-  --color-white: #FAFAFA;
+  /* Colors - Editorial: near-black canvas + terracotta accent. --destructive
+     is intentionally a different hue from --accent now (was the same red as
+     the brand color, so a delete button and a primary CTA looked identical). */
+  --color-black: #0A0A0B;
+  --color-white: #FAF8F6;
+  --color-terracotta: #E05C3A;
+  --color-terracotta-muted: rgba(224, 92, 58, 0.7);
+  --color-terracotta-subtle: rgba(224, 92, 58, 0.15);
   --color-red: #E63946;
   --color-red-muted: rgba(230, 57, 70, 0.7);
   --color-red-subtle: rgba(230, 57, 70, 0.15);
@@ -106,34 +112,30 @@ select {
   --color-gray-7: #F2F2F7;
 
   /* Theme Colors */
-  --background: #18181B;
-  --foreground: #F4F4F5;
-  --card: #27272A;
-  --card-foreground: #F4F4F5;
-  --border: #3F3F46;
-  --muted: #27272A;
-  --muted-foreground: #A1A1AA;
-  --accent: var(--color-red);
-  --accent-hover: #D62839;
+  --background: #0C0C0E;
+  --foreground: #F4F2EF;
+  --card: #1A1A1D;
+  --card-foreground: #F4F2EF;
+  --border: #2E2E33;
+  --muted: #1A1A1D;
+  --muted-foreground: #9B9B9F;
+  --accent: var(--color-terracotta);
+  --accent-hover: #C94E30;
   --destructive: var(--color-red);
   --destructive-hover: #D62839;
   --success: var(--color-white);
   --warning: var(--color-red);
 
-  /* Dot Pattern */
-  --dot-size: 2px;
-  --dot-spacing: 20px;
-
-  /* Shadows - Soft, modern shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.2);
-  --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.25);
-  --shadow-glow: 0 0 20px rgba(230, 57, 70, 0.3);
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(224, 92, 58, 0.3);
 
   /* Elevated surfaces */
-  --card-elevated: #2A2A2D;
-  --card-hover: #323235;
+  --card-elevated: #1F1F23;
+  --card-hover: #26262A;
   --surface-subtle: rgba(255, 255, 255, 0.03);
 
   /* Spacing - Grid-based */
@@ -144,44 +146,49 @@ select {
   --space-xl: 32px;
   --space-2xl: 48px;
 
-  /* Border Radius - Soft, rounded corners */
-  --radius-sm: 8px;
-  --radius: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  /* Border Radius - tightened from the previous soft/pill-everything scale;
+     --radius-pill stays available for badges/avatars but is no longer the
+     default button shape (see .btn in the Buttons section below). */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
   --radius-pill: 9999px;
 
-  /* Typography - Clean, Modern Style */
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  /* Typography - Playfair Display for editorial headlines, Inter for UI/body.
+     --font-inter/--font-playfair are set by next/font/google in layout.tsx;
+     the Georgia/serif and system-sans fallbacks only apply before those load. */
+  --font-display: var(--font-playfair), Georgia, 'Times New Roman', serif;
+  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'SF Mono', Menlo, monospace;
 
   /* Transitions - Snappy */
   --transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-fast: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Light mode override */
+/* Light mode override - warm paper tone rather than cold gray, to match the
+   editorial direction instead of reading as a generic SaaS light theme. */
 @media (prefers-color-scheme: light) {
   :root {
-    --background: #F9FAFB;
-    --foreground: #18181B;
+    --background: #FAF6F1;
+    --foreground: #1C1712;
     --card: #FFFFFF;
-    --card-foreground: #18181B;
-    --border: #E5E7EB;
-    --muted: #F3F4F6;
-    --muted-foreground: #6B7280;
+    --card-foreground: #1C1712;
+    --border: #E8E0D6;
+    --muted: #F3ECE3;
+    --muted-foreground: #6B6258;
 
     /* Soft shadows for light mode */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.12);
-    --shadow-glow: 0 0 20px rgba(230, 57, 70, 0.15);
+    --shadow-glow: 0 0 20px rgba(224, 92, 58, 0.15);
 
     /* Elevated surfaces for light mode */
     --card-elevated: #FFFFFF;
-    --card-hover: #F8F8F8;
+    --card-hover: #F8F4EF;
     --surface-subtle: rgba(0, 0, 0, 0.02);
   }
 }
@@ -240,6 +247,10 @@ label {
   color: var(--foreground);
 }
 
+h1, h2, h3 {
+  font-family: var(--font-display);
+}
+
 h1 {
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 800;
@@ -247,10 +258,12 @@ h1 {
 
 h2 {
   font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
 }
 
 h3 {
   font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
 }
 
 /* Mono text elements */
@@ -289,7 +302,7 @@ h3 {
 .navbar {
   background: var(--background);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 0 0 var(--color-red-subtle);
+  box-shadow: 0 1px 0 0 var(--color-terracotta-subtle);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -313,8 +326,11 @@ h3 {
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--color-white);
+  /* Uppercase serif reads as a magazine masthead (Vogue, Time) rather than
+     the generic mono-uppercase-label pattern used elsewhere pre-redesign -
+     this is the one place uppercase stays. */
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -323,7 +339,7 @@ h3 {
 }
 
 .navbar-brand:hover {
-  color: var(--color-red);
+  color: var(--accent);
   transform: translateX(4px);
 }
 
@@ -341,15 +357,13 @@ h3 {
   background: none;
   border: none;
   color: var(--foreground);
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
   font-weight: 500;
   padding: var(--space-sm) var(--space-md);
   cursor: pointer;
   transition: var(--transition);
   text-decoration: none;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
   position: relative;
 }
 
@@ -360,7 +374,7 @@ h3 {
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--color-red);
+  background: var(--accent);
   transform: scaleX(0);
   transition: var(--transition);
 }
@@ -371,7 +385,7 @@ h3 {
 }
 
 .nav-link.active {
-  color: var(--color-red);
+  color: var(--accent);
 }
 
 .navbar-user {
@@ -407,21 +421,21 @@ h3 {
 
 .navbar-feedback-trigger:hover {
   border-color: var(--accent);
-  background: rgba(230, 57, 70, 0.1);
+  background: var(--color-terracotta-subtle);
 }
 
 .user-avatar {
   width: 40px;
   height: 40px;
   border: 1px solid var(--border);
-  box-shadow: 0 0 0 1px var(--color-red-subtle);
+  box-shadow: 0 0 0 1px var(--color-terracotta-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-white);
   font-weight: 700;
   font-size: 0.875rem;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   position: relative;
   overflow: hidden;
 }
@@ -433,15 +447,13 @@ h3 {
   right: -1px;
   width: 6px;
   height: 6px;
-  background: var(--color-red-muted);
+  background: var(--color-terracotta-muted);
 }
 
 .user-email {
-  color: var(--color-gray-4);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
 }
 
 /* Buttons - Soft & Modern */
@@ -461,7 +473,7 @@ h3 {
   position: relative;
   overflow: hidden;
   padding: var(--space-md) var(--space-xl);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-lg);
 }
 
 .btn::before {
@@ -471,7 +483,7 @@ h3 {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: var(--color-red);
+  background: var(--accent);
   transition: var(--transition);
   z-index: -1;
 }
@@ -480,84 +492,51 @@ h3 {
   left: 0;
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:disabled::before {
+  display: none;
+}
+
 .btn-primary {
-  background: var(--color-red);
+  background: var(--accent);
   color: var(--color-white);
-  border-color: var(--color-red);
+  border-color: var(--accent);
 }
 
 .btn-primary:hover {
   background: var(--color-black);
-  border-color: var(--color-red);
-  color: var(--color-red);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Lower-emphasis action, e.g. "Edit" next to a primary "Share" - was
+   referenced by several components (className="btn btn-secondary") with no
+   actual definition, silently falling back to bare .btn styling. */
+.btn-secondary {
+  background: var(--muted);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--card-hover);
+  border-color: var(--muted-foreground);
 }
 
 .btn-destructive {
   background: transparent;
-  color: var(--color-red);
-  border-color: var(--color-red);
+  color: var(--destructive);
+  border-color: var(--destructive);
   padding: var(--space-sm) var(--space-md);
 }
 
 .btn-destructive:hover {
-  background: var(--color-red);
+  background: var(--destructive);
   color: var(--color-white);
-}
-
-/* Gradient Button - Primary CTAs (Tidal-style pill) */
-.btn-gradient {
-  background: linear-gradient(135deg, var(--color-red) 0%, var(--accent-hover) 100%);
-  color: var(--color-white);
-  font-family: var(--font-body);
-  font-weight: 600;
-  padding: 0.875rem 1.75rem;
-  border: none;
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow), var(--shadow-glow);
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-gradient::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, var(--accent-hover) 0%, var(--color-red) 100%);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.btn-gradient:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.4);
-}
-
-.btn-gradient:hover::before {
-  opacity: 1;
-}
-
-.btn-gradient:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
-}
-
-.btn-gradient:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-gradient:disabled:hover {
-  transform: none;
-  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
-}
-
-/* Gradient button content needs relative positioning */
-.btn-gradient > * {
-  position: relative;
-  z-index: 1;
 }
 
 .btn-small {
@@ -612,9 +591,9 @@ h3 {
 
 .form-input:focus {
   outline: none;
-  background: rgba(230, 57, 70, 0.05);
-  border-color: var(--color-red-muted);
-  box-shadow: 0 0 0 3px var(--color-red-subtle);
+  background: var(--color-terracotta-subtle);
+  border-color: var(--color-terracotta-muted);
+  box-shadow: 0 0 0 3px var(--color-terracotta-subtle);
 }
 
 .form-input::placeholder {
@@ -655,9 +634,9 @@ h3 {
 }
 
 .input-glass:focus {
-  background: rgba(230, 57, 70, 0.08) !important;
-  border-color: var(--color-red-muted);
-  box-shadow: 0 0 0 3px var(--color-red-subtle);
+  background: var(--color-terracotta-subtle) !important;
+  border-color: var(--color-terracotta-muted);
+  box-shadow: 0 0 0 3px var(--color-terracotta-subtle);
 }
 
 /* Textarea Styling */
@@ -667,7 +646,7 @@ textarea {
   border: 2px solid var(--border);
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 0.875rem;
   transition: all 0.2s ease;
   border-radius: var(--radius);
@@ -677,16 +656,14 @@ textarea {
 
 textarea:focus {
   outline: none;
-  background: rgba(230, 57, 70, 0.05);
-  border-color: var(--color-red-muted);
-  box-shadow: 0 0 0 3px var(--color-red-subtle);
+  background: var(--color-terracotta-subtle);
+  border-color: var(--color-terracotta-muted);
+  box-shadow: 0 0 0 3px var(--color-terracotta-subtle);
 }
 
 textarea::placeholder {
   color: var(--muted-foreground);
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
+  font-size: 0.875rem;
 }
 
 /* Select/Dropdown Styling */
@@ -696,7 +673,7 @@ select {
   border: 2px solid var(--border);
   background: var(--background);
   color: var(--foreground) !important;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 0.875rem;
   transition: all 0.2s ease;
   border-radius: var(--radius);
@@ -705,9 +682,9 @@ select {
 
 select:focus {
   outline: none;
-  background: rgba(230, 57, 70, 0.05);
-  border-color: var(--color-red-muted);
-  box-shadow: 0 0 0 3px var(--color-red-subtle);
+  background: var(--color-terracotta-subtle);
+  border-color: var(--color-terracotta-muted);
+  box-shadow: 0 0 0 3px var(--color-terracotta-subtle);
 }
 
 select option {
@@ -747,8 +724,8 @@ select option {
   left: 0;
   width: 30px;
   height: 30px;
-  border-top: 2px solid var(--color-red-muted);
-  border-left: 2px solid var(--color-red-muted);
+  border-top: 2px solid var(--color-terracotta-muted);
+  border-left: 2px solid var(--color-terracotta-muted);
   z-index: 10;
 }
 
@@ -759,8 +736,8 @@ select option {
   right: 0;
   width: 30px;
   height: 30px;
-  border-bottom: 2px solid var(--color-red-muted);
-  border-right: 2px solid var(--color-red-muted);
+  border-bottom: 2px solid var(--color-terracotta-muted);
+  border-right: 2px solid var(--color-terracotta-muted);
   z-index: 10;
 }
 
@@ -843,7 +820,7 @@ select option {
 /* Close button styling */
 .gm-style .gm-ui-hover-effect {
   opacity: 1 !important;
-  background: rgba(230, 57, 70, 0.15) !important;
+  background: rgba(224, 92, 58, 0.15) !important;
   border-radius: 50% !important;
   width: 28px !important;
   height: 28px !important;
@@ -852,7 +829,7 @@ select option {
 }
 
 .gm-style .gm-ui-hover-effect:hover {
-  background: rgba(230, 57, 70, 0.3) !important;
+  background: rgba(224, 92, 58, 0.3) !important;
 }
 
 .gm-style .gm-ui-hover-effect > span {
@@ -898,22 +875,22 @@ select option {
   right: 0;
   width: 40px;
   height: 40px;
-  border-top: 2px solid var(--color-red-muted);
-  border-right: 2px solid var(--color-red-muted);
+  border-top: 2px solid var(--color-terracotta-muted);
+  border-right: 2px solid var(--color-terracotta-muted);
 }
 
 .profile-avatar {
   width: 100px;
   height: 100px;
   border: 2px solid var(--border);
-  box-shadow: 0 0 0 1px var(--color-red-muted);
+  box-shadow: 0 0 0 1px var(--color-terracotta-muted);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-white);
   font-size: 2.5rem;
   font-weight: 700;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   position: relative;
   overflow: hidden;
 }
@@ -930,7 +907,7 @@ select option {
 }
 
 .stat-card:hover {
-  border-color: var(--color-red-muted);
+  border-color: var(--color-terracotta-muted);
   transform: translateY(-2px);
 }
 
@@ -949,17 +926,18 @@ select option {
   font-family: var(--font-display);
   font-size: 3rem;
   font-weight: 700;
-  color: var(--color-red-muted);
+  color: var(--color-terracotta-muted);
   line-height: 1;
   margin-bottom: var(--space-sm);
 }
 
 .stat-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 0.75rem;
+  font-weight: 500;
   color: var(--muted-foreground);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
 }
 
 /* Glassmorphism Effects */
@@ -1564,10 +1542,10 @@ select option {
 /* Glow animation - for active/selected states, notifications */
 @keyframes glow {
   0% {
-    box-shadow: 0 0 5px rgba(230, 57, 70, 0.5);
+    box-shadow: 0 0 5px rgba(224, 92, 58, 0.5);
   }
   100% {
-    box-shadow: 0 0 20px rgba(230, 57, 70, 0.8);
+    box-shadow: 0 0 20px rgba(224, 92, 58, 0.8);
   }
 }
 

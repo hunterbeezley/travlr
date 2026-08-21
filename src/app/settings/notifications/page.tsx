@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Auth from '@/components/Auth'
+import { Mail, Bell } from 'lucide-react'
 
 interface NotificationPreferences {
   email_notifications: boolean
@@ -130,11 +131,9 @@ export default function NotificationSettingsPage() {
           ← Back
         </button>
         <h1 style={{
-          fontSize: '1.5rem',
+          fontSize: '1.75rem',
           fontWeight: '700',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          fontFamily: 'var(--font-display)',
           margin: 0
         }}>
           Notification Settings
@@ -157,14 +156,16 @@ export default function NotificationSettingsPage() {
         marginBottom: '1rem'
       }}>
         <h2 style={{
-          fontSize: '1rem',
+          fontSize: '1.125rem',
           fontWeight: '700',
-          fontFamily: 'var(--font-mono)',
+          fontFamily: 'var(--font-display)',
           marginBottom: '1rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em'
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
         }}>
-          📬 Delivery Channels
+          <Mail size={18} color="var(--accent)" />
+          Delivery Channels
         </h2>
 
         <div style={{
@@ -264,14 +265,16 @@ export default function NotificationSettingsPage() {
         marginBottom: '1rem'
       }}>
         <h2 style={{
-          fontSize: '1rem',
+          fontSize: '1.125rem',
           fontWeight: '700',
-          fontFamily: 'var(--font-mono)',
+          fontFamily: 'var(--font-display)',
           marginBottom: '1rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em'
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
         }}>
-          🔔 Activity Notifications
+          <Bell size={18} color="var(--accent)" />
+          Activity Notifications
         </h2>
 
         <div style={{
@@ -328,9 +331,7 @@ export default function NotificationSettingsPage() {
           borderRadius: 'var(--radius)',
           cursor: saving ? 'not-allowed' : 'pointer',
           fontWeight: '600',
-          fontFamily: 'var(--font-mono)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
+          fontFamily: 'var(--font-body)',
           fontSize: '0.875rem',
           marginBottom: '1rem'
         }}

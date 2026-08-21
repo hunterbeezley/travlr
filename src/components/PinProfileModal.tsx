@@ -6,6 +6,8 @@ import ImageSlideshow from './ImageSlideshow'
 import { useAuth } from '@/hooks/useAuth'
 import FollowButton from './FollowButton'
 import { getBusinessStatusDisplay, formatPriceLevel, formatRating, formatPhoneForLink, isPlaceDataStale } from '@/lib/placeHelpers'
+import { getCategoryIcon, getCategoryLabel } from '@/lib/categoryIcons'
+import { X, User, AlertTriangle, Check, Phone, Globe, Navigation, Share2, Pencil } from 'lucide-react'
 
 interface PinProfileModalProps {
   isOpen: boolean
@@ -17,33 +19,6 @@ interface PinProfileModalProps {
 interface PinImageData {
   url: string
   order: number
-}
-
-// Category emoji mapping
-const categoryEmojis: Record<string, string> = {
-  restaurant: '🍽️',
-  cafe: '☕',
-  bar: '🍺',
-  attraction: '🎯',
-  nature: '🌲',
-  shopping: '🛍️',
-  hotel: '🏨',
-  transport: '🚌',
-  activity: '🎪',
-  other: '📍'
-}
-
-const categoryLabels: Record<string, string> = {
-  restaurant: 'RESTAURANT',
-  cafe: 'CAFÉ',
-  bar: 'BAR/PUB',
-  attraction: 'ATTRACTION',
-  nature: 'NATURE',
-  shopping: 'SHOPPING',
-  hotel: 'HOTEL',
-  transport: 'TRANSPORT',
-  activity: 'ACTIVITY',
-  other: 'OTHER'
 }
 
 export default function PinProfileModal({
@@ -251,6 +226,7 @@ export default function PinProfileModal({
   })) || []
 
   const isOwner = user && pinData && user.id === pinData.creator_id
+  const CategoryIcon = pinData?.category ? getCategoryIcon(pinData.category) : null
 
   if (!isOpen) return null
 
@@ -283,8 +259,6 @@ export default function PinProfileModal({
           color: '#000',
           border: '2px solid rgba(0, 0, 0, 0.1)',
           cursor: 'pointer',
-          fontSize: '20px',
-          fontWeight: 'bold',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -302,7 +276,7 @@ export default function PinProfileModal({
         }}
         title="Close"
       >
-        ✕
+        <X size={20} />
       </button>
 
       {/* Modal Container */}
@@ -354,7 +328,9 @@ export default function PinProfileModal({
             textAlign: 'center'
           }}>
             <div>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚠️</div>
+              <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+                <AlertTriangle size={32} color="var(--destructive)" />
+              </div>
               <div>{error}</div>
             </div>
           </div>
@@ -370,12 +346,11 @@ export default function PinProfileModal({
                 marginBottom: '0.75rem',
                 fontSize: '1.5rem',
                 fontWeight: '700',
-                fontFamily: 'var(--font-mono)',
-                letterSpacing: '0.05em'
+                fontFamily: 'var(--font-display)'
               }}>
                 {pinData.title}
               </h2>
-              {pinData.category && (
+              {pinData.category && CategoryIcon && (
                 <div style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -385,11 +360,12 @@ export default function PinProfileModal({
                   color: 'white',
                   borderRadius: 'var(--radius)',
                   fontSize: '0.75rem',
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-body)',
                   fontWeight: '700',
-                  letterSpacing: '0.1em'
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
                 }}>
-                  {categoryEmojis[pinData.category] || '📍'} {categoryLabels[pinData.category] || pinData.category.toUpperCase()}
+                  <CategoryIcon size={14} /> {getCategoryLabel(pinData.category)}
                 </div>
               )}
             </div>
@@ -441,10 +417,9 @@ export default function PinProfileModal({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.25rem',
                     border: '2px solid var(--border)'
                   }}>
-                    👤
+                    <User size={22} color="var(--muted-foreground)" />
                   </div>
                 )}
                 <div style={{
@@ -457,11 +432,12 @@ export default function PinProfileModal({
                     <div style={{
                       fontSize: '0.75rem',
                       color: 'var(--muted-foreground)',
-                      fontFamily: 'var(--font-mono)',
-                      letterSpacing: '0.1em',
+                      fontFamily: 'var(--font-body)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
                       marginBottom: '0.25rem'
                     }}>
-                      CREATED BY
+                      Created by
                     </div>
                     <div style={{
                       fontSize: '1rem',
@@ -488,11 +464,12 @@ export default function PinProfileModal({
                 <div style={{
                   fontSize: '0.75rem',
                   color: 'var(--muted-foreground)',
-                  fontFamily: 'var(--font-mono)',
-                  letterSpacing: '0.1em',
+                  fontFamily: 'var(--font-body)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
                   marginBottom: '0.5rem'
                 }}>
-                  📍 LOCATION
+                  Location
                 </div>
                 {addressLoading ? (
                   <div style={{
@@ -515,7 +492,7 @@ export default function PinProfileModal({
                   color: 'var(--muted-foreground)',
                   fontFamily: 'var(--font-mono)'
                 }}>
-                  🗺️ {pinData.latitude.toFixed(4)}, {pinData.longitude.toFixed(4)}
+                  {pinData.latitude.toFixed(4)}, {pinData.longitude.toFixed(4)}
                 </div>
               </div>
 
@@ -533,11 +510,12 @@ export default function PinProfileModal({
                   <div style={{
                     fontSize: '0.75rem',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)',
-                    letterSpacing: '0.1em',
+                    fontFamily: 'var(--font-body)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
                     marginBottom: '0.5rem'
                   }}>
-                    📂 COLLECTION
+                    Collection
                   </div>
                   <div style={{
                     fontSize: '0.875rem',
@@ -552,11 +530,12 @@ export default function PinProfileModal({
                   color: pinData.collection_is_public ? '#22c55e' : '#9ca3af',
                   borderRadius: 'var(--radius)',
                   fontSize: '0.625rem',
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-body)',
                   fontWeight: '700',
-                  letterSpacing: '0.1em'
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
                 }}>
-                  {pinData.collection_is_public ? 'PUBLIC' : 'PRIVATE'}
+                  {pinData.collection_is_public ? 'Public' : 'Private'}
                 </div>
               </div>
 
@@ -571,11 +550,12 @@ export default function PinProfileModal({
                   <div style={{
                     fontSize: '0.75rem',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)',
-                    letterSpacing: '0.1em',
+                    fontFamily: 'var(--font-body)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
                     marginBottom: '0.5rem'
                   }}>
-                    ℹ️ ABOUT
+                    About
                   </div>
                   <div style={{
                     fontSize: '0.875rem',
@@ -599,11 +579,12 @@ export default function PinProfileModal({
                   <div style={{
                     fontSize: '0.75rem',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)',
-                    letterSpacing: '0.1em',
+                    fontFamily: 'var(--font-body)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
                     marginBottom: '0.5rem'
                   }}>
-                    📝 NOTES
+                    Notes
                   </div>
                   <div style={{
                     fontSize: '0.875rem',
@@ -626,11 +607,12 @@ export default function PinProfileModal({
                   <div style={{
                     fontSize: '0.75rem',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)',
-                    letterSpacing: '0.1em',
+                    fontFamily: 'var(--font-body)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
                     marginBottom: '0.5rem'
                   }}>
-                    🏪 BUSINESS STATUS
+                    Business Status
                   </div>
                   <div style={{
                     fontSize: '0.875rem',
@@ -655,11 +637,12 @@ export default function PinProfileModal({
                   <div style={{
                     fontSize: '0.75rem',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)',
-                    letterSpacing: '0.1em',
+                    fontFamily: 'var(--font-body)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
                     marginBottom: '0.5rem'
                   }}>
-                    ⭐ RATING
+                    Rating
                   </div>
                   <div style={{
                     fontSize: '1.25rem',
@@ -691,11 +674,12 @@ export default function PinProfileModal({
                   <div style={{
                     fontSize: '0.75rem',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)',
-                    letterSpacing: '0.1em',
+                    fontFamily: 'var(--font-body)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
                     marginBottom: '0.75rem'
                   }}>
-                    📞 CONTACT
+                    Contact
                   </div>
                   <div style={{
                     display: 'flex',
@@ -726,7 +710,7 @@ export default function PinProfileModal({
                           e.currentTarget.style.backgroundColor = 'rgba(34, 197, 94, 0.1)'
                         }}
                       >
-                        📱 {(pinData as any).phone_number}
+                        <Phone size={16} /> {(pinData as any).phone_number}
                       </a>
                     )}
                     {(pinData as any).website && (
@@ -758,7 +742,7 @@ export default function PinProfileModal({
                           e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)'
                         }}
                       >
-                        🌐 Visit Website
+                        <Globe size={16} /> Visit Website
                       </a>
                     )}
                   </div>
@@ -776,11 +760,12 @@ export default function PinProfileModal({
                   <div style={{
                     fontSize: '0.75rem',
                     color: 'var(--muted-foreground)',
-                    fontFamily: 'var(--font-mono)',
-                    letterSpacing: '0.1em',
+                    fontFamily: 'var(--font-body)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
                     marginBottom: '0.5rem'
                   }}>
-                    💵 PRICE LEVEL
+                    Price Level
                   </div>
                   <div style={{
                     fontSize: '1.25rem',
@@ -802,10 +787,11 @@ export default function PinProfileModal({
                 <div style={{
                   fontSize: '0.75rem',
                   color: 'var(--muted-foreground)',
-                  fontFamily: 'var(--font-mono)',
-                  letterSpacing: '0.1em'
+                  fontFamily: 'var(--font-body)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
                 }}>
-                  CREATED: {formatDate(pinData.created_at)}
+                  Created: {formatDate(pinData.created_at)}
                 </div>
               </div>
             </div>
@@ -819,11 +805,12 @@ export default function PinProfileModal({
                 <div style={{
                   fontSize: '0.75rem',
                   color: 'var(--muted-foreground)',
-                  fontFamily: 'var(--font-mono)',
-                  letterSpacing: '0.1em',
+                  fontFamily: 'var(--font-body)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
                   marginBottom: '0.75rem'
                 }}>
-                  🖼️ ALL IMAGES ({images.length})
+                  All Images ({images.length})
                 </div>
                 <div style={{
                   display: 'flex',
@@ -896,9 +883,12 @@ export default function PinProfileModal({
                   borderRadius: 'var(--radius)',
                   cursor: 'pointer',
                   fontSize: '0.875rem',
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-body)',
                   fontWeight: '700',
-                  letterSpacing: '0.1em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
                   transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
@@ -912,7 +902,7 @@ export default function PinProfileModal({
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
-                🧭 GET DIRECTIONS
+                <Navigation size={16} /> Get Directions
               </button>
 
               <button
@@ -927,9 +917,12 @@ export default function PinProfileModal({
                   borderRadius: 'var(--radius)',
                   cursor: 'pointer',
                   fontSize: '0.875rem',
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-body)',
                   fontWeight: '700',
-                  letterSpacing: '0.1em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
                   transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
@@ -943,7 +936,7 @@ export default function PinProfileModal({
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
-                🔗 SHARE PIN
+                <Share2 size={16} /> Share Pin
               </button>
 
               {isOwner && (
@@ -959,21 +952,24 @@ export default function PinProfileModal({
                     borderRadius: 'var(--radius)',
                     cursor: 'pointer',
                     fontSize: '0.875rem',
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: 'var(--font-body)',
                     fontWeight: '700',
-                    letterSpacing: '0.1em',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
                     transition: 'all 0.2s ease'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)'
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(230, 57, 70, 0.3)'
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(224, 92, 58, 0.3)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)'
                     e.currentTarget.style.boxShadow = 'none'
                   }}
                 >
-                  ✏️ EDIT PIN
+                  <Pencil size={16} /> Edit Pin
                 </button>
               )}
             </div>
@@ -994,13 +990,15 @@ export default function PinProfileModal({
           borderRadius: 'var(--radius-lg)',
           boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)',
           fontSize: '0.875rem',
-          fontFamily: 'var(--font-mono)',
+          fontFamily: 'var(--font-body)',
           fontWeight: '700',
-          letterSpacing: '0.1em',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
           zIndex: 1002,
           animation: 'slideUp 0.3s ease'
         }}>
-          ✓ LINK COPIED TO CLIPBOARD!
+          <Check size={16} /> Link copied to clipboard!
         </div>
       )}
 

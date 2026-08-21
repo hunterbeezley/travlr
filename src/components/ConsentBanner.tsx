@@ -2,6 +2,7 @@
 import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { DatabaseService } from '@/lib/database'
+import { Cookie } from 'lucide-react'
 
 export default function ConsentBanner() {
   const [showBanner, setShowBanner] = useState(false)
@@ -92,7 +93,7 @@ export default function ConsentBanner() {
         flexWrap: 'wrap'
       }}>
         {/* Cookie Icon */}
-        <div style={{ fontSize: '32px' }}>🍪</div>
+        <Cookie size={32} color="white" style={{ flexShrink: 0 }} />
 
         {/* Message */}
         <div style={{ flex: 1, minWidth: '300px' }}>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
+import { User } from 'lucide-react'
 
 export default function FollowingSuggestions() {
   const { user } = useAuth()
@@ -100,9 +101,9 @@ export default function FollowingSuggestions() {
         <h3 style={{
           fontSize: '0.875rem',
           fontWeight: '700',
-          fontFamily: 'var(--font-mono)',
+          fontFamily: 'var(--font-body)',
           textTransform: 'uppercase',
-          letterSpacing: '0.1em',
+          letterSpacing: '0.05em',
           marginBottom: '1rem',
           color: 'var(--foreground)'
         }}>
@@ -133,13 +134,13 @@ export default function FollowingSuggestions() {
       <h3 style={{
         fontSize: '0.875rem',
         fontWeight: '700',
-        fontFamily: 'var(--font-mono)',
+        fontFamily: 'var(--font-body)',
         textTransform: 'uppercase',
-        letterSpacing: '0.1em',
+        letterSpacing: '0.05em',
         marginBottom: '1rem',
         color: 'var(--foreground)'
       }}>
-        ✨ Suggested For You
+        Suggested For You
       </h3>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -182,7 +183,7 @@ export default function FollowingSuggestions() {
                   }}
                 />
               ) : (
-                <span style={{ fontSize: '1.25rem' }}>👤</span>
+                <User size={18} style={{ color: 'var(--muted-foreground)' }} />
               )}
             </Link>
 
@@ -225,9 +226,7 @@ export default function FollowingSuggestions() {
                 cursor: following.has(suggestion.user_id) ? 'not-allowed' : 'pointer',
                 fontSize: '0.7rem',
                 fontWeight: '600',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                fontFamily: 'var(--font-body)',
                 whiteSpace: 'nowrap',
                 flexShrink: 0
               }}

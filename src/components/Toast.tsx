@@ -81,7 +81,7 @@ export default function Toast({
         boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
         zIndex: 9999,
         animation: 'toastSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        fontFamily: 'var(--font-mono)',
+        fontFamily: 'var(--font-body)',
         fontSize: '0.875rem',
         fontWeight: '600',
         display: 'flex',

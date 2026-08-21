@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { Camera } from 'lucide-react'
 
 interface ImageSlideshowProps {
   images: Array<{
@@ -31,9 +32,10 @@ export default function ImageSlideshow({
         alignItems: 'center',
         justifyContent: 'center',
         color: 'var(--muted-foreground)',
-        fontSize: '0.875rem'
+        fontSize: '0.875rem',
+        gap: '0.5rem'
       }} className={className}>
-        📷 No images available
+        <Camera size={18} /> No images available
       </div>
     )
   }

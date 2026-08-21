@@ -1,5 +1,6 @@
 'use client'
 import { ReactNode, useEffect } from 'react'
+import { X } from 'lucide-react'
 
 interface GlassModalProps {
   isOpen: boolean
@@ -108,8 +109,6 @@ export default function GlassModal({
                   fontSize: '1.25rem',
                   fontWeight: '700',
                   fontFamily: 'var(--font-display)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
                   color: 'var(--foreground)'
                 }}
               >
@@ -130,7 +129,7 @@ export default function GlassModal({
                   width: '44px',
                   height: '44px',
                   borderRadius: '50%',
-                  backgroundColor: 'rgba(230, 57, 70, 0.15)',
+                  backgroundColor: 'var(--color-terracotta-subtle)',
                   color: 'var(--foreground)',
                   border: '1px solid rgba(255, 255, 255, 0.2)',
                   cursor: 'pointer',
@@ -143,16 +142,16 @@ export default function GlassModal({
                   zIndex: 20
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.3)'
+                  e.currentTarget.style.backgroundColor = 'var(--color-terracotta-muted)'
                   e.currentTarget.style.transform = 'rotate(90deg)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(230, 57, 70, 0.15)'
+                  e.currentTarget.style.backgroundColor = 'var(--color-terracotta-subtle)'
                   e.currentTarget.style.transform = 'rotate(0deg)'
                 }}
                 aria-label="Close modal"
               >
-                ×
+                <X size={20} />
               </button>
             )}
           </div>
@@ -171,8 +170,8 @@ export default function GlassModal({
             left: 0,
             width: '20px',
             height: '20px',
-            borderTop: '2px solid rgba(230, 57, 70, 0.5)',
-            borderLeft: '2px solid rgba(230, 57, 70, 0.5)',
+            borderTop: '2px solid var(--color-terracotta-muted)',
+            borderLeft: '2px solid var(--color-terracotta-muted)',
             pointerEvents: 'none'
           }}
         />
@@ -183,8 +182,8 @@ export default function GlassModal({
             right: 0,
             width: '20px',
             height: '20px',
-            borderBottom: '2px solid rgba(230, 57, 70, 0.5)',
-            borderRight: '2px solid rgba(230, 57, 70, 0.5)',
+            borderBottom: '2px solid var(--color-terracotta-muted)',
+            borderRight: '2px solid var(--color-terracotta-muted)',
             pointerEvents: 'none'
           }}
         />

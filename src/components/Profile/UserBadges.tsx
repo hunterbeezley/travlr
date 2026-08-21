@@ -104,12 +104,12 @@ export default function UserBadges({ badges }: UserBadgesProps) {
       <h3 style={{
         fontSize: '0.875rem',
         fontWeight: '700',
-        fontFamily: 'var(--font-mono)',
+        fontFamily: 'var(--font-body)',
         textTransform: 'uppercase',
         letterSpacing: '0.05em',
         marginBottom: '1rem'
       }}>
-        🏅 Badges ({badges.length})
+        Badges ({badges.length})
       </h3>
 
       <div style={{

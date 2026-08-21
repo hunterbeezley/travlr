@@ -6,6 +6,8 @@ import { DatabaseService } from '@/lib/database'
 import { supabase } from '@/lib/supabase'
 import SingleImageUpload from './SingleImageUpload'
 import MultipleImageUpload from './MultipleImageUpload'
+import { X, Pencil, AlertTriangle, MapPin, Trash2, Check, Loader2, Bookmark } from 'lucide-react'
+import { PIN_CATEGORIES } from '@/lib/categoryIcons'
 
 interface PinEditModalProps {
   isOpen: boolean
@@ -31,19 +33,6 @@ interface Collection {
   description: string | null
   is_public: boolean
 }
-
-const PIN_CATEGORIES = [
-  { value: 'restaurant', label: '🍽️ Restaurant', icon: '🍽️' },
-  { value: 'cafe', label: '☕ Café', icon: '☕' },
-  { value: 'bar', label: '🍺 Bar/Pub', icon: '🍺' },
-  { value: 'attraction', label: '🎯 Attraction', icon: '🎯' },
-  { value: 'nature', label: '🌲 Nature', icon: '🌲' },
-  { value: 'shopping', label: '🛍️ Shopping', icon: '🛍️' },
-  { value: 'hotel', label: '🏨 Hotel', icon: '🏨' },
-  { value: 'transport', label: '🚌 Transport', icon: '🚌' },
-  { value: 'activity', label: '🎪 Activity', icon: '🎪' },
-  { value: 'other', label: '📍 Other', icon: '📍' }
-]
 
 export default function PinEditModal({
   isOpen,
@@ -315,8 +304,8 @@ export default function PinEditModal({
           maxWidth: 'min(400px, calc(100vw - 2rem))',
           width: '100%'
         }}>
-          <h3 style={{ marginBottom: '1rem', color: 'var(--destructive)' }}>
-            ⚠️ Access Denied
+          <h3 style={{ marginBottom: '1rem', color: 'var(--destructive)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <AlertTriangle size={20} /> Access Denied
           </h3>
           <p style={{ marginBottom: '1.5rem', color: 'var(--muted-foreground)' }}>
             You can only edit pins that you created.
@@ -378,11 +367,12 @@ export default function PinEditModal({
             margin: 0,
             fontSize: '1.25rem',
             fontWeight: '600',
+            fontFamily: 'var(--font-display)',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
           }}>
-            ✏️ Edit Pin
+            <Pencil size={18} /> Edit Pin
           </h2>
 
           {/* Enhanced Close Button */}
@@ -399,8 +389,6 @@ export default function PinEditModal({
               color: 'var(--foreground)',
               border: '1px solid var(--border)',
               cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: 'bold',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -408,9 +396,9 @@ export default function PinEditModal({
               zIndex: 1001
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(220, 38, 38, 0.1)'
-              e.currentTarget.style.color = 'var(--destructive)'
-              e.currentTarget.style.borderColor = 'var(--destructive)'
+              e.currentTarget.style.backgroundColor = 'var(--color-terracotta-subtle)'
+              e.currentTarget.style.color = 'var(--accent)'
+              e.currentTarget.style.borderColor = 'var(--accent)'
               e.currentTarget.style.transform = 'scale(1.05)'
             }}
             onMouseLeave={(e) => {
@@ -421,7 +409,7 @@ export default function PinEditModal({
             }}
             title="Close"
           >
-            ✕
+            <X size={18} />
           </button>
         </div>
 
@@ -435,11 +423,17 @@ export default function PinEditModal({
               padding: '0.75rem',
               borderRadius: 'var(--radius)',
               fontSize: '0.875rem',
-              color: 'var(--muted-foreground)'
+              color: 'var(--muted-foreground)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.5rem'
             }}>
-              📍 <strong>Location:</strong> {pin.latitude.toFixed(4)}, {pin.longitude.toFixed(4)}
-              <br />
-              <small>Note: Location cannot be changed</small>
+              <MapPin size={16} style={{ flexShrink: 0, marginTop: '0.15rem' }} />
+              <span>
+                <strong>Location:</strong> {pin.latitude.toFixed(4)}, {pin.longitude.toFixed(4)}
+                <br />
+                <small>Note: Location cannot be changed</small>
+              </span>
             </div>
           </div>
 
@@ -614,10 +608,13 @@ export default function PinEditModal({
                     border: 'none',
                     borderRadius: 'var(--radius)',
                     cursor: 'pointer',
-                    fontSize: '0.875rem'
+                    fontSize: '0.875rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
                   }}
                 >
-                  🗑️ Delete
+                  <Trash2 size={16} /> Delete
                 </button>
               ) : (
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -646,10 +643,13 @@ export default function PinEditModal({
                       border: 'none',
                       borderRadius: 'var(--radius)',
                       cursor: deleteLoading ? 'not-allowed' : 'pointer',
-                      fontSize: '0.875rem'
+                      fontSize: '0.875rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem'
                     }}
                   >
-                    {deleteLoading ? '⏳' : '✓'} Confirm Delete
+                    {deleteLoading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={16} />} Confirm Delete
                   </button>
                 </div>
               )}
@@ -687,7 +687,15 @@ export default function PinEditModal({
                   gap: '0.5rem'
                 }}
               >
-                {loading ? '⏳ Saving...' : '💾 Save Changes'}
+                {loading ? (
+                  <>
+                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Saving...
+                  </>
+                ) : (
+                  <>
+                    <Bookmark size={16} /> Save Changes
+                  </>
+                )}
               </button>
             </div>
           </div>

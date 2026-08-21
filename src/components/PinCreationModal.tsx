@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase'
 import SingleImageUpload from './SingleImageUpload'
 import MultipleImageUpload from './MultipleImageUpload'
 import CollectionPicker from './CollectionPicker'
+import { X, MapPin } from 'lucide-react'
+import { PIN_CATEGORIES } from '@/lib/categoryIcons'
 
 
 interface PinCreationModalProps {
@@ -25,19 +27,6 @@ interface ImageItem {
   isUploading: boolean
   isTemp: boolean
 }
-
-const PIN_CATEGORIES = [
-  { value: 'restaurant', label: '🍽️ Restaurant', icon: '🍽️' },
-  { value: 'cafe', label: '☕ Café', icon: '☕' },
-  { value: 'bar', label: '🍺 Bar/Pub', icon: '🍺' },
-  { value: 'attraction', label: '🎯 Attraction', icon: '🎯' },
-  { value: 'nature', label: '🌲 Nature', icon: '🌲' },
-  { value: 'shopping', label: '🛍️ Shopping', icon: '🛍️' },
-  { value: 'hotel', label: '🏨 Hotel', icon: '🏨' },
-  { value: 'transport', label: '🚌 Transport', icon: '🚌' },
-  { value: 'activity', label: '🎪 Activity', icon: '🎪' },
-  { value: 'other', label: '📍 Other', icon: '📍' }
-]
 
 export default function PinCreationModal({
   isOpen,
@@ -322,11 +311,12 @@ export default function PinCreationModal({
             margin: 0,
             fontSize: '1.25rem',
             fontWeight: '600',
+            fontFamily: 'var(--font-display)',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
           }}>
-            📍 Create Pin
+            Create Pin
           </h2>
           <button
             onClick={onClose}
@@ -337,7 +327,6 @@ export default function PinCreationModal({
               cursor: 'pointer',
               padding: '0.5rem',
               borderRadius: 'var(--radius)',
-              fontSize: '1.25rem',
               transition: 'var(--transition)',
               minWidth: '44px',
               minHeight: '44px',
@@ -346,7 +335,7 @@ export default function PinCreationModal({
               justifyContent: 'center'
             }}
           >
-            ✕
+            <X size={20} />
           </button>
         </div>
 
@@ -359,9 +348,13 @@ export default function PinCreationModal({
               padding: '0.75rem',
               borderRadius: 'var(--radius)',
               fontSize: '0.875rem',
-              color: 'var(--muted-foreground)'
+              color: 'var(--muted-foreground)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}>
-              📍 <strong>Location:</strong> {loadingAddress ? 'Loading address...' : address}
+              <MapPin size={16} style={{ flexShrink: 0 }} />
+              <span><strong>Location:</strong> {loadingAddress ? 'Loading address...' : address}</span>
             </div>
           </div>
 

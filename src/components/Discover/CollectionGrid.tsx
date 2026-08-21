@@ -218,7 +218,7 @@ export default function CollectionGrid({ collections, currentUserId }: Collectio
                   fontSize: '1rem',
                   fontWeight: '700',
                   marginBottom: '0.25rem',
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-display)',
                   color: 'var(--foreground)'
                 }}>
                   {collection.collection_name}

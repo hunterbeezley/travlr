@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { X, Folder, FolderOpen } from 'lucide-react'
 
 interface OrganizeFolderModalProps {
   collectionId: string
@@ -70,9 +71,7 @@ export default function OrganizeFolderModal({
               fontSize: '1.25rem',
               fontWeight: '700',
               margin: 0,
-              fontFamily: 'var(--font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+              fontFamily: 'var(--font-display)'
             }}>
               Organize Collection
             </h2>
@@ -81,7 +80,7 @@ export default function OrganizeFolderModal({
               style={{
                 background: 'transparent',
                 border: 'none',
-                fontSize: '1.5rem',
+                display: 'flex',
                 cursor: 'pointer',
                 color: 'var(--muted-foreground)',
                 padding: '0.25rem',
@@ -89,7 +88,7 @@ export default function OrganizeFolderModal({
               }}
               aria-label="Close"
             >
-              ×
+              <X size={22} />
             </button>
           </div>
 
@@ -122,12 +121,16 @@ export default function OrganizeFolderModal({
                         cursor: 'pointer',
                         fontSize: '0.875rem',
                         fontWeight: '600',
-                        fontFamily: 'var(--font-mono)',
+                        fontFamily: 'var(--font-body)',
                         textAlign: 'left',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
                         transition: 'var(--transition)'
                       }}
                     >
-                      📂 Unsorted
+                      <FolderOpen size={16} />
+                      Unsorted
                     </button>
 
                     {folders.filter(f => f !== 'Unsorted').map((folder) => (
@@ -145,12 +148,16 @@ export default function OrganizeFolderModal({
                           cursor: 'pointer',
                           fontSize: '0.875rem',
                           fontWeight: '600',
-                          fontFamily: 'var(--font-mono)',
+                          fontFamily: 'var(--font-body)',
                           textAlign: 'left',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
                           transition: 'var(--transition)'
                         }}
                       >
-                        📁 {folder}
+                        <Folder size={16} />
+                        {folder}
                       </button>
                     ))}
                   </div>
@@ -169,7 +176,7 @@ export default function OrganizeFolderModal({
                     cursor: 'pointer',
                     fontSize: '0.875rem',
                     fontWeight: '600',
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: 'var(--font-body)',
                     color: 'var(--foreground)',
                     marginBottom: '1.5rem',
                     transition: 'var(--transition)'
@@ -232,7 +239,7 @@ export default function OrganizeFolderModal({
                     cursor: 'pointer',
                     fontSize: '0.875rem',
                     fontWeight: '600',
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: 'var(--font-body)',
                     color: 'var(--foreground)',
                     marginBottom: '1.5rem',
                     transition: 'var(--transition)'
@@ -261,9 +268,7 @@ export default function OrganizeFolderModal({
                   fontSize: '0.875rem',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  fontFamily: 'var(--font-body)'
                 }}
               >
                 Cancel
@@ -280,9 +285,7 @@ export default function OrganizeFolderModal({
                   fontSize: '0.875rem',
                   fontWeight: '600',
                   cursor: (creatingNew && !newFolderName.trim()) ? 'not-allowed' : 'pointer',
-                  fontFamily: 'var(--font-mono)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-body)',
                   opacity: (creatingNew && !newFolderName.trim()) ? 0.5 : 1
                 }}
               >
